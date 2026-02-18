@@ -1,0 +1,358 @@
+.dashboardContainer {
+    height: 90vh;
+}
+
+.HeaderOption {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    background-color: black;
+    color: #ffffff;
+    top:0;
+    padding: 10px;
+    width:100%;
+    position:fixed;
+   
+}
+
+
+
+
+/* Header container */
+.header-top {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  gap: 12px;
+  background: transparent; /* keep header background as you wish */
+  z-index: 50;
+}
+
+/* Wrapper gives background accent and soft shadow */
+.logo-wrap {
+    
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(248, 248, 248, 0.03));
+  box-shadow: 4px 4px 10px rgba(255, 255, 255, 0.12);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  will-change: transform, box-shadow;
+  animation: logoFloat 4s ease-in-out infinite;
+}
+
+/* Logo image */
+.aviconn-logo {
+  width: 30%;                /* keep your existing width */
+  max-width: 140px;         /* prevents it from getting huge on wide screens */
+  height: auto;
+  object-fit: contain;
+  display: block;
+  padding: 1px;
+  border-radius: 1px;
+  filter: drop-shadow(0 6px 18px rgba(249,112,0,0.18));
+  transition: transform 220ms ease, filter 220ms ease;
+  animation: logoGlow 2.6s ease-in-out infinite;
+}
+
+/* Hover / focus (if user hovers logo) */
+.logo-wrap:hover,
+.logo-wrap:focus {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 10px 30px rgb(249, 112, 0);
+}
+
+/* Keyframes */
+@keyframes logoFloat {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes logoGlow {
+  0%   { filter: drop-shadow(0 6px 12px rgba(249,112,0,0.10)); }
+  50%  { filter: drop-shadow(0 10px 30px rgba(249,112,0,0.30)); }
+  100% { filter: drop-shadow(0 6px 12px rgba(249,112,0,0.10)); }
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .logo-wrap, .aviconn-logo { animation: none; transition: none; transform: none; }
+}
+
+
+#addDeviceContainer {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-bottom: 1px solid rgb(254, 130, 5);
+    background-color: #FF933B;
+    background-color: #f97000;
+    color: #000000;
+}
+
+.addDeviceOption {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom:10px;
+    width: 35%;
+    
+    background-color: #868383;
+    background-color: #020202;
+    
+    color:#fffafa;
+    border-radius:10px;
+    padding-left:1%;
+    padding-right:1%;
+
+    box-shadow: 0 0 6px rgb(113, 216, 220),
+    0 0 6px rgb(113, 216, 220),
+    0 0 6px rgb(113, 216, 220),
+    0 0 6px rgb(113, 216, 220);
+
+}
+
+
+
+.addDeviceOption:hover 
+{
+    
+    box-shadow: 0 0 8px rgb(254, 254, 254),
+    0 0 8px  rgb(254, 254, 254),
+    0 0 8px  rgb(254, 254, 254),
+    0 0 8px  rgb(254, 254, 254);
+}
+
+
+
+
+
+
+
+
+.action-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    cursor: pointer; /* Add cursor pointer for better UX */
+}
+
+#device_action 
+{
+    background-color:#bcc3c3;
+    border-radius:5px;
+    padding:2px;
+    color: #000000;
+    margin-top:2%;
+    font-family:'Times New Roman', Times, serif;
+    font-weight:bold;
+    border: solid 1.5px #000000;
+    border: solid 1.5px #413e3e;
+   
+    
+}
+
+#device_action:hover
+{
+    background-color: #ff6403;
+    border-radius:5px;
+    padding:1%;
+    border: solid 2px #ffffff;   
+}
+
+.action-item .icon {
+    display:flex;
+    justify-content: center;
+    align-items: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 6px;
+    
+}
+
+
+
+.add-icon {
+    background-color: #739deb;
+    color: white;
+}
+
+.copy-icon {
+    background-color: #73ffd3;
+    color: black;
+}
+
+.edit-icon {
+    background-color: #ffc107;
+    color: black;
+}
+
+.delete-icon {
+    background-color: red;
+    color: white;
+}
+
+
+
+
+.icon {
+    margin-right: 2px;
+}
+
+.add-icon {
+    border-radius: 9px;
+    background-color: #739deb;
+    color: aliceblue;
+}
+
+
+
+.iconTableContainer {
+    margin-top: 5%;
+    margin-left:1%;
+    height: 90%;
+    width:98%;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.dashboardTable {
+    
+    max-width:95%;
+    border-collapse: collapse;
+    margin-left: 2%;
+    margin-top: 2%;
+    box-shadow: 0 0 4px #717070,
+                0 0 4px #717070,
+                0 0 4px #717070,
+                0 0 4px #717070;
+    text-align: center;
+}
+
+.dashboardTable th {
+    background-color: #ff5500;
+    border: 0px;
+    height: 30px;
+    font-weight: 650;
+    font-size: 18px;
+    text-align: center;
+}
+
+.dashboardTable td {
+    border: 0px;
+    text-align: center;
+}
+
+.dashboardTable tbody tr:nth-child(odd) {
+    background-color: #bcc3c3;
+    height: 35px;
+    font-size: 16px;
+}
+
+.dashboardTable tbody tr:nth-child(even) {
+    background-color: #fffafa;
+    height: 35px;
+    font-size: 16px;
+}
+
+.dashboardTable tr.selected {
+    background-color: #ff5900; /* Light blue background for selected row */
+}
+
+#selected_item 
+{
+    background-color: #ff5900;
+}
+
+@keyframes move-dots {
+    0% {
+        border-color: rgb(255, 115, 0) transparent transparent transparent;
+    }
+    25% {
+        border-color: transparent rgb(255, 115, 0) transparent transparent;
+    }
+    50% {
+        border-color: transparent transparent rgb(255, 115, 0) transparent;
+    }
+    75% {
+        border-color: transparent transparent transparent rgb(255, 115, 0);
+    }
+    100% {
+        border-color: rgb(255, 115, 0) transparent transparent transparent;
+    }
+}
+
+.border-effect {
+    border: 5px dotted transparent;
+    animation: move-dots 10s linear infinite;
+    box-shadow: 0 0 10px #FF933B,
+                0 0 10px #FF933B,
+                0 0 10px #FF933B,
+                0 0 10px #FF933B;
+}
+
+.dashboardTable th.no {
+    max-width: 5%;
+}
+
+.dashboardTable th.space {
+    padding: 5px;
+}
+
+.dashboardTable th.serial-number {
+    min-width: 30%;
+}
+
+.dashboardTable th.meter-number {
+    min-width: 30%;
+}
+
+
+.onConfirm_popup 
+{
+    
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      
+}
+
+
+.popup-content 
+{
+    background-color: #73ffd3;
+}
+
+

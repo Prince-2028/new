@@ -1,0 +1,95 @@
+.load-control-container-securitySetting 
+{
+    
+     font-family: Arial, sans-serif;
+  padding-left:2%;
+  background-color: #f5f5f5;
+  min-height:74vh;
+  max-height:74vh;
+  padding:1%;
+  overflow-x: auto;
+  text-align:center;
+margin:1%;
+
+}
+
+.security-form {
+    
+    width:100%;
+    
+}
+
+.security-form label {
+    display: flex;
+    align-items: center;
+    margin:0.5%;
+}
+
+.security-form span {
+    
+  font-size:14px;
+  font-weight:540;
+    min-width:40%;
+    max-width:40%;
+    text-align:start;
+}
+
+
+
+.security-form input[type="text"],.security-form input[type="number"],
+.security-form select {
+    padding:4px;
+    margin-left: 1%;
+    border-radius: 4px;
+    min-width:50%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    border-color: #f88b3e; /* Example of a blue border on focus */
+box-shadow: 3px 3px 3px rgba(255, 89, 0, 0.6);
+outline: none; /* Remove default outline */
+   
+}
+
+.section-header 
+{
+    position: relative;
+    border: 2px solid #444;
+    padding:0.5%;
+    margin:2%;
+}
+
+
+.ppp-heading1
+{
+    position: absolute;
+    width:40%;
+    top: -10%;        /* moves it onto the border */
+    
+    background: #fff;  /* IMPORTANT: hides the border behind text */
+    padding: 0 8px;
+    font-weight: 600;
+ 
+
+}
+
+
+
+
+
+.security-form input:focus, 
+.security-form select:focus {
+border-color: #f88b3e; /* Example of a blue border on focus */
+box-shadow: 3px 3px 3px rgba(255, 89, 0, 0.6);
+outline: none; /* Remove default outline */
+}
+
+.submit-button {
+    grid-column: 1 / span 2;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}

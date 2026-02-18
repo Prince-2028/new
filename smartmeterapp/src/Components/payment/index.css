@@ -1,0 +1,79 @@
+.token-form {
+    width: 50%;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+  }
+  
+  .label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+  
+  .input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .description-container {
+    margin-top: 10px;
+  }
+  
+  .description-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+  }
+  
+  .description-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 5px;
+  }
+  
+  .index-input {
+    width: 20%;
+  }
+  
+  .description-input {
+    width: 75%;
+  }
+  
+  .add-button {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .add-button:hover {
+    background-color: #0056b3;
+  }
+  
+  .radio-group {
+    margin-top: 5px;
+  }
+  
+  .submit-button {
+    margin-top: 15px;
+    padding: 10px 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .submit-button:hover {
+    background-color: #218838;
+  }
+  

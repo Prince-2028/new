@@ -1,0 +1,26 @@
+[project]
+name = "dlmsapplication"
+version = "0.1.0"
+requires-python = ">=3.11, <3.12"
+dependencies = [
+    "asgiref==3.9.1",
+    "coloredlogs==15.0.1",
+    "django==5.2.6",
+    "django-cors-headers==4.7.0",
+    "djangorestframework==3.16.1",
+    "future==1.0.0",
+    "getmac==0.9.5",
+    "gurux-common==1.0.13",
+    "gurux-dlms==1.0.189",
+    "gurux-net==1.0.23",
+    "gurux-serial==1.0.21",
+    "humanfriendly==10.0",
+    "iso8601==2.1.0",
+    "pyreadline3==3.5.4",
+    "pyserial==3.5",
+    "pyyaml==6.0.2",
+    "serial==0.0.97",
+    "setuptools==80.9.0",
+    "sqlparse==0.5.3",
+    "tzdata==2025.2",
+]

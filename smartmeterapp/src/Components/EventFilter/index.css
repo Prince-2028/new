@@ -1,0 +1,28 @@
+
+
+.filter-buttons button 
+{
+    width:20%;
+    
+    font-weight:700;
+    border:0px;
+    margin:1%;
+    border-radius:5px;
+    background-color: rgb(249, 115, 32)
+}
+
+.filter-buttons button:hover
+{
+    
+    border-radius:5px;
+    background-color: rgb(255, 47, 0)
+}
+
+.filter-content
+{
+    background-color:#f4f4f4;
+    min-height:60vh;
+    max-height:100vh;
+    overflow-y:auto;
+    margin:1%;
+}

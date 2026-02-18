@@ -1,0 +1,11 @@
+.modal-content1 {
+    min-width: 100px;
+    max-height: 90vh; /* Set a maximum height relative to the viewport */
+    background-color: rgb(244, 244, 244);
+    overflow-y: auto; /* Allow vertical scrolling if content overflows */
+    overflow-x: hidden; /* Hide horizontal scrolling if unnecessary */
+    padding: 15px; /* Optional padding for better appearance */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add optional shadow for aesthetics */
+    border-radius: 8px; /* Optional rounded corners */
+}
+

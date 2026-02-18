@@ -1,0 +1,256 @@
+/* App.css - A more beautiful and modern UX for the Image Transfer and other components */
+
+.app-container {
+    display: flex;
+    height: 100vh;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+
+
+.device-info {
+    font-size: 14px;
+    margin-bottom: 25px;
+    color: #667085;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #f0f4f8;
+}
+
+.billing-section-title {
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e5e9f2;
+    color: #1a202c;
+}
+
+
+
+.content {
+    flex-grow: 1;
+    padding: 30px;
+    background-color: #f7f9fc;
+    overflow-y: auto;
+}
+
+/* --- Dashboard Header and Tabs --- */
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e5e9f2;
+}
+
+.dashboard-title {
+    font-size: 28px;
+    font-weight: bold;
+    color: #1a202c;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+
+.dashboard-btn {
+    padding: 5px 10px;
+    margin:1%;
+    border: 1px solid #cdd5e0;
+    background-color: #fff;
+    color: #000000;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.dashboard-btn:hover {
+    background-color: #f0f4f8;
+    transform: translateY(-1px);
+}
+
+.dashboard-btn:active {
+    transform: translateY(0);
+}
+
+.tabs {
+    display: flex;
+    border-bottom: 2px solid #e5e9f2;
+}
+
+.tab-btn {
+    padding: 12px 20px;
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    color: #667085;
+    position: relative;
+    top: 2px;
+}
+
+.tab-btn.active-tab {
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+    font-weight: 600;
+}
+
+/* --- Form and Input Styling --- */
+.tab-content {
+    padding: 25px;
+    background-color: #fff;
+    border: 1px solid #e5e9f2;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f4f8;
+}
+
+.form-row:last-child {
+    border-bottom: none;
+}
+
+.form-row label {
+    flex-shrink: 0;
+    width: 250px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #333;
+    text-align: right;
+    padding-right: 20px;
+}
+
+.form-row input[type="text"] {
+    flex-grow: 1;
+    padding: 10px 15px;
+    border: 1px solid #cdd5e0;
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: #f9fbfd;
+    color: #333;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-row input[type="text"]:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+.form-row input[type="text"][readOnly] {
+    background-color: #e9ecef;
+    border-color: #cdd5e0;
+    cursor: not-allowed;
+}
+
+.radio-group {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    flex-grow: 1;
+}
+
+.radio-group label {
+    font-weight: normal;
+    color: #333;
+    width: auto;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding-right: 0;
+}
+
+.radio-group input[type="radio"] {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+/* --- Table Styling --- */
+.data-table-container {
+    margin-top: 30px;
+    border: 1px solid #e5e9f2;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #fff;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th, .data-table td {
+    padding: 15px;
+    text-align: left;
+    font-size: 14px;
+    border-bottom: 1px solid #e5e9f2;
+}
+
+.data-table th {
+    background-color: #f0f4f8;
+    font-weight: 600;
+    color: #4a5568;
+    text-transform: uppercase;
+}
+
+.data-table tbody tr:nth-child(even) {
+    background-color: #f8faff; /* Subtle alternating row color */
+}
+
+.data-table tbody tr:hover {
+    background-color: #e0e7ff; /* Highlight row on hover */
+    cursor: pointer;
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* General button styling for the Upgrade button in the ImageTransferTab */
+.tab-content button {
+    padding: 12px 25px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.tab-content button:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+.tab-content button:active {
+    transform: translateY(0);
+}

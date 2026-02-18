@@ -1,0 +1,133 @@
+/* Container for the list of checkboxes */
+.meter-info-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px; /* Space between items */
+    padding: 10px;
+    list-style-type: none; /* Remove default list styling */
+    margin: 0;
+  }
+  
+/* Style for each list item */
+.meter-info-item {
+  display: flex;
+  align-items: center;
+  
+  padding: 10px;
+  cursor: pointer;
+  color: black;
+  font-weight: bold;
+  font-size: 16px; /* Make sure font-size is correct */
+  background: linear-gradient(to top, rgb(0, 238, 255)  0%, #ffffff 50%, #ffffff 100%);
+  border-radius: 0px 10px;
+  transition: height 2s ease;
+  background-size: 100% 200%; /* Adjust background size to allow for animation */
+  animation: moveBackground 5s infinite ease-in-out; 
+  box-shadow: 0 0 4px #2f2b2b,
+                0 0 4px #505050,
+                0 0 4px #505050,
+                0 0 4px #505050;/* Apply the animation */
+}
+
+@keyframes moveBackground {
+  0% {
+    background-position: 0% 100%; /* Start with the gradient at the bottom */
+  }
+  50% {
+    background-position: 0% 0%; /* Move the gradient to the top */
+  }
+  100% {
+    background-position: 0% 100%; /* Return the gradient to the bottom */
+  }
+}
+
+
+  .meter-info-item.selected {
+    background: linear-gradient(to top, rgb(255, 128, 0) 0%, #ffe8d4 50%, #fffafa 100%);
+    border:1px solid #000000;
+    background-color: #ff6600; /* Change to a different color */
+    box-shadow: 0 0 4px #2f2b2b,
+                0 0 4px #505050,
+                0 0 4px #505050,
+                0 0 4px #505050; /* Change box shadow for a different effect */
+    transform: scale(0.98); 
+  }
+  
+
+ 
+  
+  
+  .meter-info-item:hover {
+    background: linear-gradient(to top, rgb(0, 238, 255) 0%, #fffafa 50%, #fffafa 100%);
+  }
+  
+
+ 
+  
+
+
+
+  
+  /* Style for the checkbox */
+  .meter-info-checkbox {
+    margin-right: 8px;
+  }
+  
+  .meter-info-label {
+    font-weight: 500;
+    font-size: 16px;
+  }
+  
+  /* Table styling */
+  .meter-info-table {
+    width: 80%;
+   
+    border-collapse: collapse;
+    margin-top: 20px;
+    box-shadow: 0 0 4px #717070,
+  0 0 4px #717070,
+  0 0 4px #717070,
+  0 0 4px #717070; 
+  text-align: center; 
+  margin:2%;
+  }
+
+
+  .meter-info-table th{
+    background-color: #ff5500;
+    border:0px;
+    height:30px;
+    font-weight:650;
+    font-size:18px;
+    text-align: center;
+  }
+  .meter-info-table td 
+  {
+   border:0px;
+    text-align: center;
+  }
+  
+  
+  .meter-info-table tbody tr:nth-child(odd) {
+    background-color:#bcc3c3; /* Light gray background for odd rows */
+    height:35px;
+    font-size:16px;
+  
+   
+  }
+  
+  .meter-info-table tbody tr:nth-child(even) {
+    background-color:#fffafa; /* Lighter gray background for even rows */
+    height:35px;
+    font-size:16px;
+    
+  }
+  
+  
+  
+  .sub-dashboard-content {
+    margin-top: 20px;
+  }
+  
+
+  

@@ -1,0 +1,439 @@
+.form-container {
+    border-radius: 8px;
+    font-family: Arial, sans-serif;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    
+    align-content: center;
+    
+    background-color:rgb(255, 255, 255);
+    margin-top:2%;
+    padding-top:2%;
+    width:90%;
+    margin:auto;
+    padding-left:5%;
+
+   
+  }
+
+  .load-control-container 
+{
+     font-family: Arial, sans-serif;
+  padding-left:2%;
+  background-color: #f5f5f5;
+  min-height:70vh;
+  max-height:70vh;
+  padding:1%;
+  overflow-x: auto;
+  text-align:center;
+margin:1%;
+  
+
+}
+
+
+ 
+  .network-input-item  
+  {
+    min-width:80%;
+    max-width:80%;
+    display:flex;
+    flex-direction:row;
+    justify-content:space-between;
+    text-align:start;
+    padding:1%;
+  }
+
+  .network-input-item label 
+  {
+    font-weight:700;
+    outline: none;
+  }
+
+  .network-input-item input:focus
+  {
+    
+    outline: none;
+    
+  }
+
+.window-Destination-table-conatainer
+{
+    width:100%;
+    display:flex;
+   flex-direction:row;
+  
+  
+   
+   
+    
+}
+
+
+.ppp-container {
+  position: relative;
+  border: 5px solid #444;
+  border-radius:1%;
+  margin:1%;
+  padding:1%;
+
+  
+}
+.gprs_grid label
+{
+   
+    text-align:left;
+    min-width:100%;
+    
+}
+
+.gprs_grid input,.gprs_grid select
+{
+    border:1px #2b2a2a solid;
+   
+    
+}
+
+.ppp-heading 
+{
+  position: absolute;
+  top: -16%;        /* moves it onto the border */
+  left: 16px;        /* adjust as needed */
+  background: #fff;  /* IMPORTANT: hides the border behind text */
+  padding: 0 8px;
+  font-weight: 600;
+  border-radius:10%;
+  margin-top:1%;
+}
+
+
+#lc-input-username
+{
+  flex: 1;
+
+  padding:1%;
+  font-size: 12px;
+
+  border-radius: 4px;
+  margin-left:1%;
+}
+
+
+
+.lc-label {
+  width: 40%;
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  text-align:end;
+ 
+}
+
+.ppp-container 
+{
+  width:100%;
+  display:flex;
+ border:1px solid black;
+  flex-direction:column;
+
+}
+
+.table-Container
+{
+   border:1px solid black;
+    min-height:35vh;
+    max-height:35vh;
+    overflow-y:auto;
+    margin:1%;
+    min-width:48%;
+   
+    
+   
+}
+
+.ipcp-Container 
+{
+   width:50%;
+  margin:1%;
+  margin-top:0%;
+ 
+
+}
+ 
+
+
+.small-table 
+{
+  padding:0%;
+  margin:0%;
+
+ 
+}
+
+.table-container-networkcontrol 
+{
+
+
+   border:2px solid black;
+   padding:0%;
+   height:32vh;
+   overflow-y:auto;
+   margin:1%;
+ 
+
+}
+
+
+.table-container-autoanswer 
+{
+
+
+   border:2px solid black;
+   padding:0%;
+   min-height:28vh;
+   overflow-y:auto;
+   margin:0%;
+ 
+
+}
+ 
+.window-table-container 
+{
+   
+    
+    width:50%;
+    padding-right:5%;
+
+
+}
+.Destination-table-container 
+{
+    min-width:50%;
+    max-width:50%;
+    
+}
+
+  
+.Autoconnect-Container 
+{
+    padding: 10px;
+    background-color:rgb(234, 234, 234);
+    margin:10px;
+    border-radius:10px;
+
+}
+
+
+
+
+.tableTariff {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+ 
+}
+
+.tableTariff th, .tableTariff td {
+  border: 1px solid #ff8e0e;
+  padding: 12px;
+  text-align: left;
+}
+
+.tableTariff th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+
+
+
+  /* Table styling */
+  .tableTariff {
+    width: 96%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    box-shadow: 0 0 4px #717070,
+  0 0 4px #717070,
+  0 0 4px #717070,
+  0 0 4px #717070; 
+  text-align: center; 
+  margin:2%;
+  }
+
+
+  .tableTariff th{
+    background-color: #ff5500;
+    border:0px;
+    height:30px;
+    font-weight:650;
+    font-size:18px;
+    text-align: center;
+  }
+  .tableTariff td 
+  {
+   border:0px;
+    text-align: center;
+  }
+  
+  
+  .tableTariff tbody tr:nth-child(odd) {
+    background-color:#bcc3c3; /* Light gray background for odd rows */
+    height:35px;
+    font-size:16px;
+  
+   
+  }
+  
+  .tableTariff tbody tr:nth-child(even) {
+    background-color:#fffafa; /* Lighter gray background for even rows */
+    height:35px;
+    font-size:16px;
+    
+  }
+ 
+
+  .network-delete-button 
+{
+
+  display: block;
+  padding:10px;
+  background-color: #ff7300;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+ 
+  width:40%;
+ 
+}
+
+.network-delete-button:hover {
+  background-color: #ff3c00;
+  
+}
+
+
+.network-add-button 
+{
+
+ display: block;
+ padding: 2px;
+ background-color: #ff7300;
+ color: white;
+ border: none;
+ cursor: pointer;
+ font-size: 14px;
+ 
+ width:40%;
+
+}
+
+
+
+
+.network-add-button:hover {
+ background-color: #45a049;
+ 
+}
+
+.button-container 
+{
+  display:flex;
+  flex-direction:row;
+  justify-content:space-around;
+  margin:0px;
+}
+
+
+.gprs_container {
+  width: 80%;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  
+ 
+}
+
+
+
+.gprs_checkbox-label {
+  display: block;
+  
+  font-weight: bold;
+}
+
+.gprs_checkbox {
+  margin-right: 8px;
+}
+
+.gprs_form-group {
+  display: flex;
+ 
+}
+
+.gprs_label {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+.gprs_input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.gprs_default-requested-section {
+  margin-top: 20px;
+}
+
+.gprs_section-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.gprs_grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px;
+  margin:1%;
+}
+
+.gprs_grid-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+.gprs_readonly-input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+.gprs-input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #e9ecef;
+ 
+}
+
+.gprs_submit-button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.gprs_submit-button:hover {
+  background-color: #0056b3;
+}
+

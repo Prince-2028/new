@@ -1,0 +1,61 @@
+.message-log-container {
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+    font-family: 'Consolas', 'Courier New', monospace;
+    padding: 10px;
+    border: 1px solid #333;
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.message-log-header {
+    display: grid;
+    grid-template-columns: 200px 80px 120px 1fr;
+    padding: 5px 0;
+    font-weight: bold;
+    color: #a0a0a0;
+    border-bottom: 1px solid #333;
+    position: sticky;
+    top: 0;
+    background-color: #1e1e1e;
+}
+
+.column-title {
+    padding: 0 5px;
+}
+
+.message-list {
+    flex-grow: 1;
+}
+
+.message-item {
+    display: grid;
+    grid-template-columns: 200px 80px 120px 1fr;
+    padding: 2px 0;
+    white-space: pre-wrap;
+    border-bottom: 1px solid #282828;
+}
+
+.message-item:hover {
+    background-color: #2b2b2b;
+}
+
+.message-item span {
+    padding-right: 10px;
+    word-break: break-all;
+}
+
+/* Message Type Colors */
+.info-message {
+    color: #025902; /* Green for INFO messages */
+}
+
+.hex-message {
+    color: #04678e; /* Light blue for messages containing hex data */
+}
+
+.log-message {
+    color: #000000; /* Black for "Port closed" messages */
+}
