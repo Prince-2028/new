@@ -4824,7 +4824,7 @@ class TamperIndicateStatusView(APIView):
         try:
             # --- 1. Get Device and DLMS Config (same as MeterDetailAPIView) ---
             try:
-                device = Device.objects.selectrelated('addressing', 'security', 'user').get(serial_number=serial_number)
+                device = Device.objects.select_related('addressing', 'security', 'user').get(serial_number=serial_number)
                 logger.info(f"Found Device with serial_number: {serial_number}")
             except Device.DoesNotExist:
                 # Fallback: try via Meter

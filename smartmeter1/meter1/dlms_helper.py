@@ -618,6 +618,9 @@ def execute_dlms_action(config, action_details):
             invocationCounter=ic_obis
         )
 
+        if interface == InterfaceType.HDLC:
+            reader.waitTime = 5000
+
         # --- 5. Connect & Get Association View ---
         logger.info("Opening media connection...")
         media.open()

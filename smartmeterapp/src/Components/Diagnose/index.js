@@ -1046,51 +1046,13 @@ function Diagnose() {
         payload
       );
       
-      // Updated to match the actual response structure from TamperIndicateStatusView
-      // Response format: { status: "success", results: [{ value: [...], obis_code: "...", ... }] }
-
-      // const returned = resp.data.results?.[0]?.value || []; ORG
-
-      ////--------------------------------------------------------------------------
-      console.log("TamperIndicateStatus Response:", resp);
+      console.log("TamperIndicateStatus Full Response:", resp);
       console.log("Response data:", resp.data);
-      console.log("Response data type:", typeof resp.data);
-      ////-----------------------------------------------------------------
-
-      // console.log("Tamper Indicate Status Response:", resp.data);
-      // console.log("Returned values:", returned);
+      console.log("Results array:", resp.data.results);
+      console.log("First result:", resp.data.results?.[0]);
       
-      ////--------------------------------------------------------------------------------------
-      // TamperIndicateStatus uses SSE streaming format
-      const sseData = resp.data;
-      let parsedData = null;
-      
-      if (typeof sseData === 'string' && sseData.startsWith('data:')) {
-        // SSE format: "data: {...}\n\n"
-        const jsonStr = sseData.replace(/^data:\s*/, '').trim();
-        console.log("Parsing SSE JSON:", jsonStr);
-        parsedData = JSON.parse(jsonStr);
-      } else if (typeof sseData === 'object') {
-        // Already parsed as object
-        console.log("Response already parsed as object");
-        parsedData = sseData;
-      } else {
-        console.error("Unexpected response format:", sseData);
-        throw new Error("Unexpected response format");
-      }
-      
-      console.log("Parsed data:", parsedData);
-      
-      // Check for error status
-      if (parsedData && parsedData.status === "error") {
-        const errorMsg = parsedData.message || "Failed to read data";
-        console.error("Error status in response:", errorMsg);
-        throw new Error(errorMsg);
-      }
-      
-      const returned = parsedData?.value || [];
+      const returned = resp.data.results?.[0]?.value || [];
       console.log("Returned values:", returned);
-      /////----------------------------------------------------------------------------------
 
       const mapping = {
         top_cover_open: "TopCoverOpen",
@@ -1100,9 +1062,14 @@ function Diagnose() {
         sim_card_removed_exception: "SimCardRemovedException",
       };
       
+      console.log("Mapping:", mapping);
+      
       const newState = Object.keys(pageStates.tamperIndicateStatus).reduce(
         (acc, key) => {
-          acc[key] = returned.includes(mapping[key]);
+          const mappedValue = mapping[key];
+          const isIncluded = returned.includes(mappedValue);
+          console.log(`Checking ${key}: mappedValue="${mappedValue}", isIncluded=${isIncluded}, returned=`, returned);
+          acc[key] = isIncluded;
           return acc;
         },
         {}

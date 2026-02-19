@@ -52,8 +52,13 @@ const ThresholdTable = () => {
 
     const selectedParams = checkedItems.map((index) => {
       const item = thresholds[index];
+      // Extract OBIS code from format "(3,1-0:12.31.0.255)" -> "1.0.12.31.0.255"
+      // Remove parentheses, remove class ID, replace colons and dashes with dots
+      const obisMatch = item.code.match(/\((\d+),(.+)\)/);
+      const obisCode = obisMatch ? obisMatch[2].replace(/[:-]/g, '.') : item.code;
+      
       return {
-        obis_code: item.obis,
+        obis_code: obisCode,
         attribute_index: "2"
       };
     });
@@ -153,8 +158,13 @@ const ThresholdTable = () => {
         </thead>
         <tbody>
           {thresholds.map((threshold, index) => {
-            const displayValue = streamValues[threshold.obis] !== undefined && streamValues[threshold.obis] !== null
-              ? `${streamValues[threshold.obis]}`
+            // Extract OBIS code from format "(3,1-0:12.31.0.255)" -> "1.0.12.31.0.255"
+            // Remove parentheses, remove class ID, replace colons and dashes with dots
+            const obisMatch = threshold.code.match(/\((\d+),(.+)\)/);
+            const obisCode = obisMatch ? obisMatch[2].replace(/[:-]/g, '.') : threshold.code;
+            
+            const displayValue = streamValues[obisCode] !== undefined && streamValues[obisCode] !== null
+              ? `${streamValues[obisCode]}`
               : '';
 
             return (

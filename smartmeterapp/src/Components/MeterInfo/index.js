@@ -86,7 +86,7 @@ const MeterInfo = () => {
   const getRowCount = (subItem) => {
     if (subItem === "Meter Identifier") return 5;
     if (subItem === "Meter Version") return 4;
-    if (subItem === "Meter Logical Parameters") return 11;
+    if (subItem === "Meter Logical Parameters") return 6;
     return 0;
   };
 
@@ -115,8 +115,8 @@ const MeterInfo = () => {
         { name: "COSEM logical device name", code: "(1,0.0.42.0.0.255)", value: getValueByObis("0.0.42.0.0.255") },
         { name: "Meter serial number", code: "(1,0.0.96.1.0.255)", value: getValueByObis("0.0.96.1.0.255") },
         { name: "Customer meter equipment identifier", code: "(1,0.0.96.1.1.255)", value: getValueByObis("0.0.96.1.1.255") },
-        { name: "Receive frame counter - unicast key", code: "(1,0.0.42.0.1.255)", value: getValueByObis("0.0.42.0.0.255") },
-        { name: "Receive frame counter - broadcast counter", code: "(1,0.0.42.0.2.255)", value: getValueByObis("0.0.42.0.0.255") }
+        { name: "Receive frame counter - unicast key", code: "(1,0.0.43.1.2.255)", value: getValueByObis("0.0.42.0.0.255") },
+        { name: "Receive frame counter - broadcast counter", code: "(1,0.0.43.1.3.255)", value: getValueByObis("0.0.42.0.0.255") }
       ],
       "Meter Version": [
         { name: "MID firmware identifier (version)", code: "(1,1-0-0.2.0.255)", value: getValueByObis("1.0.0.2.0.255") },
@@ -127,12 +127,12 @@ const MeterInfo = () => {
      
       "Meter Logical Parameters": [
         
-  { name: "Nominal voltage", code: "(3,1-0-0.6.0.255)", value: getValueByObis("1.0.0.6.0.255") },
-  { name: "Basic/Nominal Current", code: "(3,1-0-0.6.1.255)", value: getValueByObis("1.0.0.6.1.255") },
-  { name: "Nominal frequency", code: "(3,1-0-0.6.2.255)", value: getValueByObis("1.0.0.6.2.255") },
-  { name: "Maximum Current", code: "(3,1-0-0.6.3.255)", value: getValueByObis("1.0.0.6.3.255") },
-  { name: "Active energy constant", code: "(3,1-0-0.3.1.255)", value: getValueByObis("1.0.0.3.1.255") },
-  { name: "Reactive energy constant", code: "(3,1-0-0.3.2.255)", value: getValueByObis("1.0.0.3.2.255")},
+  { name: "Nominal voltage (V)", code: "(3,1-0-0.6.0.255)", value: getValueByObis("1.0.0.6.0.255") },
+        { name: "Basic/Nominal Current (A)", code: "(3,1-0-0.6.1.255)", value: getValueByObis("1.0.0.6.1.255") },
+        { name: "Nominal frequency (Hz)", code: "(3,1-0-0.6.2.255)", value: getValueByObis("1.0.0.6.2.255") },
+        { name: "Maximum Current (A)", code: "(3,1-0-0.6.3.255)", value: getValueByObis("1.0.0.6.3.255") },
+        { name: "Active energy constant (kWh)", code: "(3,1-0-0.3.0.255)", value: getValueByObis("1.0.0.3.0.255") },
+        { name: "Reactive energy constant (kVArh)", code: "(3,1-0-0.3.1.255)", value: getValueByObis("1.0.0.3.1.255")},
     
   { name: "Voltage RMS",   code: "(3,1.0.32.7.0.255)", value: getValueByObis("1.0.32.7.0.255") },
       { name: "Frequency",     code: "(3,1.0.14.7.0.255)", value: getValueByObis("1.0.14.7.0.255") },

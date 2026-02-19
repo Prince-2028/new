@@ -643,69 +643,42 @@ setResult(extracted);
     console.log("parameters", parameters);
 
     try {
-      const response = await fetch(`${BASE_URL}/api/time-settings/update/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          serial_number: serial,
-          action: "read_obis",
-          parameters,
-        }),
+      const response = await axios.post(`${BASE_URL}/api/TimeSettingsAPIView/`, {
+        serial_number: serial,
+        action: "read_obis",
+        parameters,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      console.log("Response data:", response.data);
 
-      if (!response.body) throw new Error("No response body received");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let buffer = "";
+      const results = response.data.results || [];
       let successCount = 0;
       let errorCount = 0;
-      const totalItems = parameters.length;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      results.forEach(item => {
+        if (item.status === "success") {
+          successCount++;
+          const opt = OPTIONS.find(o => o.index === parseInt(item.attribute_index));
+          const displayValue =
+            item.value && typeof item.value === "object" && "Date" in item.value && "Time" in item.value
+              ? `${item.value.Date} ${item.value.Time}`
+              : String(item.value);
 
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop();
-
-        for (const part of parts) {
-          if (part.startsWith("data:")) {
-            try {
-              const item = JSON.parse(part.replace("data:", "").trim());
-              
-              if (item.status === "success") {
-                successCount++;
-                const opt = OPTIONS.find(o => o.index.toString() === item.attribute_index);
-                const displayValue =
-                  item.value && typeof item.value === "object" && "Date" in item.value && "Time" in item.value
-                    ? `${item.value.Date} ${item.value.Time}`
-                    : String(item.value);
-
-                setResult(prev => [
-                  ...prev,
-                  {
-                    label: opt ? opt.label : `Parameter ${item.attribute_index}`,
-                    value: displayValue,
-                  },
-                ]);
-              } else if (item.status === "error") {
-                errorCount++;
-                console.error(`Error reading attribute ${item.attribute_index}: ${item.message}`);
-              }
-            } catch (err) {
-              console.error("JSON parse error:", err);
-            }
-          }
+          setResult(prev => [
+            ...prev,
+            {
+              label: opt ? opt.label : `Parameter ${item.attribute_index}`,
+              value: displayValue,
+            },
+          ]);
+        } else if (item.status === "error") {
+          errorCount++;
+          console.error(`Error reading attribute ${item.attribute_index}: ${item.message}`);
         }
-      }
+      });
 
       // Show final result
+      const totalItems = parameters.length;
       if (errorCount === 0) {
         alert(`Success! Retrieved ${successCount} of ${totalItems} values.`);
       } else if (successCount > 0) {
