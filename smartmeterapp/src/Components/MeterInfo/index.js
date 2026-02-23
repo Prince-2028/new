@@ -4,6 +4,7 @@ import './Meterinfo.css';
 import axios from "axios";
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
 import { PERMISSIONS } from '../../permissions';
+import WriteModal from '../WriteModal';
 
 
 
@@ -34,6 +35,9 @@ const MeterInfo = () => {
     "Meter Logical Parameters": false
   });
 
+  // Write modal state
+  const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
+  const [writeModalData, setWriteModalData] = useState({ name: '', code: '', row: null });
 
    // stores streamed values by obis_code  #11111111111111
   const [streamValues, setStreamValues] = useState({});
@@ -195,13 +199,17 @@ const MeterInfo = () => {
   }
 
   
+    // Open write modal instead of prompt
+    setWriteModalData({ name: selectedRow.name, code: selectedRow.code, row: selectedRow });
+    setIsWriteModalOpen(true);
+  };
 
+  const handleWriteSubmit = async (enteredValue) => {
+    const selectedRow = writeModalData.row;
+    if (!selectedRow) return;
 
-    const enteredValue = prompt(`Enter value for "${selectedRow.name}" (Code: ${selectedRow.code}):`);
-    if (!enteredValue || enteredValue.trim() === "") {
-      alert("Value cannot be empty.");
-      return;
-    }
+    // Close modal immediately
+    setIsWriteModalOpen(false);
 
     const cleanCode = selectedRow.code
       .replace(/[()]/g, "")
@@ -223,6 +231,7 @@ const MeterInfo = () => {
 
     console.log("Write Payload:", payload);
 
+    // Perform write operation after modal is closed
     axios.post(`${BASE_URL}/api/getmeterinfo/`, payload)
       .then(response => {
         console.log("Response:", response.data);
@@ -554,6 +563,14 @@ const renderTableRows = (sub) =>
       </div>
 
       {renderTable(selectedSubDashboard)}
+      
+      <WriteModal
+        isOpen={isWriteModalOpen}
+        onClose={() => setIsWriteModalOpen(false)}
+        itemName={writeModalData.name}
+        itemCode={writeModalData.code}
+        onSubmit={handleWriteSubmit}
+      />
     </div>
     
   );

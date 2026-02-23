@@ -1,5 +1,5 @@
 // src/Components/Dashboard.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './index.css'
 import { VscDebugDisconnect } from "react-icons/vsc";
 import Header from "../Header";
@@ -26,6 +26,7 @@ import mobileupload from '../../assets/mobileupload.png'
 import executeIcon from  '../../assets/execute.png'
 import { PERMISSIONS } from '../../permissions';
 import logo from '../../assets/logo.png'
+import { enterFullscreen } from '../../utils/fullscreen';
 
 const ICONS = [
   { key: 'header',  src: Mobile,        title: 'Mobile / Header',       aria: 'show header' },
@@ -51,6 +52,13 @@ export default function DashboardTwo({
   const perms = PERMISSIONS[role] || {};
    const navigate = useNavigate(); 
      
+  // Ensure fullscreen on DashboardTwo mount
+  useEffect(() => {
+    console.log('DashboardTwo mounted, attempting fullscreen...');
+    enterFullscreen().catch(err => {
+      console.log('DashboardTwo fullscreen failed:', err);
+    });
+  }, []);
 
   const renderPanel = () => {
     switch (active) {

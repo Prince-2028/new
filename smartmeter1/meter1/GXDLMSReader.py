@@ -333,6 +333,48 @@ class GXDLMSReader:
         data = self.client.write(item, attributeIndex)
         self.readDLMSPacket(data)
 
+    def method(self, item, methodIndex, data, dataType):
+        """
+        Execute a method on a COSEM object.
+        
+        Parameters:
+        -----------
+        item : GXDLMSObject
+            The COSEM object to execute the method on
+        methodIndex : int
+            The method number (1-based index)
+        data : any
+            The parameter data to pass to the method (can be None)
+        dataType : DataType
+            The data type of the parameter
+            
+        Returns:
+        --------
+        The result value from the method execution
+        
+        Example for Image Transfer (Class 18):
+        ---------------------------------------
+        # Method 1: image_transfer_initiate(image_identifier, image_size)
+        image_obj = client.objects.findByLN(ObjectType.IMAGE_TRANSFER, "0.0.44.0.0.255")
+        params = [b"FW_V1.0", 1024000]  # identifier, size
+        reader.method(image_obj, 1, params, DataType.ARRAY)
+        
+        # Method 3: image_verify()
+        reader.method(image_obj, 3, None, DataType.NONE)
+        
+        # Method 4: image_activate()
+        reader.method(image_obj, 4, None, DataType.NONE)
+        """
+        # Get the method request from client
+        request_data = self.client.method(item, methodIndex, data, dataType)
+        
+        # Send request and read reply
+        reply = GXReplyData()
+        self.readDataBlock(request_data, reply)
+        
+        # Return the result value
+        return reply.value
+
     def readRowsByEntry(self, pg, index, count):
         data = self.client.readRowsByEntry(pg, index, count)
         reply = GXReplyData()

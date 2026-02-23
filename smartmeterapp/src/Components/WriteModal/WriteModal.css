@@ -1,0 +1,129 @@
+.write-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100001;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.write-modal-box {
+  background: white;
+  border-radius: 10px;
+  padding: 30px;
+  min-width: 400px;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.write-modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.write-modal-info {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 5px;
+}
+
+.write-modal-info p {
+  margin: 5px 0;
+  color: #333;
+  font-size: 14px;
+}
+
+.write-modal-info strong {
+  color: #f88b3e;
+  font-size: 15px;
+}
+
+.write-modal-code {
+  color: #666 !important;
+  font-size: 13px !important;
+  font-family: monospace;
+}
+
+.write-modal-input {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.write-modal-input:focus {
+  outline: none;
+  border-color: #f88b3e;
+}
+
+.write-modal-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.write-modal-button {
+  flex: 1;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.write-modal-ok {
+  background: #4CAF50;
+  color: white;
+}
+
+.write-modal-ok:hover {
+  background: #45a049;
+}
+
+.write-modal-cancel {
+  background: #f44336;
+  color: white;
+}
+
+.write-modal-cancel:hover {
+  background: #da190b;
+}
+
+.write-modal-button:active {
+  transform: scale(0.98);
+}

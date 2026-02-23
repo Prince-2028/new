@@ -857,6 +857,121 @@ def execute_dlms_action(config, action_details):
             result = {"status": "success", "action": "read_profile", "obis_code": obis,
                       "profile_buffer": decoded_buffer, "message": "Profile read successful."}
 
+        elif action == "execute_method":
+            media.open()
+            reader.initializeConnection()
+            
+            obis = parameters.get('obis_code')
+            method_index_str = parameters.get('method_index')
+            method_data = parameters.get('data', 0)  # Default to 0 if no data
+            data_type_str = parameters.get('data_type')
+            
+            if not obis or method_index_str is None:
+                raise ValueError("Missing 'obis_code' or 'method_index' for execute_method.")
+            
+            try:
+                method_index = int(method_index_str)
+            except (ValueError, TypeError):
+                raise ValueError("Invalid 'method_index'.")
+            
+            # Find the target object
+            target_obj = client.objects.findByLN(ObjectType.NONE, obis)
+            if not target_obj:
+                raise ValueError(f"Object '{obis}' not found.")
+            
+            logger.info(f"Executing method {method_index} on OBIS: {obis}")
+            
+            # Determine data type - CRITICAL: GXDLMSClient requires dataType != NONE
+            if data_type_str:
+                # User provided explicit data type
+                try:
+                    data_type = DataType(int(data_type_str))
+                    logger.debug(f"Using provided DataType: {data_type.name}")
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid data_type: {data_type_str}. Will auto-detect.")
+                    data_type = None
+            else:
+                data_type = None
+            
+            # Auto-detect data type if not provided (similar to write_obis)
+            if data_type is None:
+                logger.debug(f"Auto-detecting data type for value: {method_data} (type: {type(method_data)})")
+                
+                # Check if it's already a Python type
+                if isinstance(method_data, bool):
+                    data_type = DataType.BOOLEAN
+                elif isinstance(method_data, int):
+                    # Determine size based on value
+                    if -128 <= method_data <= 127:
+                        data_type = DataType.INT8
+                    elif 0 <= method_data <= 255:
+                        data_type = DataType.UINT8
+                    elif -32768 <= method_data <= 32767:
+                        data_type = DataType.INT16
+                    elif 0 <= method_data <= 65535:
+                        data_type = DataType.UINT16
+                    elif -2147483648 <= method_data <= 2147483647:
+                        data_type = DataType.INT32
+                    else:
+                        data_type = DataType.INT64
+                elif isinstance(method_data, float):
+                    data_type = DataType.FLOAT32
+                elif isinstance(method_data, str):
+                    # Check if it's hex string
+                    if method_data.startswith('0x') or all(c in '0123456789ABCDEFabcdef' for c in method_data):
+                        data_type = DataType.OCTET_STRING
+                    else:
+                        data_type = DataType.STRING
+                elif isinstance(method_data, (bytes, bytearray)):
+                    data_type = DataType.OCTET_STRING
+                elif isinstance(method_data, list):
+                    data_type = DataType.ARRAY
+                elif isinstance(method_data, dict):
+                    data_type = DataType.STRUCTURE
+                elif method_data is None or method_data == 0:
+                    # For parameterless methods (like image_verify, image_activate)
+                    data_type = DataType.INT8
+                else:
+                    # Fallback
+                    data_type = DataType.INT8
+                
+                logger.info(f"Auto-determined DataType: {data_type.name} for value: {method_data}")
+            
+            # Convert data if needed
+            converted_data = method_data
+            if data_type_str or (data_type and data_type != DataType.INT8):
+                try:
+                    converted_data = _convert_write_value(str(method_data), data_type)
+                    logger.debug(f"Converted method data: {converted_data} (Type: {type(converted_data)})")
+                except Exception as e:
+                    logger.warning(f"Failed to convert method data: {e}. Using raw value.")
+                    converted_data = method_data
+            
+            # Execute the method using reader.method()
+            try:
+                logger.debug(f"Calling reader.method({obis}, {method_index}, {converted_data}, {data_type.name})")
+                response = reader.method(target_obj, method_index, converted_data, data_type)
+                response_value = _convert_read_value(response) if response else None
+                
+                logger.info(f"Method execution successful for {obis} method {method_index}")
+                result = {
+                    "status": "success",
+                    "action": "execute_method",
+                    "obis_code": obis,
+                    "method_index": method_index,
+                    "response": response_value,
+                    "data_type_used": data_type.name,
+                    "message": "Method executed successfully."
+                }
+            except Exception as method_error:
+                logger.error(f"Error executing method {method_index} on {obis}: {method_error}")
+                result = {
+                    "status": "error",
+                    "obis_code": obis,
+                    "method_index": method_index,
+                    "message": f"Method execution failed: {str(method_error)}"
+                }
+
         else:
             logger.warning(f"Unknown DLMS action requested: {action}")
             result = {"status": "error", "message": f"Unknown action '{action}' requested."}

@@ -19,6 +19,8 @@ import { PERMISSIONS } from '../../permissions';
 import MessageLog from '../Message'
 import Options from '../Options'
 import logo from '../../assets/logo.png'
+import { enterFullscreen } from '../../utils/fullscreen';
+import ICModal from '../ICModal';
 
 
 const Dashboard = () => {
@@ -30,6 +32,8 @@ const Dashboard = () => {
     const [isAddDevicePopupOpen, setIsAddDevicePopupOpen] = useState(false);
     const [isOptionPopupOpen , setIsOptionPopupOpen] = useState(false);
     const [isCopyPopupOpen, setIsCopyPopupOpen] = useState(false);
+    const [isICModalOpen, setIsICModalOpen] = useState(false);
+    const [currentIC, setCurrentIC] = useState(null);
     const [selectedDeviceId, setSelectedDeviceId] = useState(null);
     const [selectedDeviceData, setSelectedDeviceData] = useState(null);
     const [selectedDeviceSerial, setSelectedDeviceSerial] = useState('');
@@ -37,6 +41,40 @@ const Dashboard = () => {
 
     const userId = localStorage.getItem('userId');
     console.log("selectedDeviceData",selectedDeviceId)
+
+    // Ensure fullscreen on Dashboard mount and maintain it
+    useEffect(() => {
+        console.log('Dashboard mounted, attempting fullscreen...');
+        
+        // Enter fullscreen on mount
+        enterFullscreen().catch(err => {
+            console.log('Dashboard fullscreen failed:', err);
+        });
+
+        // Add click handler to maintain fullscreen on any click
+        const maintainFullscreen = () => {
+            const isInFullscreen = !!(
+                document.fullscreenElement ||
+                document.webkitFullscreenElement ||
+                document.mozFullScreenElement ||
+                document.msFullscreenElement
+            );
+            
+            if (!isInFullscreen) {
+                console.log('Click detected while not in fullscreen, re-entering...');
+                enterFullscreen().catch(err => {
+                    console.log('Failed to maintain fullscreen:', err);
+                });
+            }
+        };
+
+        // Listen for clicks to maintain fullscreen
+        document.addEventListener('click', maintainFullscreen, { capture: true });
+
+        return () => {
+            document.removeEventListener('click', maintainFullscreen, { capture: true });
+        };
+    }, []);
 
     const openPortPopup = () => {
     if (!selectedDeviceId) {
@@ -172,36 +210,29 @@ const Dashboard = () => {
         try {
             // First, get the current IC value
             const getResponse = await axios.get(`${BASE_URL}/invocation-counter/`);
-            const currentIC = getResponse.data.current_ic;
+            const currentICValue = getResponse.data.current_ic;
             
-            // Prompt user to enter new IC value
-            const newIC = window.prompt(
-                `Current Invocation Counter: ${currentIC}\n\n` +
-                `Enter new IC value to update ic_obis in dlms_helper.py:`,
-                currentIC
-            );
-            
-            if (newIC === null) {
-                // User clicked Cancel
-                return;
-            }
-            
-            // Validate input
-            const icValue = parseInt(newIC);
-            if (isNaN(icValue) || icValue < 0) {
-                alert('Please enter a valid positive number.');
-                return;
-            }
-            
+            // Open custom modal instead of window.prompt
+            setCurrentIC(currentICValue);
+            setIsICModalOpen(true);
+        } catch (err) {
+            console.error('Error getting IC:', err);
+            alert('Error: ' + (err.response?.data?.error || 'Failed to get IC value.'));
+        }
+    };
+
+    const handleICSubmit = async (icValue) => {
+        try {
             // Update the IC value in dlms_helper.py
             const postResponse = await axios.post(`${BASE_URL}/invocation-counter/`, {
                 ic_value: icValue
             });
             
             alert(postResponse.data.message);
+            setIsICModalOpen(false);
         } catch (err) {
-            console.error('Error handling IC:', err);
-            alert('Error: ' + (err.response?.data?.error || 'Failed to handle IC operation.'));
+            console.error('Error updating IC:', err);
+            alert('Error: ' + (err.response?.data?.error || 'Failed to update IC value.'));
         }
     };
 
@@ -363,6 +394,12 @@ const Dashboard = () => {
                 {isMessagePopupOpen && <MessageLog closeMessagePopup={closeMessagePopup}/>}
                 {isAddDevicePopupOpen && <AddDevice closeAdddevicePopup={closeAddDevicePopup} deviceData={selectedDeviceData} />}
                 {isOptionPopupOpen && <Options onClose={closeOptionPopup}/>}
+                <ICModal 
+                    isOpen={isICModalOpen}
+                    onClose={() => setIsICModalOpen(false)}
+                    currentIC={currentIC}
+                    onSubmit={handleICSubmit}
+                />
         
 
                 <table className="dashboardTable">

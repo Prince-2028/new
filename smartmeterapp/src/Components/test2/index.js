@@ -6,6 +6,7 @@ import myImage from '../../assets/serialnumber.jpg'; // Adjust the path as neede
 import { FaUserAlt } from "react-icons/fa";
 import { RiLockPasswordFill } from "react-icons/ri";
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
+import { enterFullscreen } from '../../utils/fullscreen';
 
 import './index.css';
 
@@ -191,6 +192,8 @@ function LoginSignup() {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
 
+    console.log('=== LOGIN SUBMIT STARTED ===');
+
     const data = {
       username: account,
       password: password,
@@ -200,8 +203,9 @@ function LoginSignup() {
       const response = await axios.post(`${baseUrl}/login/`, data);
 
       if (response.status === 200) {
+        console.log('Login successful, attempting fullscreen...');
+        
         setUserId(response.data.user_id);
-
         setUserCode("")
         setAccount("")
         setPassword("")
@@ -210,7 +214,18 @@ function LoginSignup() {
         localStorage.setItem('userId', response.data.user_id);
         localStorage.setItem('userRole', response.data.user_type);
 
-        navigate('/dashboard');
+        // Try to enter fullscreen immediately
+        try {
+          await enterFullscreen();
+          console.log('Fullscreen activated, navigating...');
+        } catch (err) {
+          console.error('Fullscreen activation failed:', err);
+        }
+
+        // Navigate after a short delay
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 200);
       } else {
         console.error('Error:', response.status);
       }

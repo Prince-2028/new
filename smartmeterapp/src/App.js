@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { HashRouter as Router, Route, Routes } from 'react-router-dom';
 
 import Dashboard from './Components/Dashboard';
@@ -8,51 +8,126 @@ import PrivateRoute from './Components/PrivateRoute/PrivateRoute';
 import BillingSection from './Components/BillingSection';
 import ImageTransferSection from './Components/ImageTransfer';
 import FullscreenButton from './Components/FullscreenButton';
+import FullscreenPrompt from './Components/FullscreenPrompt';
+import { AlertProvider, setupCustomAlert, useAlert } from './Components/CustomAlert';
+import { enterFullscreen } from './utils/fullscreen';
 
 import './App.css';
 
-function App() {
+function AppContent() {
+  const [fullscreenLocked, setFullscreenLocked] = useState(true);
+  const [fullscreenActivated, setFullscreenActivated] = useState(false);
+  const { showAlert } = useAlert();
+
   useEffect(() => {
-    // Auto-enter fullscreen on app load
-    const enterFullscreen = () => {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen().catch(err => {
-          console.log('Auto-fullscreen failed, user interaction required:', err);
-        });
-      } else if (elem.webkitRequestFullscreen) {
-        elem.webkitRequestFullscreen();
-      } else if (elem.mozRequestFullScreen) {
-        elem.mozRequestFullScreen();
-      } else if (elem.msRequestFullscreen) {
-        elem.msRequestFullscreen();
+    // Setup custom alert globally
+    setupCustomAlert(showAlert);
+    console.log('Custom alert system initialized');
+  }, [showAlert]);
+
+  useEffect(() => {
+    console.log('App mounted - setting up fullscreen triggers');
+
+    // Try to enter fullscreen on ANY user interaction
+    const activateFullscreen = () => {
+      if (!fullscreenActivated) {
+        console.log('First user interaction detected, entering fullscreen...');
+        enterFullscreen()
+          .then(() => {
+            console.log('✓ Fullscreen activated successfully');
+            setFullscreenActivated(true);
+            localStorage.setItem('fullscreenActivated', 'true');
+          })
+          .catch(err => {
+            console.log('✗ Fullscreen activation failed:', err);
+          });
       }
     };
 
-    // Try immediately (may fail due to browser security)
-    enterFullscreen();
+    // Check if fullscreen was previously activated
+    const wasActivated = localStorage.getItem('fullscreenActivated') === 'true';
+    if (wasActivated) {
+      console.log('Fullscreen was previously activated, attempting to re-enter...');
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        activateFullscreen();
+      }, 100);
+    }
 
-    // Fallback: Enter fullscreen on first user interaction
-    const handleFirstInteraction = () => {
-      enterFullscreen();
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('keydown', handleFirstInteraction);
-      document.removeEventListener('touchstart', handleFirstInteraction);
+    // Listen for ANY user interaction
+    const events = ['click', 'touchstart', 'keydown', 'mousedown'];
+    events.forEach(event => {
+      document.addEventListener(event, activateFullscreen, { once: true, capture: true });
+    });
+
+    // Monitor fullscreen changes and re-enter if locked - MORE AGGRESSIVE
+    const handleFullscreenChange = () => {
+      const isInFullscreen = !!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+      );
+      
+      console.log('Fullscreen change detected. In fullscreen:', isInFullscreen, 'Locked:', fullscreenLocked);
+      
+      if (!isInFullscreen && fullscreenLocked && fullscreenActivated) {
+        console.log('Fullscreen exited unexpectedly, re-entering IMMEDIATELY...');
+        // Immediate re-entry without delay
+        enterFullscreen()
+          .then(() => console.log('✓ Re-entered fullscreen successfully'))
+          .catch(err => {
+            console.log('✗ Failed to re-enter fullscreen, retrying...', err);
+            // Retry after short delay if first attempt fails
+            setTimeout(() => {
+              enterFullscreen().catch(e => console.log('Retry failed:', e));
+            }, 50);
+          });
+      }
     };
 
-    document.addEventListener('click', handleFirstInteraction);
-    document.addEventListener('keydown', handleFirstInteraction);
-    document.addEventListener('touchstart', handleFirstInteraction);
+    // Use multiple event listeners for better browser compatibility
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    // Also listen for visibility changes (when user switches tabs)
+    const handleVisibilityChange = () => {
+      if (!document.hidden && fullscreenLocked && fullscreenActivated) {
+        const isInFullscreen = !!(
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.mozFullScreenElement ||
+          document.msFullscreenElement
+        );
+        
+        if (!isInFullscreen) {
+          console.log('Tab became visible and not in fullscreen, re-entering...');
+          setTimeout(() => {
+            enterFullscreen().catch(err => console.log('Failed on visibility change:', err));
+          }, 100);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      document.removeEventListener('click', handleFirstInteraction);
-      document.removeEventListener('keydown', handleFirstInteraction);
-      document.removeEventListener('touchstart', handleFirstInteraction);
+      events.forEach(event => {
+        document.removeEventListener(event, activateFullscreen, { capture: true });
+      });
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [fullscreenLocked, fullscreenActivated]);
 
   return (
     <div className="App">
+      <FullscreenPrompt />
       <Router>
         <Routes>
           <Route path="/" element={<LoginSignup />} />
@@ -74,8 +149,19 @@ function App() {
           />
         </Routes>
       </Router>
-      <FullscreenButton />
+      <FullscreenButton 
+        fullscreenLocked={fullscreenLocked} 
+        setFullscreenLocked={setFullscreenLocked} 
+      />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AlertProvider>
+      <AppContent />
+    </AlertProvider>
   );
 }
 

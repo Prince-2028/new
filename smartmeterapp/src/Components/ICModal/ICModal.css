@@ -1,0 +1,106 @@
+.ic-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100001;
+  animation: fadeIn 0.2s ease-in;
+}
+
+.ic-modal-box {
+  background: white;
+  border-radius: 10px;
+  padding: 30px;
+  min-width: 400px;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+
+.ic-modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.ic-modal-info {
+  margin-bottom: 20px;
+}
+
+.ic-modal-info p {
+  margin: 8px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.ic-modal-info strong {
+  color: #f88b3e;
+  font-size: 16px;
+}
+
+.ic-modal-subtitle {
+  color: #666 !important;
+  font-size: 13px !important;
+  margin-top: 15px !important;
+}
+
+.ic-modal-input {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.ic-modal-input:focus {
+  outline: none;
+  border-color: #f88b3e;
+}
+
+.ic-modal-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.ic-modal-button {
+  flex: 1;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ic-modal-ok {
+  background: #4CAF50;
+  color: white;
+}
+
+.ic-modal-ok:hover {
+  background: #45a049;
+}
+
+.ic-modal-cancel {
+  background: #f44336;
+  color: white;
+}
+
+.ic-modal-cancel:hover {
+  background: #da190b;
+}
+
+.ic-modal-button:active {
+  transform: scale(0.98);
+}
