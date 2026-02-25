@@ -23,6 +23,7 @@ from gurux_dlms.objects import (
 )
 from gurux_dlms.GXByteBuffer import GXByteBuffer
 from gurux_dlms.GXFloat32 import GXFloat32
+from gurux_dlms.internal._GXCommon import _GXCommon
 from enum import IntFlag
 from .GXDLMSReader import GXDLMSReader
 # Configure logging for this module
@@ -365,12 +366,74 @@ def _convert_read_value(value, obis=None):
     else:
         logger.debug(f"Converting complex type {type(value).__name__} to string.")
         return str(value)
+
+
+# --- Helper Function to Build Image Transfer Data Structures ---
+def _build_image_transfer_data(method_data, method_index):
+    """Build properly formatted data for image transfer methods.
+    
+    Args:
+        method_data: Dict containing image transfer parameters
+        method_index: Method number (1=initiate, 2=block_transfer)
+    
+    Returns:
+        Tuple of (data_list, DataType.ARRAY) for use with reader.method()
+    """
+    
+    if method_index == 1:
+        # Method 1: image_transfer_initiate
+        # Return list: [image_identifier (bytes), image_size (int)]
+        identifier = method_data.get('image_identifier', '')
+        size = method_data.get('image_size', 0)
         
+        # Convert identifier to bytes
+        identifier_bytes = identifier.encode('utf-8') if isinstance(identifier, str) else identifier
+        
+        logger.debug(f"Built image_transfer_initiate data: identifier={identifier_bytes}, size={size}")
+        return [identifier_bytes, size], DataType.ARRAY
+        
+    elif method_index == 2:
+        # Method 2: image_block_transfer
+        # Return list: [image_block_number (int), image_block_value (bytes)]
+        block_num = method_data.get('image_block_number', 0)
+        block_value = method_data.get('image_block_value', b'')
+        
+        # Convert hex string to bytes if needed
+        if isinstance(block_value, str):
+            hex_str = block_value
+            if hex_str.startswith('0x'):
+                hex_str = hex_str[2:]
+            
+            # Ensure even length for hex conversion
+            if len(hex_str) % 2 != 0:
+                logger.warning(f"Hex string has odd length ({len(hex_str)}), padding with 0")
+                hex_str = '0' + hex_str
+            
+            try:
+                block_value = bytes.fromhex(hex_str)
+                logger.debug(f"Converted hex string to {len(block_value)} bytes")
+            except ValueError as e:
+                logger.error(f"Invalid hex string: {e}")
+                raise ValueError(f"Invalid hex string for image_block_value: {e}")
+        
+        logger.debug(f"Built image_block_transfer data: block_num={block_num}, block_size={len(block_value)}")
+        return [int(block_num), block_value], DataType.ARRAY
+    
+    return None, DataType.NONE
+
 
 # --- Helper Function to Convert Value for Writing (Adapted from DLMSClient) ---
 def _convert_write_value(value_str, data_type: DataType):
-    """Convert string input from API to the appropriate data type for DLMS write."""
-    logger.debug(f"Converting '{value_str}' to {DataType(data_type).name} for writing...")
+    """Convert input value from API to the appropriate data type for DLMS write.
+    
+    Args:
+        value_str: Input value (can be str, dict, list, int, float, etc.)
+        data_type: Target DLMS DataType
+    
+    Returns:
+        Converted value suitable for DLMS operations
+    """
+    logger.debug(f"Converting '{value_str}' (type: {type(value_str)}) to {DataType(data_type).name} for writing...")
     try:
         if data_type == DataType.OCTET_STRING: # Type 9
             s = str(value_str).strip()
@@ -448,6 +511,89 @@ def _convert_write_value(value_str, data_type: DataType):
         elif data_type == DataType.TIME:
              tm_obj = datetime.strptime(value_str, "%H:%M:%S").time()
              return GXDateTime(tm_obj)
+        elif data_type == DataType.STRUCTURE:
+            # Handle STRUCTURE - convert dict/JSON to list of values
+            logger.debug(f"Converting STRUCTURE from: {value_str} (type: {type(value_str)})")
+            if isinstance(value_str, dict):
+                # Special handling for image transfer methods
+                if 'image_identifier' in value_str and 'image_size' in value_str:
+                    # Image transfer method 1: convert identifier to bytes
+                    identifier = value_str['image_identifier']
+                    if isinstance(identifier, str):
+                        identifier = identifier.encode('utf-8')
+                    logger.debug(f"Image transfer initiate: identifier={identifier}, size={value_str['image_size']}")
+                    return [identifier, value_str['image_size']]
+                elif 'image_block_number' in value_str and 'image_block_value' in value_str:
+                    # Image transfer method 2: convert block data to bytes
+                    block_data = value_str['image_block_value']
+                    if isinstance(block_data, str):
+                        # Assume hex string
+                        if block_data.startswith('0x'):
+                            block_data = bytes.fromhex(block_data[2:])
+                        else:
+                            block_data = bytes.fromhex(block_data)
+                    logger.debug(f"Image block transfer: block={value_str['image_block_number']}, data_len={len(block_data)}")
+                    return [value_str['image_block_number'], block_data]
+                
+                # Generic dict to list conversion
+                return list(value_str.values())
+            elif isinstance(value_str, str):
+                # Try to parse JSON string
+                import json
+                try:
+                    parsed = json.loads(value_str)
+                    if isinstance(parsed, dict):
+                        return list(parsed.values())
+                    elif isinstance(parsed, list):
+                        return parsed
+                    else:
+                        raise ValueError(f"Invalid STRUCTURE format: {value_str}")
+                except json.JSONDecodeError:
+                    raise ValueError(f"Cannot parse STRUCTURE JSON: {value_str}")
+            elif isinstance(value_str, list):
+                return value_str
+            else:
+                raise ValueError(f"Invalid STRUCTURE type: {type(value_str)}")
+        elif data_type == DataType.ARRAY:
+            # Handle ARRAY - similar to STRUCTURE
+            logger.debug(f"Converting ARRAY from: {value_str} (type: {type(value_str)})")
+            if isinstance(value_str, dict):
+                # Special handling for image transfer methods
+                if 'image_identifier' in value_str and 'image_size' in value_str:
+                    # Image transfer method 1: convert identifier to bytes
+                    identifier = value_str['image_identifier']
+                    if isinstance(identifier, str):
+                        identifier = identifier.encode('utf-8')
+                    logger.debug(f"Image transfer initiate: identifier={identifier}, size={value_str['image_size']}")
+                    return [identifier, value_str['image_size']]
+                elif 'image_block_number' in value_str and 'image_block_value' in value_str:
+                    # Image transfer method 2: convert block data to bytes
+                    block_data = value_str['image_block_value']
+                    if isinstance(block_data, str):
+                        # Assume hex string
+                        if block_data.startswith('0x'):
+                            block_data = bytes.fromhex(block_data[2:])
+                        else:
+                            block_data = bytes.fromhex(block_data)
+                    logger.debug(f"Image block transfer: block={value_str['image_block_number']}, data_len={len(block_data)}")
+                    return [value_str['image_block_number'], block_data]
+                
+                # Generic dict to list conversion
+                return list(value_str.values())
+            elif isinstance(value_str, list):
+                return value_str
+            elif isinstance(value_str, str):
+                import json
+                try:
+                    parsed = json.loads(value_str)
+                    if isinstance(parsed, list):
+                        return parsed
+                    else:
+                        raise ValueError(f"Invalid ARRAY format: {value_str}")
+                except json.JSONDecodeError:
+                    raise ValueError(f"Cannot parse ARRAY JSON: {value_str}")
+            else:
+                raise ValueError(f"Invalid ARRAY type: {type(value_str)}")
         else:
             logger.warning(f"Write conversion not explicitly handled for {data_type.name}. Using raw string.")
             return str(value_str)
@@ -485,6 +631,7 @@ def execute_dlms_action(config, action_details):
     client = None
     media = None
     reader = None
+    import time
     start_time = time.monotonic()
     result = {"status": "error", "message": "Operation did not start."}
 
@@ -927,7 +1074,13 @@ def execute_dlms_action(config, action_details):
                 elif isinstance(method_data, list):
                     data_type = DataType.ARRAY
                 elif isinstance(method_data, dict):
-                    data_type = DataType.STRUCTURE
+                    # Check if this is an image transfer method
+                    if 'image_identifier' in method_data or 'image_block_number' in method_data:
+                        # Image transfer methods use ARRAY, not STRUCTURE
+                        data_type = DataType.ARRAY
+                        logger.debug("Detected image transfer method, using ARRAY instead of STRUCTURE")
+                    else:
+                        data_type = DataType.STRUCTURE
                 elif method_data is None or method_data == 0:
                     # For parameterless methods (like image_verify, image_activate)
                     data_type = DataType.INT8
@@ -937,22 +1090,83 @@ def execute_dlms_action(config, action_details):
                 
                 logger.info(f"Auto-determined DataType: {data_type.name} for value: {method_data}")
             
-            # Convert data if needed
-            converted_data = method_data
-            if data_type_str or (data_type and data_type != DataType.INT8):
-                try:
-                    converted_data = _convert_write_value(str(method_data), data_type)
-                    logger.debug(f"Converted method data: {converted_data} (Type: {type(converted_data)})")
-                except Exception as e:
-                    logger.warning(f"Failed to convert method data: {e}. Using raw value.")
-                    converted_data = method_data
-            
-            # Execute the method using reader.method()
+            # Execute the method
             try:
-                logger.debug(f"Calling reader.method({obis}, {method_index}, {converted_data}, {data_type.name})")
-                response = reader.method(target_obj, method_index, converted_data, data_type)
-                response_value = _convert_read_value(response) if response else None
+                # Special handling for image transfer methods (Class 18, OBIS 0.0.44.0.0.255)
+                is_image_transfer = (obis == '0.0.44.0.0.255' and 
+                                   isinstance(method_data, dict) and 
+                                   ('image_identifier' in method_data or 'image_block_number' in method_data))
                 
+                if is_image_transfer and method_index in [1, 2]:
+                    # Use GXDLMSImageTransfer object's built-in methods
+                    logger.debug(f"Using GXDLMSImageTransfer built-in method for method {method_index}")
+                    
+                    # CRITICAL: Read imageBlockSize (attribute 2) first if not already set
+                    if target_obj.imageBlockSize == 0 or target_obj.imageBlockSize is None:
+                        logger.info("Reading imageBlockSize (attribute 2) before method execution...")
+                        block_size_value = reader.read(target_obj, 2)
+                        logger.info(f"Image block size from meter: {block_size_value}")
+                    
+                    if method_index == 1:
+                        # imageTransferInitiate(client, imageIdentifier, imageSize)
+                        identifier = method_data.get('image_identifier', '')
+                        size = method_data.get('image_size', 0)
+                        logger.debug(f"Calling imageTransferInitiate: identifier={identifier}, size={size}")
+                        
+                        # Call the built-in method which handles encoding correctly
+                        request_data = target_obj.imageTransferInitiate(client, identifier, size)
+                        
+                    elif method_index == 2:
+                        # imageBlockTransfer(client, imageBlockValue, imageBlockCount)
+                        block_value = method_data.get('image_block_value', b'')
+                        
+                        # Convert hex string to bytes if needed
+                        if isinstance(block_value, str):
+                            hex_str = block_value
+                            if hex_str.startswith('0x'):
+                                hex_str = hex_str[2:]
+                            if len(hex_str) % 2 != 0:
+                                hex_str = '0' + hex_str
+                            block_value = bytes.fromhex(hex_str)
+                        
+                        logger.debug(f"Calling imageBlockTransfer: block_size={len(block_value)}, imageBlockSize={target_obj.imageBlockSize}")
+                        
+                        # imageBlockTransfer returns a list of requests (one per block)
+                        # Since we're sending one block at a time, we get the first request
+                        block_count = [0]
+                        request_list = target_obj.imageBlockTransfer(client, block_value, block_count)
+                        request_data = request_list[0] if request_list else None
+                    
+                    # Send the request and read reply
+                    if request_data:
+                        from gurux_dlms import GXReplyData
+                        reply = GXReplyData()
+                        reader.readDataBlock(request_data, reply)
+                        response_value = _convert_read_value(reply.value) if reply.value else None
+                    else:
+                        response_value = None
+                        
+                else:
+                    # Normal method execution path
+                    converted_data, data_type = _build_image_transfer_data(method_data, method_index) if is_image_transfer else (method_data, data_type)
+                    
+                    if not is_image_transfer:
+                        # Convert data if needed (normal path)
+                        converted_data = method_data
+                        if data_type_str or (data_type and data_type != DataType.INT8):
+                            try:
+                                # Pass the original method_data (not str()) to preserve dict/list types
+                                converted_data = _convert_write_value(method_data, data_type)
+                                logger.debug(f"Converted method data: {converted_data} (Type: {type(converted_data)})")
+                            except Exception as e:
+                                logger.warning(f"Failed to convert method data: {e}. Using raw value.")
+                                converted_data = method_data
+                    
+                    logger.debug(f"Calling reader.method({obis}, {method_index}, {converted_data}, {data_type.name})")
+                    response_value = reader.method(target_obj, method_index, converted_data, data_type)
+                    response_value = _convert_read_value(response_value) if response_value else None
+                
+                # Build success result
                 logger.info(f"Method execution successful for {obis} method {method_index}")
                 result = {
                     "status": "success",
@@ -960,7 +1174,7 @@ def execute_dlms_action(config, action_details):
                     "obis_code": obis,
                     "method_index": method_index,
                     "response": response_value,
-                    "data_type_used": data_type.name,
+                    "data_type_used": data_type.name if not is_image_transfer else "IMAGE_TRANSFER",
                     "message": "Method executed successfully."
                 }
             except Exception as method_error:
@@ -970,6 +1184,218 @@ def execute_dlms_action(config, action_details):
                     "obis_code": obis,
                     "method_index": method_index,
                     "message": f"Method execution failed: {str(method_error)}"
+                }
+
+        elif action == "combined_image_transfer":
+            # Combined image transfer: Keep connection open for entire process
+            # Flow: GET block_size → GET transfer_enabled → M1 → M2 loop → GET blocks status → M3 → M4
+            
+            obis = parameters.get('obis_code', '0.0.44.0.0.255')
+            image_identifier = parameters.get('image_identifier')
+            image_data = parameters.get('image_data')  # Full image as hex string or bytes
+            
+            if not image_identifier or not image_data:
+                raise ValueError("Missing 'image_identifier' or 'image_data' for combined_image_transfer.")
+            
+            # Convert image_data to bytes if it's a hex string
+            if isinstance(image_data, str):
+                hex_str = image_data
+                if hex_str.startswith('0x'):
+                    hex_str = hex_str[2:]
+                if len(hex_str) % 2 != 0:
+                    hex_str = '0' + hex_str
+                logger.debug(f"Converting hex string to bytes: length={len(hex_str)} chars")
+                image_data = bytes.fromhex(hex_str)
+                logger.debug(f"Converted to bytes: length={len(image_data)}, type={type(image_data)}")
+                logger.debug(f"First 20 bytes after conversion: {image_data[:20]}")
+            
+            # CRITICAL: Convert bytes to bytearray for Gurux library compatibility
+            # The Gurux library expects bytearray, not bytes
+            if isinstance(image_data, bytes):
+                image_data = bytearray(image_data)
+                logger.debug(f"Converted bytes to bytearray: type={type(image_data)}")
+            
+            image_size = len(image_data)
+            
+            logger.info(f"Starting combined image transfer: {image_identifier}, size={image_size} bytes")
+            
+            # Open connection and keep it open
+            media.open()
+            reader.initializeConnection()
+            
+            # Log HDLC settings after connection negotiation
+            logger.info(f"HDLC Settings after connection:")
+            logger.info(f"  maxInfoTX: {client.hdlcSettings.maxInfoTX}")
+            logger.info(f"  maxInfoRX: {client.hdlcSettings.maxInfoRX}")
+            logger.info(f"  windowSizeTX: {client.hdlcSettings.windowSizeTX}")
+            logger.info(f"  windowSizeRX: {client.hdlcSettings.windowSizeRX}")
+            logger.info(f"  maxReceivePDUSize: {client.maxReceivePDUSize}")
+            
+            # Find the image transfer object
+            target_obj = client.objects.findByLN(ObjectType.NONE, obis)
+            if not target_obj:
+                raise ValueError(f"Image Transfer object '{obis}' not found.")
+            
+            transfer_log = []
+            transfer_log.append(f"HDLC maxInfoTX: {client.hdlcSettings.maxInfoTX}, maxInfoRX: {client.hdlcSettings.maxInfoRX}")
+            
+            try:
+                # Step 1: GET block_size (attribute 2)
+                logger.info("Step 1: Reading imageBlockSize (attribute 2)...")
+                block_size_value = reader.read(target_obj, 2)
+                logger.info(f"Image block size from meter: {block_size_value}")
+                transfer_log.append(f"Block size from meter: {block_size_value}")
+                
+                # Use the meter's block size directly
+                # The HDLC library bug has been fixed to support extended format (up to 2047 bytes)
+                target_obj.imageBlockSize = block_size_value
+                logger.info(f"Using meter's block size: {block_size_value}")
+                transfer_log.append(f"Using block size: {block_size_value}")
+                
+                # Step 2: GET transfer_enabled (attribute 5)
+                logger.info("Step 2: Reading imageTransferEnabled (attribute 5)...")
+                transfer_enabled = reader.read(target_obj, 5)
+                logger.info(f"Image transfer enabled: {transfer_enabled}")
+                transfer_log.append(f"Transfer enabled: {transfer_enabled}")
+                
+                if not transfer_enabled:
+                    raise ValueError("Image transfer is not enabled on the meter")
+                
+                # Step 3: ACTION Method 1 (image_transfer_initiate)
+                logger.info(f"Step 3: Executing Method 1 (initiate) - identifier={image_identifier}, size={image_size}...")
+                request_m1 = target_obj.imageTransferInitiate(client, image_identifier, image_size)
+                from gurux_dlms import GXReplyData
+                reply_m1 = GXReplyData()
+                reader.readDataBlock(request_m1, reply_m1)
+                logger.info("Method 1 (initiate) executed successfully")
+                transfer_log.append("Method 1: Initiate - SUCCESS")
+                
+                # Step 4: GET status (attribute 6) to confirm initiation
+                logger.info("Step 4: Reading imageTransferStatus (attribute 6)...")
+                status_after_init = reader.read(target_obj, 6)
+                logger.info(f"Status after initiate: {status_after_init}")
+                transfer_log.append(f"Status after initiate: {status_after_init}")
+                
+                # Step 5: ACTION Method 2 loop (image_block_transfer)
+                # Calculate number of blocks
+                block_count = int(image_size / target_obj.imageBlockSize)
+                if image_size % target_obj.imageBlockSize != 0:
+                    block_count += 1
+                
+                logger.info(f"Step 5: Transferring {block_count} blocks...")
+                transfer_log.append(f"Total blocks to transfer: {block_count}")
+                
+                # Debug: Check image_data type and sample bytes
+                logger.debug(f"image_data type: {type(image_data)}, length: {len(image_data)}")
+                logger.debug(f"First 20 bytes: {image_data[:20]}")
+                logger.debug(f"Sample byte values: {[b for b in image_data[:20]]}")
+                
+                # Verify all bytes are in valid range
+                invalid_bytes = [i for i, b in enumerate(image_data[:100]) if not isinstance(b, int) or b < 0 or b > 255]
+                if invalid_bytes:
+                    logger.error(f"Found invalid bytes at positions: {invalid_bytes}")
+                    logger.error(f"Invalid byte values: {[image_data[i] for i in invalid_bytes[:10]]}")
+                
+                # CRITICAL: imageBlockTransfer expects the FULL image data and creates all packets internally
+                # It returns a list of requests, one per block
+                block_count_arr = [0]
+                logger.debug(f"Calling imageBlockTransfer with image_data length={len(image_data)}, imageBlockSize={target_obj.imageBlockSize}")
+                
+                # Test with just first block to isolate issue
+                test_block = image_data[:target_obj.imageBlockSize]
+                logger.debug(f"Test block type: {type(test_block)}, length: {len(test_block)}")
+                logger.debug(f"Test block first 10 bytes: {list(test_block[:10])}")
+                
+                try:
+                    request_list = target_obj.imageBlockTransfer(client, image_data, block_count_arr)
+                except Exception as e:
+                    logger.error(f"Error in imageBlockTransfer: {e}")
+                    logger.error(f"Error type: {type(e).__name__}")
+                    import traceback
+                    tb_lines = traceback.format_exc().split('\n')
+                    for line in tb_lines:
+                        logger.error(line)
+                    raise
+                total_requests = len(request_list)
+                
+                logger.info(f"Generated {total_requests} block transfer requests")
+                
+                successful_blocks = 0
+                failed_blocks = 0
+                
+                # Send each request
+                for block_num, request_m2 in enumerate(request_list):
+                    try:
+                        reply_m2 = GXReplyData()
+                        reader.readDataBlock(request_m2, reply_m2)
+                        successful_blocks += 1
+                        
+                        # Log progress every 50 blocks
+                        if (block_num + 1) % 50 == 0 or (block_num + 1) == total_requests:
+                            progress_pct = ((block_num + 1) / total_requests) * 100
+                            logger.info(f"Progress: {block_num + 1}/{total_requests} blocks ({progress_pct:.1f}%)")
+                            transfer_log.append(f"Block {block_num + 1}/{total_requests} transferred ({progress_pct:.1f}%)")
+                    except Exception as block_error:
+                        logger.error(f"Error transferring block {block_num}: {block_error}")
+                        failed_blocks += 1
+                        transfer_log.append(f"Block {block_num} FAILED: {str(block_error)}")
+                
+                logger.info(f"Block transfer complete: {successful_blocks} successful, {failed_blocks} failed")
+                transfer_log.append(f"Block transfer complete: {successful_blocks}/{total_requests} successful")
+                
+                # Step 6: GET blocks status (attribute 3)
+                logger.info("Step 6: Reading imageTransferredBlocksStatus (attribute 3)...")
+                blocks_status = reader.read(target_obj, 3)
+                logger.info(f"Blocks status: {blocks_status}")
+                transfer_log.append(f"Blocks status retrieved")
+                
+                # Step 7: ACTION Method 3 (image_verify)
+                logger.info("Step 7: Executing Method 3 (verify)...")
+                request_m3 = target_obj.imageVerify(client)
+                reply_m3 = GXReplyData()
+                reader.readDataBlock(request_m3, reply_m3)
+                logger.info("Method 3 (verify) executed successfully")
+                transfer_log.append("Method 3: Verify - SUCCESS")
+                
+                # Step 8: GET status after verify
+                logger.info("Step 8: Reading status after verify...")
+                status_after_verify = reader.read(target_obj, 6)
+                logger.info(f"Status after verify: {status_after_verify}")
+                transfer_log.append(f"Status after verify: {status_after_verify}")
+                
+                # # Step 9: ACTION Method 4 (image_activate)
+                # logger.info("Step 9: Executing Method 4 (activate)...")
+                # request_m4 = target_obj.imageActivate(client)
+                # reply_m4 = GXReplyData()
+                # reader.readDataBlock(request_m4, reply_m4)
+                # logger.info("Method 4 (activate) executed successfully")
+                # transfer_log.append("Method 4: Activate - SUCCESS")
+                
+                # # Final status check
+                # logger.info("Step 10: Reading final status...")
+                # final_status = reader.read(target_obj, 6)
+                # logger.info(f"Final status: {final_status}")
+                # transfer_log.append(f"Final status: {final_status}")
+                
+                result = {
+                    "status": "success",
+                    "action": "combined_image_transfer",
+                    "image_identifier": image_identifier,
+                    "image_size": image_size,
+                    "blocks_transferred": successful_blocks,
+                    "blocks_failed": failed_blocks,
+                    "total_blocks": block_count,
+                    "transfer_log": transfer_log,
+                    "message": f"Combined image transfer completed successfully. {successful_blocks}/{block_count} blocks transferred."
+                }
+                
+            except Exception as transfer_error:
+                logger.error(f"Error during combined image transfer: {transfer_error}")
+                result = {
+                    "status": "error",
+                    "action": "combined_image_transfer",
+                    "message": f"Combined image transfer failed: {str(transfer_error)}",
+                    "transfer_log": transfer_log
                 }
 
         else:

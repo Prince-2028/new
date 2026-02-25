@@ -1867,8 +1867,8 @@ class MeterDetailAPIView(APIView):
                     
                     return Response(error_results, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            elif action == 'write_obis' or action == 'execute_method':
-                # --- Handle Write or Execute Method ---
+            elif action in ['write_obis', 'execute_method', 'image_transfer_combined', 'combined_image_transfer']:
+                # --- Handle Write, Execute Method, or Image Transfer Combined ---
                 # Directly call the main helper, DO NOT update/clear DB 'value'
                 logger.info(f"Executing DLMS action '{action}' via helper.")
                 result = execute_dlms_action(dlms_config, action_details={"action": action, "parameters": parameters})

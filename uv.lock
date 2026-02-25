@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = "==3.11.*"
 
 [[package]]
@@ -60,57 +60,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/8a/95/5376fe618646fde6899b3cdc85fd959716bb67542e273a76a80d9f326f27/djangorestframework-3.16.1.tar.gz", hash = "sha256:166809528b1aced0a17dc66c24492af18049f2c9420dbd0be29422029cfc3ff7", size = 1089735, upload-time = "2025-08-06T17:50:53.251Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b0/ce/bf8b9d3f415be4ac5588545b5fcdbbb841977db1c1d923f7568eeabe1689/djangorestframework-3.16.1-py3-none-any.whl", hash = "sha256:33a59f47fb9c85ede792cbf88bde71893bcda0667bc573f784649521f1102cec", size = 1080442, upload-time = "2025-08-06T17:50:50.667Z" },
-]
-
-[[package]]
-name = "dlmsapplication"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "asgiref" },
-    { name = "coloredlogs" },
-    { name = "django" },
-    { name = "django-cors-headers" },
-    { name = "djangorestframework" },
-    { name = "future" },
-    { name = "getmac" },
-    { name = "gurux-common" },
-    { name = "gurux-dlms" },
-    { name = "gurux-net" },
-    { name = "gurux-serial" },
-    { name = "humanfriendly" },
-    { name = "iso8601" },
-    { name = "pyreadline3" },
-    { name = "pyserial" },
-    { name = "pyyaml" },
-    { name = "serial" },
-    { name = "setuptools" },
-    { name = "sqlparse" },
-    { name = "tzdata" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "asgiref", specifier = "==3.9.1" },
-    { name = "coloredlogs", specifier = "==15.0.1" },
-    { name = "django", specifier = "==5.2.6" },
-    { name = "django-cors-headers", specifier = "==4.7.0" },
-    { name = "djangorestframework", specifier = "==3.16.1" },
-    { name = "future", specifier = "==1.0.0" },
-    { name = "getmac", specifier = "==0.9.5" },
-    { name = "gurux-common", specifier = "==1.0.13" },
-    { name = "gurux-dlms", specifier = "==1.0.189" },
-    { name = "gurux-net", specifier = "==1.0.23" },
-    { name = "gurux-serial", specifier = "==1.0.21" },
-    { name = "humanfriendly", specifier = "==10.0" },
-    { name = "iso8601", specifier = "==2.1.0" },
-    { name = "pyreadline3", specifier = "==3.5.4" },
-    { name = "pyserial", specifier = "==3.5" },
-    { name = "pyyaml", specifier = "==6.0.2" },
-    { name = "serial", specifier = "==0.0.97" },
-    { name = "setuptools", specifier = "==80.9.0" },
-    { name = "sqlparse", specifier = "==0.5.3" },
-    { name = "tzdata", specifier = "==2025.2" },
 ]
 
 [[package]]
@@ -227,6 +176,57 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/45/73/0f49dacd6e82c9430e46f4a027baa4ca205e8b0a9dce1397f44edc23559d/PyYAML-6.0.2-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:797b4f722ffa07cc8d62053e4cff1486fa6dc094105d13fea7b1de7d8bf71c9e", size = 756638, upload-time = "2024-08-06T20:32:18.555Z" },
     { url = "https://files.pythonhosted.org/packages/22/5f/956f0f9fc65223a58fbc14459bf34b4cc48dec52e00535c79b8db361aabd/PyYAML-6.0.2-cp311-cp311-win32.whl", hash = "sha256:11d8f3dd2b9c1207dcaf2ee0bbbfd5991f571186ec9cc78427ba5bd32afae4b5", size = 143850, upload-time = "2024-08-06T20:32:19.889Z" },
     { url = "https://files.pythonhosted.org/packages/ed/23/8da0bbe2ab9dcdd11f4f4557ccaf95c10b9811b13ecced089d43ce59c3c8/PyYAML-6.0.2-cp311-cp311-win_amd64.whl", hash = "sha256:e10ce637b18caea04431ce14fabcf5c64a1c61ec9c56b071a4b7ca131ca52d44", size = 161980, upload-time = "2024-08-06T20:32:21.273Z" },
+]
+
+[[package]]
+name = "semapp"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "asgiref" },
+    { name = "coloredlogs" },
+    { name = "django" },
+    { name = "django-cors-headers" },
+    { name = "djangorestframework" },
+    { name = "future" },
+    { name = "getmac" },
+    { name = "gurux-common" },
+    { name = "gurux-dlms" },
+    { name = "gurux-net" },
+    { name = "gurux-serial" },
+    { name = "humanfriendly" },
+    { name = "iso8601" },
+    { name = "pyreadline3" },
+    { name = "pyserial" },
+    { name = "pyyaml" },
+    { name = "serial" },
+    { name = "setuptools" },
+    { name = "sqlparse" },
+    { name = "tzdata" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "asgiref", specifier = "==3.9.1" },
+    { name = "coloredlogs", specifier = "==15.0.1" },
+    { name = "django", specifier = "==5.2.6" },
+    { name = "django-cors-headers", specifier = "==4.7.0" },
+    { name = "djangorestframework", specifier = "==3.16.1" },
+    { name = "future", specifier = "==1.0.0" },
+    { name = "getmac", specifier = "==0.9.5" },
+    { name = "gurux-common", specifier = "==1.0.13" },
+    { name = "gurux-dlms", specifier = "==1.0.189" },
+    { name = "gurux-net", specifier = "==1.0.23" },
+    { name = "gurux-serial", specifier = "==1.0.21" },
+    { name = "humanfriendly", specifier = "==10.0" },
+    { name = "iso8601", specifier = "==2.1.0" },
+    { name = "pyreadline3", specifier = "==3.5.4" },
+    { name = "pyserial", specifier = "==3.5" },
+    { name = "pyyaml", specifier = "==6.0.2" },
+    { name = "serial", specifier = "==0.0.97" },
+    { name = "setuptools", specifier = "==80.9.0" },
+    { name = "sqlparse", specifier = "==0.5.3" },
+    { name = "tzdata", specifier = "==2025.2" },
 ]
 
 [[package]]

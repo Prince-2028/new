@@ -7,7 +7,8 @@ import BillingSection from '../BillingSection';
 import LoadProfileSection from '../ProfileLoadSection';
 import EventLogSection from '../EventLog';
 import ExecuteSection from '../Execute';
-import ImageTransferSection from '../ImageTransfer'
+import ImageTransferSection from '../ImageTransfer';
+import ImageTransferREN from '../ImageTransferREN';
 import { redirect, useNavigate } from 'react-router-dom';
 
 import { TiDelete } from 'react-icons/ti';
@@ -35,7 +36,7 @@ const ICONS = [
   { key: 'event',   src: edit,          title: 'Event Log / Edit',      aria: 'show event log' },
   { key: 'execute', src: executeIcon,      title: 'Execute / Others',      aria: 'show execute' },
   { key: 'image',   src: mobileupload,  title: 'Image Transfer',        aria: 'show image transfer' },
-
+  { key: 'imageREN',   src: mobileupload,  title: 'Image Transfer (New)',        aria: 'show image transfer new' },
 ];
 
 export default function DashboardTwo({
@@ -67,6 +68,7 @@ export default function DashboardTwo({
       case 'load':    return <LoadProfileSection />;
       case 'event':   return <EventLogSection />;
       case 'image':   return <ImageTransferSection />;
+      case 'imageREN':   return <ImageTransferREN />;
       case 'execute': return <ExecuteSection />;
       default:        return <div />; // fallback
     }
