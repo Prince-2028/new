@@ -14,7 +14,7 @@ const protocolOptions = {
 const baudRateOptions = [300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200];
 
 const baseUrl =BASE_URL;
-const userId = 2;
+const userId = localStorage.getItem('userId');;
 
 const CounterBar = ({ count, setCount }) => {
   const handleInputChange = (e) => {
