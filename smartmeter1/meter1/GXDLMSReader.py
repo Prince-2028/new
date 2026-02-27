@@ -45,6 +45,9 @@ from gurux_dlms.objects import GXDLMSObject, GXDLMSObjectCollection, GXDLMSData,
     GXDLMSDemandRegister, GXDLMSProfileGeneric, GXDLMSExtendedRegister
 from gurux_net import GXNet
 from gurux_serial import GXSerial
+import logging
+logger = logging.getLogger(__name__)
+
 
 class GXDLMSReader:
     stored_invocation_counter = 0
@@ -54,7 +57,8 @@ class GXDLMSReader:
         #pylint: disable=too-many-arguments
         self.replyBuff = bytearray(8 + 1024)
         self.waitTime = -1
-        self.logFile = open("logFile.txt", "w")
+        # Open logFile with line buffering for immediate writes
+        self.logFile = open("logFile.txt", "w", buffering=1)
         self.trace = trace
         self.media = media
         self.invocationCounter = invocationCounter
@@ -112,6 +116,7 @@ class GXDLMSReader:
         if self.trace >= level:
             print(line)
         self.logFile.write(line + "\n")
+        self.logFile.flush()  # Flush immediately for real-time updates
 
     def readDLMSPacket(self, data, reply=None):
         if not reply:
@@ -261,17 +266,57 @@ class GXDLMSReader:
                 time.sleep(1)
 
     def updateFrameCounter(self):
-        if self.invocationCounter and self.client.ciphering is not None and self.client.ciphering.security != Security.NONE:
-            if GXDLMSReader.stored_invocation_counter == 0:
-                if isinstance(self.invocationCounter, int) and self.invocationCounter > 0:
-                    GXDLMSReader.stored_invocation_counter = self.invocationCounter
-                else:
-                    GXDLMSReader.stored_invocation_counter = 1
-            else:
-                GXDLMSReader.stored_invocation_counter += 20
+        #IC Value Working
+        # if self.invocationCounter and self.client.ciphering is not None and self.client.ciphering.security != Security.NONE:
+        #     if GXDLMSReader.stored_invocation_counter == 0:
+        #         if isinstance(self.invocationCounter, int) and self.invocationCounter > 0:
+        #             GXDLMSReader.stored_invocation_counter = self.invocationCounter
+        #         else:
+        #             GXDLMSReader.stored_invocation_counter = 1
+        #     else:
+        #         GXDLMSReader.stored_invocation_counter += 20
             
-            self.client.ciphering.invocationCounter = GXDLMSReader.stored_invocation_counter+1
-            print("Invocation counter: " + str(self.client.ciphering.invocationCounter))
+        #     self.client.ciphering.invocationCounter = GXDLMSReader.stored_invocation_counter+1
+        #     print("Invocation counter: " + str(self.client.ciphering.invocationCounter))
+
+        #IC OBIS Value working
+        if self.invocationCounter and self.client.ciphering is not None and self.client.ciphering.security != Security.NONE:
+            self.initializeOpticalHead()
+            self.client.proposedConformance |= Conformance.GENERAL_PROTECTION
+            add = self.client.clientAddress
+            auth = self.client.authentication
+            security = self.client.ciphering.security
+            challenge = self.client.ctoSChallenge
+            try:
+                self.client.clientAddress = 16
+                self.client.authentication = Authentication.NONE
+                self.client.ciphering.security = Security.NONE
+                reply = GXReplyData()
+                data = self.client.snrmRequest()
+                if data:
+                    self.readDLMSPacket(data, reply)
+                    self.client.parseUAResponse(reply.data)
+                    size = self.client.hdlcSettings.maxInfoTX + 40
+                    self.replyBuff = bytearray(size)
+                reply.clear()
+                self.readDataBlock(self.client.aarqRequest(), reply)
+                self.client.parseAareResponse(reply.data)
+                reply.clear()
+                d = GXDLMSData(self.invocationCounter)
+                self.read(d, 2)
+                self.client.ciphering.invocationCounter = 1 + d.value
+                print("Invocation counter: " + str(self.client.ciphering.invocationCounter))
+                self.disconnect()
+                if self.client.interfaceType==InterfaceType.WRAPPER:
+                    self.media.close()
+                    time.sleep(2)
+                    self.media.open()
+                #except Exception as ex:
+            finally:
+                self.client.clientAddress = add
+                self.client.authentication = auth
+                self.client.ciphering.security = security
+                self.client.ctoSChallenge = challenge
 
     def initializeConnection(self):
         print("Standard: " + str(self.client.standard))
@@ -294,6 +339,7 @@ class GXDLMSReader:
                 size = self.client.hdlcSettings.maxInfoTX + 40
                 self.replyBuff = bytearray(size)
             reply.clear()
+        logger.info(f"Updated frame counter before sending: {self.client.ciphering.invocationCounter}")
         self.readDataBlock(self.client.aarqRequest(), reply)
         self.client.parseAareResponse(reply.data)
         reply.clear()

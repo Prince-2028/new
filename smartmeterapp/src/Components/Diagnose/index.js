@@ -1,7 +1,8 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import "./index.css";
 import axios from "axios"; 
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
+import ProgressModal from '../ProgressModal';
 
 
 
@@ -833,6 +834,7 @@ function Diagnose() {
   const [serialNumber, setSerialNumber] = useState(() =>
     localStorage.getItem("selectedSerialNumber")
   );
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("selectedSerialNumber");
@@ -949,6 +951,7 @@ function Diagnose() {
   };
 
   const readInternalOperatingStatus = async () => {
+    setShowProgressModal(true);
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
@@ -988,13 +991,17 @@ function Diagnose() {
         ...prev,
         internalOperatingStatus: newState,
       }));
+      setShowProgressModal(false);
+      alert("Internal Operating Status read successfully");
     } catch (error) {
       console.error("Failed to read Internal Operating Status:", error);
+      setShowProgressModal(false);
       alert("Failed to read Internal Operating Status.");
     }
   };
 
   const readPowerQualityStatus = async () => {
+    setShowProgressModal(true);
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
@@ -1028,13 +1035,17 @@ function Diagnose() {
         ...prev,
         powerQualityStatus: newState,
       }));
+      setShowProgressModal(false);
+      alert("Power Quality Status read successfully");
     } catch (error) {
       console.error("Failed to read Power Quality Status:", error);
+      setShowProgressModal(false);
       alert("Failed to read Power Quality Status.");
     }
   };
 
   const readTamperIndicateStatus = async () => {
+    setShowProgressModal(true);
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
@@ -1081,6 +1092,7 @@ function Diagnose() {
         ...prev,
         tamperIndicateStatus: newState,
       }));
+      setShowProgressModal(false);
       ////--------------------------------------------------------------------------
       console.log("About to show success alert");
       alert("Success! Tamper Indicate Status data retrieved.");
@@ -1089,6 +1101,7 @@ function Diagnose() {
     } catch (error) {
       console.error("Read Error (TamperIndicateStatus):", error);
       console.error("Error message:", error.message);
+      setShowProgressModal(false);
       console.log("Error alert shown");
     }
   };
@@ -1281,6 +1294,12 @@ function Diagnose() {
     
 
       {selectedPage && renderPage(selectedPage, pages[selectedPage])}
+      
+      <ProgressModal
+        isOpen={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+        title="Diagnose Operation Progress"
+      />
     </div>
   );
 }

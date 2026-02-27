@@ -12,15 +12,21 @@ root.render(
   </React.StrictMode>
 );
 
-// Register service worker for PWA
-serviceWorkerRegistration.register({
-  onSuccess: () => console.log('PWA installed successfully!'),
-  onUpdate: (registration) => {
-    console.log('New version available! Please refresh.');
-    if (window.confirm('New version available! Reload to update?')) {
-      window.location.reload();
-    }
-  }
-});
+// Unregister service worker to prevent aggressive caching during development
+// This ensures updates are immediately visible without hard refresh
+serviceWorkerRegistration.unregister();
+
+// If you want PWA functionality in production, use this instead:
+// serviceWorkerRegistration.register({
+//   onSuccess: () => console.log('PWA installed successfully!'),
+//   onUpdate: (registration) => {
+//     console.log('New version available! Reloading...');
+//     // Automatically reload on update
+//     if (registration && registration.waiting) {
+//       registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+//     }
+//     window.location.reload();
+//   }
+// });
 
 reportWebVitals();

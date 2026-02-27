@@ -10,7 +10,7 @@ if (hostname === 'localhost' || hostname === '127.0.0.1') {
   BASE_URL = 'http://127.0.0.1:8000/meter1';
 } else if (hostname.includes('trycloudflare.com')) {
   // Cloudflare Tunnel - Replace with YOUR backend tunnel URL
-  BASE_URL = 'https://thousand-diversity-rights-flour.trycloudflare.com/meter1';
+  BASE_URL = 'https://mall-admitted-converter-tomato.trycloudflare.com/meter1';
 } else if (hostname.includes('loca.lt')) {
   // localtunnel - Replace with YOUR backend tunnel URL
   BASE_URL = 'https://smartmeter-avc-be.loca.lt/meter1';

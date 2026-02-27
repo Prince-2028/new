@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import './ImageTransferREN.css';
 import API_BASE_URL from '../../apiConfig';
+import ProgressModal from '../ProgressModal';
 
 const ImageTransferREN = () => {
   // Get serial number from localStorage (automatically set when device is selected)
@@ -33,6 +34,7 @@ const ImageTransferREN = () => {
   const [currentStep, setCurrentStep] = useState('');
   const [logs, setLogs] = useState([]);
   const [error, setError] = useState('');
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
   // Add log entry
   const addLog = (message, type = 'info') => {
@@ -90,10 +92,13 @@ const ImageTransferREN = () => {
     setLoading(true);
     setError('');
     setLogs([]);
+    setShowProgressModal(true); // Show progress modal
 
     try {
       const initiateData = buildInitiateData();
       const result = await executeMethod(1, initiateData);
+      
+      setShowProgressModal(false); // Close modal
       
       if (result.status === 'success') {
         addLog('Method 1: Initiate - Success', 'success');
@@ -101,6 +106,7 @@ const ImageTransferREN = () => {
         throw new Error(result.message);
       }
     } catch (err) {
+      setShowProgressModal(false);
       setError(err.message);
       addLog(`Method 1: Initiate - Failed: ${err.message}`, 'error');
     } finally {
@@ -113,10 +119,13 @@ const ImageTransferREN = () => {
     setLoading(true);
     setError('');
     setLogs([]);
+    setShowProgressModal(true); // Show progress modal
 
     try {
       const blockTransferData = buildBlockTransferData(blockNumber, blockData);
       const result = await executeMethod(2, blockTransferData);
+      
+      setShowProgressModal(false); // Close modal
       
       if (result.status === 'success') {
         addLog('Method 2: Block Transfer - Success', 'success');
@@ -124,6 +133,7 @@ const ImageTransferREN = () => {
         throw new Error(result.message);
       }
     } catch (err) {
+      setShowProgressModal(false);
       setError(err.message);
       addLog(`Method 2: Block Transfer - Failed: ${err.message}`, 'error');
     } finally {
@@ -136,9 +146,12 @@ const ImageTransferREN = () => {
     setLoading(true);
     setError('');
     setLogs([]);
+    setShowProgressModal(true); // Show progress modal
 
     try {
       const result = await executeMethod(3, 0);
+      
+      setShowProgressModal(false); // Close modal
       
       if (result.status === 'success') {
         addLog('Method 3: Verify - Success', 'success');
@@ -146,6 +159,7 @@ const ImageTransferREN = () => {
         throw new Error(result.message);
       }
     } catch (err) {
+      setShowProgressModal(false);
       setError(err.message);
       addLog(`Method 3: Verify - Failed: ${err.message}`, 'error');
     } finally {
@@ -158,9 +172,12 @@ const ImageTransferREN = () => {
     setLoading(true);
     setError('');
     setLogs([]);
+    setShowProgressModal(true); // Show progress modal
 
     try {
       const result = await executeMethod(4, 0);
+      
+      setShowProgressModal(false); // Close modal
       
       if (result.status === 'success') {
         addLog('Method 4: Activate - Success', 'success');
@@ -168,6 +185,7 @@ const ImageTransferREN = () => {
         throw new Error(result.message);
       }
     } catch (err) {
+      setShowProgressModal(false);
       setError(err.message);
       addLog(`Method 4: Activate - Failed: ${err.message}`, 'error');
     } finally {
@@ -186,6 +204,7 @@ const ImageTransferREN = () => {
     setError('');
     setLogs([]);
     setProgress(0);
+    setShowProgressModal(true); // Show progress modal
 
     try {
       // Step 1: Read file as hex
@@ -212,6 +231,9 @@ const ImageTransferREN = () => {
 
       const result = response.data;
       
+      // Close modal first
+      setShowProgressModal(false);
+      
       if (result.status === 'success') {
         // Display transfer log from backend
         if (result.transfer_log && Array.isArray(result.transfer_log)) {
@@ -228,6 +250,7 @@ const ImageTransferREN = () => {
       }
 
     } catch (err) {
+      setShowProgressModal(false); // Close modal on error too
       setError(err.response?.data?.message || err.message);
       addLog(`Combined transfer failed: ${err.response?.data?.message || err.message}`, 'error');
     } finally {
@@ -485,6 +508,13 @@ const ImageTransferREN = () => {
           </div>
         </div>
       )}
+
+      {/* Progress Modal */}
+      <ProgressModal
+        isOpen={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+        title="Image Transfer Progress"
+      />
     </div>
   );
 };

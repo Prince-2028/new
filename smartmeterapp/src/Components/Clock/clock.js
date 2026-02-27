@@ -6,6 +6,7 @@ import axios from 'axios';
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
 import { Calendar as CalendarIcon } from 'react-feather';
 import { Clock } from 'lucide-react';
+import ProgressModal from '../ProgressModal';
 
 import { formatInTimeZone } from 'date-fns-tz';
 
@@ -30,6 +31,7 @@ function TimeSettingsChart1() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showWriteModal, setShowWriteModal] = useState(false);
+  const [showProgressModal, setShowProgressModal] = useState(false);
   const [writeDateTime, setWriteDateTime] = useState('');
   const [writeMinutes, setWriteMinutes] = useState('');
   const [writeOffset, setWriteOffset] = useState(''); 
@@ -89,6 +91,7 @@ function TimeSettingsChart1() {
 
     setLoading(true);
     setError(null);
+    setShowProgressModal(true);
 
     const parameters = Array.from(selected).map(i => ({
       obis_code: '0.0.1.0.0.255',
@@ -124,6 +127,7 @@ function TimeSettingsChart1() {
       setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);
+      setShowProgressModal(false);
     }
   };
 
@@ -132,6 +136,7 @@ function TimeSettingsChart1() {
   
 
  const handleWriteSubmit = async () => {
+    setShowProgressModal(true);
     const attrIdx = Array.from(selected)[0];
     let payloadValue;
     let dataType;
@@ -140,6 +145,7 @@ function TimeSettingsChart1() {
       if (!writeDateTime || !writeOffset) {
         setError('Please enter both Date/Time and Deviation.');
         setTimeout(() => setError(null), 3000);
+        setShowProgressModal(false);
         return;
       }
       // Build ISO-like string with user offset
@@ -151,6 +157,7 @@ function TimeSettingsChart1() {
       if (!writeMinutes) {
         setError('Please enter a minute value.');
         setTimeout(() => setError(null), 3000);
+        setShowProgressModal(false);
         return;
       }
       payloadValue = writeMinutes;
@@ -159,6 +166,7 @@ function TimeSettingsChart1() {
     } else {
       setError('Writing not supported for this parameter.');
       setTimeout(() => setError(null), 3000);
+      setShowProgressModal(false);
       return;
     }
 
@@ -197,6 +205,7 @@ function TimeSettingsChart1() {
       setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);
+      setShowProgressModal(false);
     }
   };
 
@@ -429,6 +438,7 @@ export default function TimeSettingsChart() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showWriteModal, setShowWriteModal] = useState(false);
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
   // Inputs for writing
   const [writeDateTime, setWriteDateTime] = useState('');
@@ -552,6 +562,7 @@ setResult(extracted);
   };
 
   const handleWriteSubmit = async () => {
+    setShowProgressModal(true);
     const attrIdx = Array.from(selected)[0];
     let payloadValue;
     let dataType;
@@ -560,6 +571,7 @@ setResult(extracted);
       if (!writeDateTime || !writeOffset) {
         setError('Please enter both Date/Time and Deviation.');
         setTimeout(() => setError(null), 3000);
+        setShowProgressModal(false);
         return;
       }
       // Build ISO-like string with user-entered seconds and offset
@@ -570,6 +582,7 @@ setResult(extracted);
       if (!writeMinutes) {
         setError('Please enter a minute value.');
         setTimeout(() => setError(null), 3000);
+        setShowProgressModal(false);
         return;
       }
       payloadValue = writeMinutes;
@@ -578,6 +591,7 @@ setResult(extracted);
     } else {
       setError('Writing not supported for this parameter.');
       setTimeout(() => setError(null), 3000);
+      setShowProgressModal(false);
       return;
     }
 
@@ -615,6 +629,7 @@ setResult(extracted);
       setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);
+      setShowProgressModal(false);
     }
   };
 
@@ -634,6 +649,7 @@ setResult(extracted);
     setLoading(true);
     setError(null);
     setResult([]);
+    setShowProgressModal(true);
 
     const parameters = Array.from(selected).map(i => ({
       obis_code: '0.0.1.0.0.255',
@@ -693,6 +709,7 @@ setResult(extracted);
       setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);
+      setShowProgressModal(false);
     }
   };
 
@@ -821,6 +838,12 @@ setResult(extracted);
           ))}
         </div>
       )}
+      
+      <ProgressModal
+        isOpen={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+        title="Clock Operation Progress"
+      />
     </div>
   );
 }

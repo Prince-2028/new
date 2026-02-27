@@ -757,12 +757,13 @@ def execute_dlms_action(config, action_details):
 
         # --- 4. Create Reader ---
         ic_obis = 1 # Hardcoded based on user's working script
+        ic_obis_code="0.0.43.1.3.255"
         logger.debug(f"Instantiating GXDLMSReader. Invocation Counter: {ic_obis}")
         reader = GXDLMSReader(
             client=client,
             media=media,
             trace=trace_level, # Use 0xFF for verbose trace like original
-            invocationCounter=ic_obis
+            invocationCounter=ic_obis_code
         )
 
         if interface == InterfaceType.HDLC:
@@ -937,7 +938,7 @@ def execute_dlms_action(config, action_details):
     
             print(f"  Access Mode: {access_rights}")
             if not can_write:
-                print(f"  ERROR: Attribute {attr} is not writable.")
+                logger.warning(f"  ERROR: Attribute {attr} is not writable.")
                 return {"status": "error", "message": f"Access denied for writing {obis} attr {attr}. Access: {access_rights}"}
             
             # 2. Determine Data Type

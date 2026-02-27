@@ -11,6 +11,7 @@ import FullscreenButton from './Components/FullscreenButton';
 import FullscreenPrompt from './Components/FullscreenPrompt';
 import { AlertProvider, setupCustomAlert, useAlert } from './Components/CustomAlert';
 import { enterFullscreen } from './utils/fullscreen';
+import { checkAndClearStaleCache } from './utils/cacheManager';
 
 import './App.css';
 
@@ -25,12 +26,30 @@ function AppContent() {
     console.log('Custom alert system initialized');
   }, [showAlert]);
 
+  // Check for stale cache on mount
+  useEffect(() => {
+    const initializeApp = async () => {
+      console.log('Checking for stale cache...');
+      const cacheCleared = await checkAndClearStaleCache();
+      if (cacheCleared) {
+        console.log('✓ Stale cache cleared, app is using fresh version');
+      } else {
+        console.log('✓ Cache is up to date');
+      }
+    };
+
+    initializeApp();
+  }, []);
+
   useEffect(() => {
     console.log('App mounted - setting up fullscreen triggers');
 
+    let fullscreenAttempted = false;
+
     // Try to enter fullscreen on ANY user interaction
     const activateFullscreen = () => {
-      if (!fullscreenActivated) {
+      if (!fullscreenAttempted) {
+        fullscreenAttempted = true;
         console.log('First user interaction detected, entering fullscreen...');
         enterFullscreen()
           .then(() => {
@@ -40,6 +59,16 @@ function AppContent() {
           })
           .catch(err => {
             console.log('✗ Fullscreen activation failed:', err);
+            // Retry once after a short delay
+            setTimeout(() => {
+              enterFullscreen()
+                .then(() => {
+                  console.log('✓ Fullscreen activated on retry');
+                  setFullscreenActivated(true);
+                  localStorage.setItem('fullscreenActivated', 'true');
+                })
+                .catch(e => console.log('Retry also failed:', e));
+            }, 200);
           });
       }
     };
@@ -47,20 +76,17 @@ function AppContent() {
     // Check if fullscreen was previously activated
     const wasActivated = localStorage.getItem('fullscreenActivated') === 'true';
     if (wasActivated) {
-      console.log('Fullscreen was previously activated, attempting to re-enter...');
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        activateFullscreen();
-      }, 100);
+      console.log('Fullscreen was previously activated');
+      setFullscreenActivated(true);
     }
 
-    // Listen for ANY user interaction
-    const events = ['click', 'touchstart', 'keydown', 'mousedown'];
+    // Listen for ANY user interaction - use multiple events for better coverage
+    const events = ['click', 'touchstart', 'keydown', 'mousedown', 'pointerdown'];
     events.forEach(event => {
       document.addEventListener(event, activateFullscreen, { once: true, capture: true });
     });
 
-    // Monitor fullscreen changes and re-enter if locked - MORE AGGRESSIVE
+    // Monitor fullscreen changes and re-enter if locked
     const handleFullscreenChange = () => {
       const isInFullscreen = !!(
         document.fullscreenElement ||
@@ -73,12 +99,10 @@ function AppContent() {
       
       if (!isInFullscreen && fullscreenLocked && fullscreenActivated) {
         console.log('Fullscreen exited unexpectedly, re-entering IMMEDIATELY...');
-        // Immediate re-entry without delay
         enterFullscreen()
           .then(() => console.log('✓ Re-entered fullscreen successfully'))
           .catch(err => {
             console.log('✗ Failed to re-enter fullscreen, retrying...', err);
-            // Retry after short delay if first attempt fails
             setTimeout(() => {
               enterFullscreen().catch(e => console.log('Retry failed:', e));
             }, 50);

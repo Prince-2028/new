@@ -1,0 +1,123 @@
+.progress-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.progress-modal {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.progress-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #4a4a4a;
+  color: white;
+  border-radius: 8px 8px 0 0;
+}
+
+.progress-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  opacity: 0.7;
+}
+
+.progress-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.progress-message {
+  text-align: center;
+  color: #666;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.progress-logs {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.log-line {
+  padding: 4px 0;
+  color: #333;
+  word-wrap: break-word;
+}
+
+.log-line:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.completion-message {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Scrollbar styling */
+.progress-logs::-webkit-scrollbar {
+  width: 8px;
+}
+
+.progress-logs::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.progress-logs::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.progress-logs::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

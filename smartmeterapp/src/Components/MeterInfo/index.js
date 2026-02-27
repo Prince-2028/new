@@ -5,6 +5,7 @@ import axios from "axios";
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
 import { PERMISSIONS } from '../../permissions';
 import WriteModal from '../WriteModal';
+import ProgressModal from '../ProgressModal';
 
 
 
@@ -38,6 +39,9 @@ const MeterInfo = () => {
   // Write modal state
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
   const [writeModalData, setWriteModalData] = useState({ name: '', code: '', row: null });
+  
+  // Progress modal state
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
    // stores streamed values by obis_code  #11111111111111
   const [streamValues, setStreamValues] = useState({});
@@ -208,8 +212,11 @@ const MeterInfo = () => {
     const selectedRow = writeModalData.row;
     if (!selectedRow) return;
 
-    // Close modal immediately
+    // Close write modal immediately
     setIsWriteModalOpen(false);
+    
+    // Show progress modal
+    setShowProgressModal(true);
 
     const cleanCode = selectedRow.code
       .replace(/[()]/g, "")
@@ -235,10 +242,12 @@ const MeterInfo = () => {
     axios.post(`${BASE_URL}/api/getmeterinfo/`, payload)
       .then(response => {
         console.log("Response:", response.data);
+        setShowProgressModal(false);
         alert("Write OBIS success");
       })
       .catch(error => {
         console.error("Error:", error);
+        setShowProgressModal(false);
         alert("Failed to write OBIS");
       });
   };
@@ -325,16 +334,16 @@ const MeterInfo = () => {
       return;
     }
 
-    
-
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
       parameters: selectedParams
     };
 
-   
     console.log("payload",payload)
+    
+    // Show progress modal
+    setShowProgressModal(true);
 
     try {
       controllerRef.current = new AbortController();
@@ -377,6 +386,9 @@ const MeterInfo = () => {
         }
       }
 
+      // Close progress modal
+      setShowProgressModal(false);
+
       // Show final result
       if (errorCount === 0) {
         alert(`Success! Retrieved ${successCount} of ${totalItems} values.`);
@@ -386,6 +398,7 @@ const MeterInfo = () => {
         alert(`Failed to retrieve data. ${errorCount} errors occurred.`);
       }
     } catch (error) {
+      setShowProgressModal(false);
       if (error.name === 'AbortError') {
         console.log('Request was aborted');
       } else {
@@ -570,6 +583,12 @@ const renderTableRows = (sub) =>
         itemName={writeModalData.name}
         itemCode={writeModalData.code}
         onSubmit={handleWriteSubmit}
+      />
+      
+      <ProgressModal
+        isOpen={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+        title="DLMS Communication Progress"
       />
     </div>
     

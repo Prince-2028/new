@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBolt, faFileInvoiceDollar, faChartLine, faCheckSquare, faPowerOff } from '@fortawesome/free-solid-svg-icons';
 import { FaBookOpen, FaFileExport } from "react-icons/fa"; // Import icons
 import BASE_URL from '../../apiConfig';
+import ProgressModal from '../ProgressModal';
 
 
 const InstantaneousReadings = forwardRef((props, ref) => {
@@ -42,6 +43,7 @@ const InstantaneousReadings = forwardRef((props, ref) => {
   const [checkedItems, setCheckedItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [streamValues, setStreamValues] = useState({});
+  const [showProgressModal, setShowProgressModal] = useState(false);
   const controllerRef = useRef(null);
   const serialNumber = localStorage.getItem('selectedSerialNumber');
 
@@ -96,6 +98,8 @@ const InstantaneousReadings = forwardRef((props, ref) => {
     };
 
     console.log("Read Payload:", payload);
+
+    setShowProgressModal(true);
 
     try {
       controllerRef.current = new AbortController();
@@ -154,6 +158,8 @@ const InstantaneousReadings = forwardRef((props, ref) => {
         console.error('Error fetching data:', error);
         alert(`Error: ${error.message || 'Failed to retrieve data. Please try again.'}`);
       }
+    } finally {
+      setShowProgressModal(false);
     }
   };
 
@@ -214,6 +220,12 @@ const InstantaneousReadings = forwardRef((props, ref) => {
           })}
         </tbody>
       </table>
+      
+      <ProgressModal
+        isOpen={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+        title="Reading Instantaneous Values"
+      />
     </div>
   );
 });
@@ -563,6 +575,7 @@ const ActiveEnergyDashboard = forwardRef((props, ref) => {
 
     const [streamValues, setStreamValues] = useState({});
     const [selectAll, setSelectAll] = useState(false);
+    const [showProgressModal, setShowProgressModal] = useState(false);
     const controllerRef = useRef(null);
     const serialNumber = localStorage.getItem('selectedSerialNumber');
 
@@ -614,6 +627,8 @@ const ActiveEnergyDashboard = forwardRef((props, ref) => {
         };
 
         console.log("Read Payload:", payload);
+
+        setShowProgressModal(true);
 
         try {
             controllerRef.current = new AbortController();
@@ -672,6 +687,8 @@ const ActiveEnergyDashboard = forwardRef((props, ref) => {
                 console.error('Error fetching data:', error);
                 alert(`Error: ${error.message || 'Failed to retrieve data. Please try again.'}`);
             }
+        } finally {
+            setShowProgressModal(false);
         }
     };
 
@@ -734,6 +751,12 @@ const ActiveEnergyDashboard = forwardRef((props, ref) => {
                     </tbody>
                 </table>
             </div>
+            
+            <ProgressModal
+                isOpen={showProgressModal}
+                onClose={() => setShowProgressModal(false)}
+                title="Reading Active Energy Values"
+            />
         </div>
     );
 });
@@ -779,6 +802,7 @@ const ReActiveEnergyDashboard = forwardRef((props, ref) => {
 
     const [streamValues, setStreamValues] = useState({});
     const [selectAll, setSelectAll] = useState(false);
+    const [showProgressModal, setShowProgressModal] = useState(false);
     const controllerRef = useRef(null);
     const serialNumber = localStorage.getItem('selectedSerialNumber');
 
@@ -830,6 +854,8 @@ const ReActiveEnergyDashboard = forwardRef((props, ref) => {
         };
 
         console.log("Read Payload:", payload);
+
+        setShowProgressModal(true);
 
         try {
             controllerRef.current = new AbortController();
@@ -888,6 +914,8 @@ const ReActiveEnergyDashboard = forwardRef((props, ref) => {
                 console.error('Error fetching data:', error);
                 alert(`Error: ${error.message || 'Failed to retrieve data. Please try again.'}`);
             }
+        } finally {
+            setShowProgressModal(false);
         }
     };
 
@@ -951,6 +979,12 @@ const ReActiveEnergyDashboard = forwardRef((props, ref) => {
                     </tbody>
                 </table>
             </div>
+            
+            <ProgressModal
+                isOpen={showProgressModal}
+                onClose={() => setShowProgressModal(false)}
+                title="Reading Reactive Energy Values"
+            />
         </div>
     );
 });
@@ -975,6 +1009,7 @@ const ApparentEnergyDashboard = forwardRef((props, ref) => {
 
     const [streamValues, setStreamValues] = useState({});
     const [selectAll, setSelectAll] = useState(false);
+    const [showProgressModal, setShowProgressModal] = useState(false);
     const controllerRef = useRef(null);
     const serialNumber = localStorage.getItem('selectedSerialNumber');
 
@@ -1026,7 +1061,7 @@ const ApparentEnergyDashboard = forwardRef((props, ref) => {
         };
 
         console.log("Read Payload:", payload);
-
+        setShowProgressModal(true);
         try {
             controllerRef.current = new AbortController();
             const res = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
@@ -1084,6 +1119,8 @@ const ApparentEnergyDashboard = forwardRef((props, ref) => {
                 console.error('Error fetching data:', error);
                 alert(`Error: ${error.message || 'Failed to retrieve data. Please try again.'}`);
             }
+        } finally {
+            setShowProgressModal(false);
         }
     };
 
@@ -1144,6 +1181,12 @@ const ApparentEnergyDashboard = forwardRef((props, ref) => {
                     })}
                 </tbody>
             </table>
+            
+            <ProgressModal
+                isOpen={showProgressModal}
+                onClose={() => setShowProgressModal(false)}
+                title="Reading Reactive Energy Values"
+            />
         </div>
     );
 });
@@ -1187,6 +1230,7 @@ const ActiveMaximumDemandDashboard = forwardRef((props, ref) => {
     ]);
 
     const [streamValues, setStreamValues] = useState({});
+    const [showProgressModal, setShowProgressModal] = useState(false);
     const controllerRef = useRef(null);
     const serialNumber = localStorage.getItem('selectedSerialNumber');
 
@@ -1334,6 +1378,7 @@ const ReActiveMaximumDemandDashboard = forwardRef((props, ref) => {
     ]);
 
     const [streamValues, setStreamValues] = useState({});
+    const [showProgressModal, setShowProgressModal] = useState(false);
     const controllerRef = useRef(null);
     const serialNumber = localStorage.getItem('selectedSerialNumber');
 
@@ -1481,6 +1526,7 @@ const ApparentMaximumDemandDashboard = forwardRef((props, ref) => {
     ]);
 
     const [streamValues, setStreamValues] = useState({});
+    const [showProgressModal, setShowProgressModal] = useState(false);
     const controllerRef = useRef(null);
     const serialNumber = localStorage.getItem('selectedSerialNumber');
 

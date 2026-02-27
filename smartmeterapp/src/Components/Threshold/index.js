@@ -1,11 +1,13 @@
 import React, { useState, useRef } from 'react';
 import './index.css';
 import BASE_URL from '../../apiConfig';
+import ProgressModal from '../ProgressModal';
 
 const ThresholdTable = () => {
   const [streamValues, setStreamValues] = useState({});
   const [checkedItems, setCheckedItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [showProgressModal, setShowProgressModal] = useState(false);
   const controllerRef = useRef(null);
   const serialNumber = localStorage.getItem('selectedSerialNumber');
 
@@ -75,6 +77,9 @@ const ThresholdTable = () => {
     };
 
     console.log("Read Payload:", payload);
+    
+    // Show progress modal
+    setShowProgressModal(true);
 
     try {
       controllerRef.current = new AbortController();
@@ -119,6 +124,9 @@ const ThresholdTable = () => {
         }
       }
 
+      // Close progress modal
+      setShowProgressModal(false);
+
       if (errorCount === 0) {
         alert(`Success! Retrieved ${successCount} of ${totalItems} values.`);
       } else if (successCount > 0) {
@@ -127,6 +135,7 @@ const ThresholdTable = () => {
         alert(`Failed to retrieve data. ${errorCount} errors occurred.`);
       }
     } catch (error) {
+      setShowProgressModal(false);
       if (error.name === 'AbortError') {
         console.log('Request was aborted');
       } else {
@@ -186,6 +195,12 @@ const ThresholdTable = () => {
           })}
         </tbody>
       </table>
+      
+      <ProgressModal
+        isOpen={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+        title="Reading Threshold Values"
+      />
     </div>
   );
 };

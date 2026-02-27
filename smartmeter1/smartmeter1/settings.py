@@ -58,6 +58,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware', # Moved higher
+    'meter1.middleware.NoCacheMiddleware',  # Prevent caching of API responses
     'django.middleware.common.CommonMiddleware', # Keep only one
     'django.middleware.csrf.CsrfViewMiddleware',  # Re-enable CSRF
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -85,6 +86,9 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
     'bypass-tunnel-reminder',  # For localtunnel
+    'cache-control',  # Allow cache-control header
+    'pragma',  # Allow pragma header
+    'expires',  # Allow expires header
 ]
 CORS_ALLOW_METHODS = [
     'DELETE',
@@ -246,6 +250,11 @@ LOGGING = {
             'handlers': ['console'], # or ['console', 'file_log']
             'level': 'INFO',       # Or WARNING to reduce Django noise
             'propagate': True,
+        },
+        'django.server': {  # Suppress frequent server request logs
+            'handlers': ['console'],
+            'level': 'WARNING',  # Only show warnings and errors, not INFO
+            'propagate': False,
         },
 
         'meter1': {

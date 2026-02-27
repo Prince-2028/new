@@ -44,34 +44,52 @@ const Dashboard = () => {
 
     // Ensure fullscreen on Dashboard mount and maintain it
     useEffect(() => {
-        console.log('Dashboard mounted, attempting fullscreen...');
+        console.log('Dashboard mounted, setting up fullscreen handler...');
         
-        // Enter fullscreen on mount
-        enterFullscreen().catch(err => {
-            console.log('Dashboard fullscreen failed:', err);
-        });
+        let hasEnteredFullscreen = false;
 
-        // Add click handler to maintain fullscreen on any click
-        const maintainFullscreen = () => {
-            const isInFullscreen = !!(
-                document.fullscreenElement ||
-                document.webkitFullscreenElement ||
-                document.mozFullScreenElement ||
-                document.msFullscreenElement
-            );
-            
-            if (!isInFullscreen) {
-                console.log('Click detected while not in fullscreen, re-entering...');
-                enterFullscreen().catch(err => {
-                    console.log('Failed to maintain fullscreen:', err);
-                });
+        // Function to enter fullscreen on first user interaction
+        const handleFirstInteraction = () => {
+            if (!hasEnteredFullscreen) {
+                console.log('First user interaction detected, entering fullscreen...');
+                enterFullscreen()
+                    .then(() => {
+                        hasEnteredFullscreen = true;
+                        console.log('✓ Fullscreen entered successfully');
+                    })
+                    .catch(err => {
+                        console.log('Fullscreen failed:', err);
+                    });
             }
         };
 
-        // Listen for clicks to maintain fullscreen
+        // Function to maintain fullscreen on subsequent interactions
+        const maintainFullscreen = () => {
+            if (hasEnteredFullscreen) {
+                const isInFullscreen = !!(
+                    document.fullscreenElement ||
+                    document.webkitFullscreenElement ||
+                    document.mozFullScreenElement ||
+                    document.msFullscreenElement
+                );
+                
+                if (!isInFullscreen) {
+                    console.log('Not in fullscreen, re-entering...');
+                    enterFullscreen().catch(err => {
+                        console.log('Failed to maintain fullscreen:', err);
+                    });
+                }
+            }
+        };
+
+        // Listen for first click to enter fullscreen
+        document.addEventListener('click', handleFirstInteraction, { once: true, capture: true });
+        
+        // Listen for subsequent clicks to maintain fullscreen
         document.addEventListener('click', maintainFullscreen, { capture: true });
 
         return () => {
+            document.removeEventListener('click', handleFirstInteraction, { capture: true });
             document.removeEventListener('click', maintainFullscreen, { capture: true });
         };
     }, []);
@@ -93,9 +111,14 @@ const Dashboard = () => {
   useEffect(() => {
     const selectedDeviceId = localStorage.getItem('selectedDeviceId');
     if (selectedDeviceId) {
-      navigate('/dashboard/header', { replace: true });
+      // Small delay to ensure React Router is fully initialized
+      const timer = setTimeout(() => {
+        console.log('Auto-navigating to /dashboard/header with device:', selectedDeviceId);
+        navigate('/dashboard/header', { replace: true });
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
-    // Else, stay here — maybe show "Please select a device"
   }, [navigate]);
 
 

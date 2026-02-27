@@ -13205,3 +13205,36 @@ class InvocationCounterAPIView(APIView):
             }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# API endpoint to serve logFile.txt for progress monitoring
+@csrf_exempt
+@require_http_methods(["GET"])
+def get_log_file(request):
+    """
+    Endpoint to read and return the contents of logFile.txt
+    Used by frontend to monitor real-time progress of DLMS operations
+    """
+    import os
+    from django.conf import settings
+    
+    log_file_path = os.path.join(settings.BASE_DIR, 'logFile.txt')
+    
+    try:
+        if os.path.exists(log_file_path):
+            with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            return JsonResponse({
+                'status': 'success',
+                'content': content
+            })
+        else:
+            return JsonResponse({
+                'status': 'success',
+                'content': ''
+            })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)

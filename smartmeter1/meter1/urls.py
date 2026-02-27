@@ -302,10 +302,9 @@ urlpatterns = [
     path("api/loadprofile2/item/<int:item_id>/", Loadprofile2EnergyRegisterView.as_view()),
     path("api/loadprofile2/clean/<int:device_id>/", Loadprofile2EnergyRegisterView.as_view()),
     path('invocation-counter/', InvocationCounterAPIView.as_view(), name='invocation-counter'),
-     
-
-  
     
+    # Log file endpoint for progress monitoring
+    path('api/logfile/', get_log_file, name='get-log-file'),
 ]
 
 
