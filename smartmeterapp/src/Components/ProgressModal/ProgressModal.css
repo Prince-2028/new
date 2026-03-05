@@ -15,7 +15,7 @@
   background: white;
   border-radius: 8px;
   width: 90%;
-  max-width: 600px;
+  max-width: 900px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
@@ -85,7 +85,9 @@
 .log-line {
   padding: 4px 0;
   color: #333;
-  word-wrap: break-word;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .log-line:nth-child(even) {

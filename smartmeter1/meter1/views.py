@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from .models import member, RegistrationVerification,Media
 import uuid
 from .models import * 
-
+from .mixins import OBISStreamingMixin
 
 from .meter_utils import (
     get_dlms_config_from_device,
@@ -1137,7 +1137,7 @@ class GetActiveMedia(APIView):
             )
 
         try:
-            device = Device.objects.get(serial_number='sai1')
+            device = Device.objects.get(serial_number=serial_number)
         except Device.DoesNotExist:
             return Response(
                 {"error": f"Device with serial_number '{serial_number}' not found."},
@@ -1778,7 +1778,7 @@ class MeterDetailAPIView1(APIView):
 #         data={"data":[{"status":"success","message":"Read successful.","action":"read","obis_code":"1.0.32.7.0.255","attribute_index":"2","value":234.1173553466797},{"status":"success","message":"Read successful.","action":"read","obis_code":"1.0.14.7.0.255","attribute_index":"2","value":50.0671272277832},{"status":"success","message":"Read successful.","action":"read","obis_code":"1.0.31.7.0.255","attribute_index":"2","value":0.0},{"status":"success","message":"Read successful.","action":"read","obis_code":"1.0.13.7.0.255","attribute_index":"2","value":1.0},{"status":"success","message":"Read successful.","action":"read","obis_code":"1.0.15.7.0.255","attribute_index":"2","value":0.08401799947023392}]}
 #         return Response(data, status=status.HTTP_200_OK)
 
-class MeterDetailAPIView(APIView):
+class MeterDetailAPIView(OBISStreamingMixin, APIView):
     """
     Handles READ and WRITE DLMS operations via POST request.
     Reads update DB temporarily and clear after response.
@@ -1904,191 +1904,7 @@ class MeterDetailAPIView(APIView):
                 for record, field_name in records_to_clear_after_response:
                     update_or_clear_db_value(record, field_name, clear=True) # Call utility to clear
                 logger.info("Finished clearing temporary DB values.")
-
-    def stream_obis_values(self, serial_number, parameters):
-        from django.http import StreamingHttpResponse
-        import json
-        import time
-        def generate_obis_stream():
-            try:
-                # Setup device (updated for current DB structure)
-                try:
-                    device = Device.objects.select_related('addressing', 'security', 'user').get(serial_number=serial_number)
-                except Device.DoesNotExist:
-                    # Fallback to Meter if Device not found directly
-                    try:
-                        meter = Meter.objects.select_related('device__addressing', 'device__security', 'device__user').get(serial_number=serial_number)
-                        device = meter.device
-                    except Meter.DoesNotExist:
-                        error_response = {
-                            "type": "error",
-                            "message": f"Device with serial number {serial_number} not found",
-                            "timestamp": timezone.now().isoformat()
-                        }
-                        yield f"data: {json.dumps(error_response)}\n\n"
-                        return
-                
-                # Get active media connection
-                media = Media.objects.filter(device=device, is_active=True).first()
-                if not media:
-                    error_response = {
-                        "type": "error",
-                        "message": f"No active media connection found for device {serial_number}",
-                        "timestamp": timezone.now().isoformat()
-                    }
-                    yield f"data: {json.dumps(error_response)}\n\n"
-                    return
-                
-                dlms_config = get_dlms_config_from_device(device, media)
-                
-                # Validate parameters
-                if not parameters or not isinstance(parameters, list):
-                    error_response = {
-                        "type": "error",
-                        "message": "Parameters must be a list of OBIS codes with attributes",
-                        "timestamp": timezone.now().isoformat()
-                    }
-                    yield f"data: {json.dumps(error_response)}\n\n"
-                    return
-                
-                # # Send initial metadata
-                # metadata = {
-                #     "type": "metadata",
-                #     "meter_id": meter.id,
-                #     "serial_number": meter.serial_number,
-                #     "device_id": device.id,
-                #     "total_obis_codes": len(parameters),
-                #     "timestamp": timezone.now().isoformat()
-                # }
-                # yield f"data: {json.dumps(metadata)}\n\n"
-                
-                # Stream each OBIS code result as it's read
-                successful_reads = 0
-                failed_reads = 0
-                
-                # NEW CODE - Use this instead:
-                # Use batch processing via execute_dlms_action (same as regular read_obis)
-                print("Stream: Processing batch OBIS read via execute_dlms_action")
-                result = execute_dlms_action(dlms_config, action_details={"action": "read_obis", "parameters": parameters})
-
-                if result.get("status") == "success" or result.get("successful_reads", 0) > 0:
-                    # Stream each result from the batch response
-                    for index, obis_result in enumerate(result.get("results", [])):
-                        obis_code = obis_result.get('obis_code')
-                        attribute_index = obis_result.get('attribute_index')
-                        
-                        if obis_result.get("status") == "success":
-                            live_value = obis_result.get('value')
-                            
-                            # Try to update DB temporarily (pass device instead of meter)
-                            db_record, value_field_name = get_db_record_for_obis(device, obis_code, attribute_index)
-                            if db_record and live_value is not None:
-                                update_or_clear_db_value(db_record, value_field_name, live_value=live_value, clear=False)
-                            
-                            success_response = {
-                                "message": "Read Successfully",
-                                "status": "success",
-                                "action": "read",
-                                "obis_code": obis_code,
-                                "attribute_index": attribute_index,
-                                "value": live_value,
-                                "db_record_found": db_record is not None,
-                                "progress": {
-                                    "current": index + 1,
-                                    "total": len(parameters),
-                                    "percentage": round(((index + 1) / len(parameters)) * 100, 2),
-                                    "successful": result.get("successful_reads", 0),
-                                    "failed": result.get("failed_reads", 0)
-                                },
-                                "timestamp": timezone.now().isoformat()
-                            }
-                            yield f"data: {json.dumps(success_response)}\n\n"
-                            
-                        else:
-                            # Failed read from batch result
-                            error_response = {
-                                "type": "obis_error",
-                                "status": "error",
-                                "message": obis_result.get("message", f"Failed to read OBIS {obis_code}"),
-                                "obis_code": obis_code,
-                                "attribute_index": attribute_index,
-                                "progress": {
-                                    "current": index + 1,
-                                    "total": len(parameters),
-                                    "percentage": round(((index + 1) / len(parameters)) * 100, 2),
-                                    "successful": result.get("successful_reads", 0),
-                                    "failed": result.get("failed_reads", 0)
-                                },
-                                "timestamp": timezone.now().isoformat()
-                            }
-                            yield f"data: {json.dumps(error_response)}\n\n"
-                        
-                        # Small delay between streaming results
-                        time.sleep(0.1)
-                else:
-                    # Handle case where entire batch failed
-                    for index, param in enumerate(parameters):
-                        obis_code = param.get('obis_code', 'Unknown')
-                        attribute_index = param.get('attribute_index', 'Unknown')
-                        
-                        error_response = {
-                            "type": "obis_error",
-                            "status": "error",
-                            "message": result.get("message", "Batch read failed"),
-                            "obis_code": obis_code,
-                            "attribute_index": attribute_index,
-                            "progress": {
-                                "current": index + 1,
-                                "total": len(parameters),
-                                "percentage": round(((index + 1) / len(parameters)) * 100, 2),
-                                "successful": 0,
-                                "failed": len(parameters)
-                            },
-                            "timestamp": timezone.now().isoformat()
-                        }
-                        yield f"data: {json.dumps(error_response)}\n\n"
-                        time.sleep(0.1)
-
-                
-                # Send completion summary
-                # completion = {
-                #     "type": "complete",
-                #     "message": f"OBIS reading completed. {successful_reads} successful, {failed_reads} failed",
-                #     "summary": {
-                #         "total_requested": len(parameters),
-                #         "successful_reads": successful_reads,
-                #         "failed_reads": failed_reads,
-                #         "success_rate": round((successful_reads / len(parameters)) * 100, 2) if parameters else 0
-                #     },
-                #     "timestamp": timezone.now().isoformat()
-                # }
-                # yield f"data: {json.dumps(completion)}\n\n"
-                
-            except Device.DoesNotExist:
-                error_response = {
-                    "type": "error",
-                    "message": f"Device with serial number {serial_number} not found",
-                    "timestamp": timezone.now().isoformat()
-                }
-                yield f"data: {json.dumps(error_response)}\n\n"
-                
-            except Exception as e:
-                error_response = {
-                    "type": "error",
-                    "message": f"Unexpected error: {str(e)}",
-                    "timestamp": timezone.now().isoformat()
-                }
-                yield f"data: {json.dumps(error_response)}\n\n"
-        
-        response = StreamingHttpResponse(
-            generate_obis_stream(),
-            content_type='text/event-stream'
-        )
-        response['Cache-Control'] = 'no-cache'
-        response['Access-Control-Allow-Origin'] = '*'  # Adjust for CORS
-        response['X-Accel-Buffering'] = 'no'  # Disable nginx buffering if using nginx
-
-        return response        
+   
 
 from .models import Threshold
 
@@ -2179,78 +1995,132 @@ from rest_framework.views import APIView
 from .models import TimeSettings  # and any other models you might need
 
 
-class TimeSettingsAPIView(APIView):
+class TimeSettingsAPIView(OBISStreamingMixin, APIView):
     """
-    Handles READ and WRITE DLMS operations for Time Settings (Clock OBIS: 0.0.1.0.0.255).
-    Similar to MeterDetailAPIView - communicates with meter via DLMS.
+    Handles READ and WRITE DLMS operations via POST request.
+    Reads update DB temporarily and clear after response.
+    Writes do not update DB value fields.
     
-    POST /api/time-settings/
-    Body: {
-        "serial_number": "device_serial",
-        "action": "read_obis" | "write_obis",
-        "parameters": {...}  // For read: list of {obis_code, attribute_index}, For write: {obis_code, attribute_index, value}
-    }
+    Updated to work with current DB structure:
+    - Device is the primary model (has serial_number, addressing, security)
+    - Media is linked to Device (with is_active flag)
+    - Meter references Device
     """
+
+    # --- Main POST Handler ---
     def post(self, request, format=None):
-        action = request.data.get('action', 'read_obis')
+        # Extract common parameters
+        action = request.data.get('action', 'read_obis') # Default to reading details if action missing
         serial_number = request.data.get('serial_number')
         parameters = request.data.get('parameters', {})
-        
         print(f"TimeSettingsAPIView received action '{action}' for SN '{serial_number}'")
 
         if not serial_number:
             return Response({"error": "serial_number is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+        records_to_clear_after_response = [] # Only used for read actions
+        final_response_data = {}
+
         try:
-            # --- 1. Get Device and DLMS Config (same as MeterDetailAPIView) ---
+            # --- 1. Get Device and DLMS Config (Updated for current DB structure) ---
+            # Try to find Device by serial_number first
             try:
                 device = Device.objects.select_related('addressing', 'security', 'user').get(serial_number=serial_number)
                 logger.info(f"Found Device with serial_number: {serial_number}")
             except Device.DoesNotExist:
-                # Fallback: try via Meter
+                # Fallback: try to find via Meter model if it exists
                 try:
                     meter = Meter.objects.select_related('device__addressing', 'device__security', 'device__user').get(serial_number=serial_number)
                     device = meter.device
                     logger.info(f"Found Device via Meter with serial_number: {serial_number}")
                 except Meter.DoesNotExist:
-                    return Response({"error": "Device not found."}, status=status.HTTP_404_NOT_FOUND)
+                    logger.warning(f"No Device or Meter found with serial_number: {serial_number}")
+                    return Response({"error": "Device not found with the provided serial number."}, status=status.HTTP_404_NOT_FOUND)
             
-            # Get active media connection
+            print(f"Device: {device}")
+            
+            # Get active media connection for this device
             media = Media.objects.filter(device=device, is_active=True).first()
             if not media:
-                return Response({"error": "No active media connection configured."}, status=status.HTTP_400_BAD_REQUEST)
+                logger.warning(f"No active Media connection found for Device {device.serial_number}")
+                return Response({"error": "No active media connection configured for this device."}, status=status.HTTP_400_BAD_REQUEST)
             
-            dlms_config = get_dlms_config_from_device(device, media)
+            print(f"Active Media found: {media.media}/{media.protocol}")
             
-            # --- 2. Execute DLMS Action ---
+            dlms_config = get_dlms_config_from_device(device, media) # Use utility function
+        
+
             if action == 'read_obis':
-                # Read time settings from meter
-                result = execute_dlms_action(dlms_config, action_details={"action": action, "parameters": parameters})
+
+                if not parameters or not isinstance(parameters, list):
+                    return Response({"error": "Parameters must be a list of OBIS codes with attributes"}, status=status.HTTP_400_BAD_REQUEST)
+               
+                if len(parameters) > 0:  # Adjust this threshold as needed
+                    return self.stream_obis_values(serial_number, parameters)
                 
-                if result.get("status") == "success":
-                    # Optionally update TimeSettings in DB with live values
-                    # You can parse the results and update the database here if needed
-                    return Response(result, status=status.HTTP_200_OK)
                 else:
-                    return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    # Handle batch failure - return error in frontend-compatible format
+                    error_results = []
+                    for index, param in enumerate(parameters):
+                        obis_code = param.get('obis_code', 'Unknown')
+                        attribute_index = param.get('attribute_index', 'Unknown')
+                        
+                        error_response = {
+                            "type": "obis_error",
+                            "status": "error", 
+                            "message": result.get("message", "Batch read failed"),
+                            "obis_code": obis_code,
+                            "attribute_index": attribute_index,
+                            "progress": {
+                                "current": index + 1,
+                                "total": len(parameters),
+                                "percentage": round(((index + 1) / len(parameters)) * 100, 2),
+                                "successful": 0,
+                                "failed": len(parameters)
+                            },
+                            "timestamp": timezone.now().isoformat()
+                        }
+                        error_results.append(error_response)
                     
-            elif action == 'write_obis':
-                # Write time settings to meter
+                    return Response(error_results, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            elif action in ['write_obis', 'execute_method', 'image_transfer_combined', 'combined_image_transfer']:
+                # --- Handle Write, Execute Method, or Image Transfer Combined ---
+                # Directly call the main helper, DO NOT update/clear DB 'value'
+                logger.info(f"Executing DLMS action '{action}' via helper.")
                 result = execute_dlms_action(dlms_config, action_details={"action": action, "parameters": parameters})
-                
-                if result.get("status") == "success":
-                    # Optionally update TimeSettings in DB after successful write
-                    return Response(result, status=status.HTTP_200_OK)
-                else:
+
+                # Return the result from the helper
+                if result.get("status") == "error":
                     return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                else:
+                    return Response(result, status=status.HTTP_200_OK)
+
             else:
+                logger.warning(f"Unknown action requested: {action}")
                 return Response({"error": f"Unknown action: {action}"}, status=status.HTTP_400_BAD_REQUEST)
 
-        except Device.DoesNotExist:
+            # --- If action was read_detail or read_obis (and successful), return collected data ---
+            # (This part is reached only if action was a successful read)
+            return Response(final_response_data, status=status.HTTP_200_OK)
+
+        # --- Exception Handling ---
+        except Device.DoesNotExist: 
+            logger.warning(f"Device with SN {serial_number} not found."); 
             return Response({"error": "Device not found."}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            logger.error(f"Error in TimeSettingsAPIView: {e}", exc_info=True)
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except ValueError as e: 
+            logger.error(f"Value error processing request for SN {serial_number}: {e}", exc_info=True); 
+            return Response({"error": f"Invalid request data or configuration: {e}"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e: 
+            logger.error(f"Unexpected error processing SN {serial_number}: {e}", exc_info=True); 
+            return Response({"error": f"Internal error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        finally:
+            # --- Clear DB Values AFTER response is determined (for read actions) ---
+            if records_to_clear_after_response:
+                logger.info(f"Clearing temporary DB values for {len(records_to_clear_after_response)} items...")
+                for record, field_name in records_to_clear_after_response:
+                    update_or_clear_db_value(record, field_name, clear=True) # Call utility to clear
+                logger.info("Finished clearing temporary DB values.")
 
 
 
@@ -4799,77 +4669,132 @@ from rest_framework import status
 from .models import TamperIndicateStatus, Device
 from django.utils.timezone import localtime
 
-class TamperIndicateStatusView(APIView):
+class TamperIndicateStatusView(OBISStreamingMixin, APIView):
     """
-    Handles READ and WRITE DLMS operations for Tamper Indicate Status (OBIS: 0.0.96.5.3.255).
-    Similar to MeterDetailAPIView - communicates with meter via DLMS.
+    Handles READ and WRITE DLMS operations via POST request.
+    Reads update DB temporarily and clear after response.
+    Writes do not update DB value fields.
     
-    POST /api/tamper-indicate-status/
-    Body: {
-        "serial_number": "device_serial",
-        "action": "read_obis" | "write_obis",
-        "parameters": {...}  // For read: list of {obis_code, attribute_index}, For write: {obis_code, attribute_index, value}
-    }
+    Updated to work with current DB structure:
+    - Device is the primary model (has serial_number, addressing, security)
+    - Media is linked to Device (with is_active flag)
+    - Meter references Device
     """
-    def post(self, request):
-        action = request.data.get('action', 'read_obis')
+
+    # --- Main POST Handler ---
+    def post(self, request, format=None):
+        # Extract common parameters
+        action = request.data.get('action', 'read_obis') # Default to reading details if action missing
         serial_number = request.data.get('serial_number')
         parameters = request.data.get('parameters', {})
-        
         print(f"TamperIndicateStatusView received action '{action}' for SN '{serial_number}'")
 
         if not serial_number:
             return Response({"error": "serial_number is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+        records_to_clear_after_response = [] # Only used for read actions
+        final_response_data = {}
+
         try:
-            # --- 1. Get Device and DLMS Config (same as MeterDetailAPIView) ---
+            # --- 1. Get Device and DLMS Config (Updated for current DB structure) ---
+            # Try to find Device by serial_number first
             try:
                 device = Device.objects.select_related('addressing', 'security', 'user').get(serial_number=serial_number)
                 logger.info(f"Found Device with serial_number: {serial_number}")
             except Device.DoesNotExist:
-                # Fallback: try via Meter
+                # Fallback: try to find via Meter model if it exists
                 try:
                     meter = Meter.objects.select_related('device__addressing', 'device__security', 'device__user').get(serial_number=serial_number)
                     device = meter.device
                     logger.info(f"Found Device via Meter with serial_number: {serial_number}")
                 except Meter.DoesNotExist:
-                    return Response({"error": "Device not found."}, status=status.HTTP_404_NOT_FOUND)
+                    logger.warning(f"No Device or Meter found with serial_number: {serial_number}")
+                    return Response({"error": "Device not found with the provided serial number."}, status=status.HTTP_404_NOT_FOUND)
             
-            # Get active media connection
+            print(f"Device: {device}")
+            
+            # Get active media connection for this device
             media = Media.objects.filter(device=device, is_active=True).first()
             if not media:
-                return Response({"error": "No active media connection configured."}, status=status.HTTP_400_BAD_REQUEST)
+                logger.warning(f"No active Media connection found for Device {device.serial_number}")
+                return Response({"error": "No active media connection configured for this device."}, status=status.HTTP_400_BAD_REQUEST)
             
-            dlms_config = get_dlms_config_from_device(device, media)
+            print(f"Active Media found: {media.media}/{media.protocol}")
             
-            # --- 2. Execute DLMS Action ---
+            dlms_config = get_dlms_config_from_device(device, media) # Use utility function
+        
+
             if action == 'read_obis':
-                # Read tamper status from meter
-                result = execute_dlms_action(dlms_config, action_details={"action": action, "parameters": parameters})
+
+                if not parameters or not isinstance(parameters, list):
+                    return Response({"error": "Parameters must be a list of OBIS codes with attributes"}, status=status.HTTP_400_BAD_REQUEST)
+               
+                if len(parameters) > 0:  # Adjust this threshold as needed
+                    return self.stream_obis_values(serial_number, parameters)
                 
-                if result.get("status") == "success":
-                    # Optionally update TamperIndicateStatus in DB with live values
-                    # The result will contain the tamper flags which can be parsed
-                    return Response(result, status=status.HTTP_200_OK)
                 else:
-                    return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    # Handle batch failure - return error in frontend-compatible format
+                    error_results = []
+                    for index, param in enumerate(parameters):
+                        obis_code = param.get('obis_code', 'Unknown')
+                        attribute_index = param.get('attribute_index', 'Unknown')
+                        
+                        error_response = {
+                            "type": "obis_error",
+                            "status": "error", 
+                            "message": result.get("message", "Batch read failed"),
+                            "obis_code": obis_code,
+                            "attribute_index": attribute_index,
+                            "progress": {
+                                "current": index + 1,
+                                "total": len(parameters),
+                                "percentage": round(((index + 1) / len(parameters)) * 100, 2),
+                                "successful": 0,
+                                "failed": len(parameters)
+                            },
+                            "timestamp": timezone.now().isoformat()
+                        }
+                        error_results.append(error_response)
                     
-            elif action == 'write_obis':
-                # Write tamper status to meter (if supported)
+                    return Response(error_results, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            elif action in ['write_obis', 'execute_method', 'image_transfer_combined', 'combined_image_transfer']:
+                # --- Handle Write, Execute Method, or Image Transfer Combined ---
+                # Directly call the main helper, DO NOT update/clear DB 'value'
+                logger.info(f"Executing DLMS action '{action}' via helper.")
                 result = execute_dlms_action(dlms_config, action_details={"action": action, "parameters": parameters})
-                
-                if result.get("status") == "success":
-                    return Response(result, status=status.HTTP_200_OK)
-                else:
+
+                # Return the result from the helper
+                if result.get("status") == "error":
                     return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                else:
+                    return Response(result, status=status.HTTP_200_OK)
+
             else:
+                logger.warning(f"Unknown action requested: {action}")
                 return Response({"error": f"Unknown action: {action}"}, status=status.HTTP_400_BAD_REQUEST)
 
-        except Device.DoesNotExist:
+            # --- If action was read_detail or read_obis (and successful), return collected data ---
+            # (This part is reached only if action was a successful read)
+            return Response(final_response_data, status=status.HTTP_200_OK)
+
+        # --- Exception Handling ---
+        except Device.DoesNotExist: 
+            logger.warning(f"Device with SN {serial_number} not found."); 
             return Response({"error": "Device not found."}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            logger.error(f"Error in TamperIndicateStatusView: {e}", exc_info=True)
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError as e: 
+            logger.error(f"Value error processing request for SN {serial_number}: {e}", exc_info=True); 
+            return Response({"error": f"Invalid request data or configuration: {e}"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e: 
+            logger.error(f"Unexpected error processing SN {serial_number}: {e}", exc_info=True); 
+            return Response({"error": f"Internal error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        finally:
+            # --- Clear DB Values AFTER response is determined (for read actions) ---
+            if records_to_clear_after_response:
+                logger.info(f"Clearing temporary DB values for {len(records_to_clear_after_response)} items...")
+                for record, field_name in records_to_clear_after_response:
+                    update_or_clear_db_value(record, field_name, clear=True) # Call utility to clear
+                logger.info("Finished clearing temporary DB values.")
 
 
 
@@ -13238,3 +13163,61 @@ def get_log_file(request):
             'status': 'error',
             'message': str(e)
         }, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def clear_log_file(request):
+    """
+    Endpoint to clear the contents of logFile.txt
+    Called before starting a new operation to ensure clean logs
+    """
+    import os
+    from django.conf import settings
+    
+    log_file_path = os.path.join(settings.BASE_DIR, 'logFile.txt')
+    
+    try:
+        # Clear the file by opening in write mode
+        with open(log_file_path, 'w', encoding='utf-8') as f:
+            f.write('')
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Log file cleared'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def add_log_separator(request):
+    """
+    Endpoint to add a separator marker to logFile.txt
+    Used to mark the start of a new operation without clearing previous logs
+    """
+    import os
+    import json
+    from django.conf import settings
+    
+    log_file_path = os.path.join(settings.BASE_DIR, 'logFile.txt')
+    
+    try:
+        data = json.loads(request.body)
+        marker = data.get('marker', '\n=== NEW OPERATION ===\n')
+        
+        # Append the marker to the file
+        with open(log_file_path, 'a', encoding='utf-8') as f:
+            f.write(marker)
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Separator added'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+

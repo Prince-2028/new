@@ -32,12 +32,29 @@ def get_dlms_config_from_device(device, media):
     """ 
     Extracts DLMS config dictionary from a Device object and Media connection.
     Updated to work with current DB structure where Media has portName.
+    Handles TCP/IP Client by building port from remoteIP:remotePort.
     """
     if not device.addressing or not device.security:
         raise ValueError("Device config incomplete (addressing or security missing).")
     
-    if not media or not media.portName:
-        raise ValueError("Media connection not configured or missing port information.")
+    if not media:
+        raise ValueError("Media connection not configured.")
+    
+    # Build port configuration based on media type
+    port_config = None
+    
+    if media.media == 'TCP/IP Client':
+        # For TCP/IP Client, build port from remoteIP:remotePort
+        if not media.remoteIP or not media.remotePort:
+            raise ValueError("TCP/IP Client requires remoteIP and remotePort to be configured.")
+        port_config = f"{media.remoteIP}:{media.remotePort}"
+        logger_util.info(f"Built TCP/IP Client port: {port_config}")
+    else:
+        # For Optical, RS232, etc., use portName
+        if not media.portName:
+            raise ValueError(f"Media type '{media.media}' requires portName to be configured.")
+        port_config = media.portName
+        logger_util.info(f"Using portName for {media.media}: {port_config}")
     
     try:
         client_addr = int(device.addressing.client_sap_hex, 16)
@@ -47,7 +64,7 @@ def get_dlms_config_from_device(device, media):
         raise ValueError("Invalid addressing format stored.")
 
     config = {
-        "port": media.portName,
+        "port": port_config,
         "client_address": client_addr,
         "server_address": server_addr,
         "security_level_str": device.security.security_level,
@@ -57,7 +74,7 @@ def get_dlms_config_from_device(device, media):
         # Use client_system_title from Security model (it's stored as string, not hex)
         "client_system_title_hex": getattr(device.security, 'client_system_title', None) or '52454E3030303030',
     }
-    logger_util.debug(f"Generated DLMS config for device {device.id}")
+    logger_util.debug(f"Generated DLMS config for device {device.id} with port: {port_config}")
     return config
 
 
@@ -119,7 +136,10 @@ def get_db_record_for_obis(device_or_meter, obis_code, attribute_index):
     if hasattr(device_or_meter, 'meter_type'):
         # It's a Device
         device = device_or_meter
-        meter = None
+        # Get the associated Meter if it exists
+        meter = Meter.objects.filter(device=device).first()
+        if meter:
+            logger_util.debug(f"Found associated Meter (ID: {meter.id}) for Device (ID: {device.id})")
     else:
         # It's a Meter
         meter = device_or_meter

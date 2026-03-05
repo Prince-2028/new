@@ -665,45 +665,70 @@ setResult(extracted);
         parameters,
       });
 
-      console.log("Response data:", response.data);
-
-      const results = response.data.results || [];
-      let successCount = 0;
-      let errorCount = 0;
-
-      results.forEach(item => {
-        if (item.status === "success") {
-          successCount++;
-          const opt = OPTIONS.find(o => o.index === parseInt(item.attribute_index));
-          const displayValue =
-            item.value && typeof item.value === "object" && "Date" in item.value && "Time" in item.value
-              ? `${item.value.Date} ${item.value.Time}`
-              : String(item.value);
-
-          setResult(prev => [
-            ...prev,
-            {
-              label: opt ? opt.label : `Parameter ${item.attribute_index}`,
-              value: displayValue,
-            },
-          ]);
-        } else if (item.status === "error") {
-          errorCount++;
-          console.error(`Error reading attribute ${item.attribute_index}: ${item.message}`);
+      console.log("Full Response:", response);
+      console.log("Response.data type:", typeof response.data);
+      console.log("Response.data:", response.data);
+      
+      // Check if response.data is a string that needs parsing
+      let parsedData = response.data;
+      if (typeof parsedData === 'string') {
+        console.log("Response is a string, attempting to parse...");
+        try {
+          // Try to parse as JSON
+          parsedData = JSON.parse(parsedData);
+          console.log("Parsed successfully:", parsedData);
+        } catch (parseError) {
+          console.error("Failed to parse response as JSON:", parseError);
+          // If it's a string like "data: {...}", extract the JSON part
+          const match = parsedData.match(/data:\s*(\{.*\})/);
+          if (match) {
+            console.log("Found data: pattern, extracting JSON...");
+            parsedData = JSON.parse(match[1]);
+            console.log("Extracted and parsed:", parsedData);
+          }
         }
-      });
+      }
+      
+      console.log("Parsed data type:", typeof parsedData);
+      console.log("Parsed data:", parsedData);
 
-      // Show final result
-      const totalItems = parameters.length;
-      if (errorCount === 0) {
-        alert(`Success! Retrieved ${successCount} of ${totalItems} values.`);
-      } else if (successCount > 0) {
-        alert(`Partial success: ${successCount} succeeded, ${errorCount} failed. Check console for details.`);
+      // Navigate through nested data structures
+      let actualData = parsedData;
+      
+      // Keep unwrapping 'data' properties until we find the actual data with 'status'
+      while (actualData && typeof actualData === 'object' && 'data' in actualData && !('status' in actualData)) {
+        console.log("Unwrapping nested data layer");
+        actualData = actualData.data;
+      }
+      
+      console.log("Final actualData:", actualData);
+      console.log("Final actualData type:", typeof actualData);
+      console.log("Status:", actualData?.status);
+      console.log("Value:", actualData?.value);
+      
+      if (actualData && actualData.status === "success") {
+        const opt = OPTIONS.find(o => o.index === parseInt(actualData.attribute_index));
+        const value = actualData.value;
+        
+        const displayValue =
+          value && typeof value === "object" && "Date" in value && "Time" in value
+            ? `${value.Date} ${value.Time}`
+            : String(value);
+
+        setResult([
+          {
+            label: opt ? opt.label : `Parameter ${actualData.attribute_index}`,
+            value: displayValue,
+          },
+        ]);
+        
+        alert(`Success! Retrieved clock data.`);
       } else {
-        alert(`Failed to retrieve data. ${errorCount} errors occurred.`);
+        throw new Error(actualData?.message || 'Failed to read data');
       }
     } catch (e) {
       console.error("API Error:", e);
+      console.error("Error details:", e.response?.data);
       setError(`Error: ${e.message || 'Failed to read data from server.'}`);
       alert(`Error: ${e.message || 'Failed to read data from server.'}`);
       setTimeout(() => setError(null), 3000);

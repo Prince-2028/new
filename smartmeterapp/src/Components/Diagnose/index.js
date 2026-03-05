@@ -907,6 +907,7 @@ function Diagnose() {
 
   // Read handlers (populate sub-checkboxes)
   const readStateOfInternalControl = async () => {
+    setShowProgressModal(true);
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
@@ -917,7 +918,29 @@ function Diagnose() {
         `${BASE_URL}/api/create-state-of-internal-control/`,
         payload
       );
-      const returned = resp.data.results?.[0]?.value || [];
+      
+      // Check if resp.data is a string that needs parsing
+      let parsedData = resp.data;
+      if (typeof parsedData === 'string') {
+        try {
+          parsedData = JSON.parse(parsedData);
+        } catch (parseError) {
+          const match = parsedData.match(/data:\s*(\{.*\})/);
+          if (match) {
+            parsedData = JSON.parse(match[1]);
+          }
+        }
+      }
+      
+      // Navigate through nested data structures
+      let actualData = parsedData;
+      while (actualData && typeof actualData === 'object' && 'data' in actualData && !('status' in actualData)) {
+        actualData = actualData.data;
+      }
+      
+      const returned = actualData?.value || [];
+      console.log("State Of Internal Control Response:", returned);
+      
       const mapping = {
         factory_mode: "FactoryMode",
         non_business_mode: "NonBusinessMode",
@@ -945,7 +968,11 @@ function Diagnose() {
         ...prev,
         stateOfInternalControl: newState,
       }));
-    } catch {
+      setShowProgressModal(false);
+      alert("State Of Internal Control read successfully");
+    } catch (error) {
+      console.error("Failed to read State Of Internal Control:", error);
+      setShowProgressModal(false);
       alert("Failed to read State Of Internal Control.");
     }
   };
@@ -962,8 +989,27 @@ function Diagnose() {
         `${BASE_URL}/api/create-internal-operating-status/`,
         payload
       );
-      // Updated to match the actual response structure
-      const returned = resp.data.results?.[0]?.value || [];
+      
+      // Check if resp.data is a string that needs parsing
+      let parsedData = resp.data;
+      if (typeof parsedData === 'string') {
+        try {
+          parsedData = JSON.parse(parsedData);
+        } catch (parseError) {
+          const match = parsedData.match(/data:\s*(\{.*\})/);
+          if (match) {
+            parsedData = JSON.parse(match[1]);
+          }
+        }
+      }
+      
+      // Navigate through nested data structures
+      let actualData = parsedData;
+      while (actualData && typeof actualData === 'object' && 'data' in actualData && !('status' in actualData)) {
+        actualData = actualData.data;
+      }
+      
+      const returned = actualData?.value || [];
       console.log("Internal Operating Status Response:", returned);
       
       const mapping = {
@@ -1012,8 +1058,27 @@ function Diagnose() {
         `${BASE_URL}/api/create-power-quality-status/`,
         payload
       );
-      // Updated to match the actual response structure
-      const returned = resp.data.results?.[0]?.value || [];
+      
+      // Check if resp.data is a string that needs parsing
+      let parsedData = resp.data;
+      if (typeof parsedData === 'string') {
+        try {
+          parsedData = JSON.parse(parsedData);
+        } catch (parseError) {
+          const match = parsedData.match(/data:\s*(\{.*\})/);
+          if (match) {
+            parsedData = JSON.parse(match[1]);
+          }
+        }
+      }
+      
+      // Navigate through nested data structures
+      let actualData = parsedData;
+      while (actualData && typeof actualData === 'object' && 'data' in actualData && !('status' in actualData)) {
+        actualData = actualData.data;
+      }
+      
+      const returned = actualData?.value || [];
       console.log("Power Quality Status Response:", returned);
       
       const mapping = {
@@ -1058,12 +1123,53 @@ function Diagnose() {
       );
       
       console.log("TamperIndicateStatus Full Response:", resp);
-      console.log("Response data:", resp.data);
-      console.log("Results array:", resp.data.results);
-      console.log("First result:", resp.data.results?.[0]);
+      console.log("TamperIndicateStatus resp.data type:", typeof resp.data);
+      console.log("TamperIndicateStatus resp.data:", resp.data);
       
-      const returned = resp.data.results?.[0]?.value || [];
+      // Check if resp.data is a string that needs parsing
+      let parsedData = resp.data;
+      if (typeof parsedData === 'string') {
+        console.log("Response is a string, attempting to parse...");
+        try {
+          // Try to parse as JSON
+          parsedData = JSON.parse(parsedData);
+          console.log("Parsed successfully:", parsedData);
+        } catch (parseError) {
+          console.error("Failed to parse response as JSON:", parseError);
+          // If it's a string like "data: {...}", extract the JSON part
+          const match = parsedData.match(/data:\s*(\{.*\})/);
+          if (match) {
+            console.log("Found data: pattern, extracting JSON...");
+            parsedData = JSON.parse(match[1]);
+            console.log("Extracted and parsed:", parsedData);
+          }
+        }
+      }
+      
+      console.log("Parsed data type:", typeof parsedData);
+      console.log("Parsed data:", parsedData);
+      
+      // Navigate through nested data structures
+      let actualData = parsedData;
+      
+      // Keep unwrapping 'data' properties until we find the actual data with 'status'
+      while (actualData && typeof actualData === 'object' && 'data' in actualData && !('status' in actualData)) {
+        console.log("Unwrapping nested data layer");
+        actualData = actualData.data;
+      }
+      
+      console.log("Final actualData:", actualData);
+      console.log("Final actualData type:", typeof actualData);
+      console.log("actualData.value:", actualData?.value);
+      
+      const returned = actualData?.value || [];
       console.log("Returned values:", returned);
+      console.log("Returned values type:", typeof returned);
+      console.log("Returned values is array:", Array.isArray(returned));
+      console.log("Returned values length:", returned.length);
+      if (Array.isArray(returned)) {
+        returned.forEach((val, idx) => console.log(`  [${idx}]: "${val}"`));
+      }
 
       const mapping = {
         top_cover_open: "TopCoverOpen",
@@ -1079,7 +1185,7 @@ function Diagnose() {
         (acc, key) => {
           const mappedValue = mapping[key];
           const isIncluded = returned.includes(mappedValue);
-          console.log(`Checking ${key}: mappedValue="${mappedValue}", isIncluded=${isIncluded}, returned=`, returned);
+          console.log(`Checking ${key}: mappedValue="${mappedValue}", isIncluded=${isIncluded}`);
           acc[key] = isIncluded;
           return acc;
         },
@@ -1088,21 +1194,23 @@ function Diagnose() {
       
       console.log("New state for tamperIndicateStatus:", newState);
       
-      setPageStates((prev) => ({
-        ...prev,
-        tamperIndicateStatus: newState,
-      }));
+      setPageStates((prev) => {
+        console.log("Previous state:", prev);
+        const newFullState = {
+          ...prev,
+          tamperIndicateStatus: newState,
+        };
+        console.log("New full state:", newFullState);
+        return newFullState;
+      });
+      
       setShowProgressModal(false);
-      ////--------------------------------------------------------------------------
-      console.log("About to show success alert");
       alert("Success! Tamper Indicate Status data retrieved.");
-      console.log("Alert shown");
-      ///////////////------------------------------------------------------------------------------------------
     } catch (error) {
       console.error("Read Error (TamperIndicateStatus):", error);
-      console.error("Error message:", error.message);
+      console.error("Error details:", error.response?.data);
       setShowProgressModal(false);
-      console.log("Error alert shown");
+      alert("Failed to read Tamper Indicate Status.");
     }
   };
 

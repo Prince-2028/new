@@ -5,6 +5,7 @@ import { FaBookOpen, FaFileExport } from "react-icons/fa"; // Import icons
 import  {  useEffect,useRef, useCallback } from "react";
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
 import axios from "axios";
+import ProgressModal from '../ProgressModal';
 
 import {  faShieldAlt, faPlug, faBolt, faComments, faShoppingCart, faPowerOff, faExchangeAlt } from '@fortawesome/free-solid-svg-icons';
 
@@ -30,6 +31,7 @@ const EventLogInformationDashboard = () => {
   const [streamValues, setStreamValues] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
   const controllerRef = useRef(null);
   const headerCheckboxRef = useRef(null);
@@ -87,66 +89,95 @@ const EventLogInformationDashboard = () => {
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
-      data_type: "event_log",
       parameters: selectedParams,
-      persist: true,
     };
 
-    controllerRef.current = new AbortController();
+    console.log("EventLog Read Payload:", payload);
+
     setLoading(true);
+    setShowProgressModal(true);
 
     try {
-      const res = await fetch(`${BASE_URL}/api/event_log_information/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      controllerRef.current = new AbortController();
+      const res = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        signal: controllerRef.current.signal,
+        signal: controllerRef.current.signal
       });
 
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let buffer = "";
+      let buffer = '';
+      let totalItems = selectedParams.length;
+      let successCount = 0;
+      let errorCount = 0;
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-
+        
         buffer += decoder.decode(value, { stream: true });
-        const chunks = buffer.split("\n\n");
+        const chunks = buffer.split('\n\n');
         buffer = chunks.pop();
-
+        
         for (let chunk of chunks) {
-          if (!chunk.startsWith("data:")) continue;
+          if (!chunk.startsWith('data:')) continue;
           try {
-            const msg = JSON.parse(chunk.replace(/^data:\s*/, ""));
-            if (msg && msg.obis_code) {
-              const obis = msg.obis_code;
-              setStreamValues((prev) => ({
+            const msg = JSON.parse(chunk.replace(/^data:\s*/, ''));
+            console.log("EventLog SSE message:", msg);
+            
+            if (msg.status === "success") {
+              successCount++;
+              setStreamValues(prev => ({
                 ...prev,
-                [obis]: {
+                [msg.obis_code]: {
                   value: msg.value,
                   timestamp: msg.timestamp || new Date().toISOString(),
-                },
+                }
               }));
+            } else if (msg.status === "error") {
+              errorCount++;
+              console.error(`Error reading ${msg.obis_code}: ${msg.message}`);
             }
-          } catch (e) {
-            console.error("Error parsing SSE chunk", e);
+          } catch (parseError) {
+            console.warn("Failed to parse SSE chunk:", parseError);
           }
         }
       }
-    } catch (err) {
-      if (err.name === "AbortError") {
-        console.log("Read aborted");
+
+      if (errorCount === 0) {
+        alert(`Success! Retrieved ${successCount} of ${totalItems} values.`);
+      } else if (successCount > 0) {
+        alert(`Partial success: ${successCount} succeeded, ${errorCount} failed.`);
       } else {
-        console.error("Streaming error", err);
-        setError(err.message || "Error streaming data");
+        alert(`Failed to retrieve data. ${errorCount} errors occurred.`);
+      }
+      
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Request was aborted');
+      } else {
+        console.error('Error fetching data:', error);
+        alert(`Error: ${error.message || 'Failed to retrieve data. Please try again.'}`);
       }
     } finally {
       setLoading(false);
+      setShowProgressModal(false);
     }
   };
+
+  // Expose handleRead to parent via ref or context if needed
+  useEffect(() => {
+    window.eventLogInformationRead = handleRead;
+    return () => {
+      delete window.eventLogInformationRead;
+    };
+  }, [tableData, serialNumber]);
 
   const handleStop = () => {
     if (controllerRef.current) {
@@ -156,6 +187,7 @@ const EventLogInformationDashboard = () => {
       } catch {}
     }
     setLoading(false);
+    setShowProgressModal(false);
   };
 
   const handleSave = async () => {
@@ -210,9 +242,6 @@ const EventLogInformationDashboard = () => {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       <div style={{ marginBottom: 12 }}>
-        <button onClick={handleRead} disabled={loading} style={{ marginRight: 8 }}>
-          {loading ? "Reading..." : "Read Selected"}
-        </button>
         <button onClick={handleStop} disabled={!loading} style={{ marginRight: 8 }}>
           Stop
         </button>
@@ -270,6 +299,12 @@ const EventLogInformationDashboard = () => {
           </tbody>
         </table>
       </div>
+      
+      <ProgressModal
+        isOpen={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+        title="Reading Event Log Information"
+      />
     </div>
   );
 };
@@ -2949,6 +2984,19 @@ export default function EventSection() {
     }
   };
 
+  const handleTopReadClick = () => {
+    if (activeSection === 'eventLogInformation') {
+      // Trigger EventLogInformationDashboard read
+      if (window.eventLogInformationRead) {
+        window.eventLogInformationRead();
+      } else {
+        alert('Event Log Information Dashboard is not ready');
+      }
+    } else {
+      alert('Read functionality for this section is not yet implemented');
+    }
+  };
+
 
   // place this with your other hooks (after useState declarations)
 const handleItemClick = (sectionId, parentMenu = null) => {
@@ -3006,7 +3054,7 @@ const handleItemClick = (sectionId, parentMenu = null) => {
 
         <main className="content">
           <div className="read-write-container">
-            <button className="dashboard-btn"><FaBookOpen style={{ marginRight: 8, color: '#ff4d00ff' }} />Read</button>
+            <button className="dashboard-btn" onClick={handleTopReadClick}><FaBookOpen style={{ marginRight: 8, color: '#ff4d00ff' }} />Read</button>
             <button className="dashboard-btn"><FaFileExport style={{ marginRight: 8, color: '#ff4d00ff' }} />Export</button>
           </div>
           {renderSection()}

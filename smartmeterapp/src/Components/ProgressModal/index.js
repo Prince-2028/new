@@ -7,35 +7,57 @@ const ProgressModal = ({ isOpen, onClose, title = "Progress" }) => {
   const [logs, setLogs] = useState([]);
   const [isComplete, setIsComplete] = useState(false);
   const pollIntervalRef = useRef(null);
-  const lastPositionRef = useRef(0);
   const logsEndRef = useRef(null);
 
   // Auto-scroll to bottom when new logs arrive
   useEffect(() => {
     if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      logsEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
     }
   }, [logs]);
 
   useEffect(() => {
-    if (isOpen) {
-      // Reset state when modal opens
-      setLogs([]);
-      setIsComplete(false);
-      lastPositionRef.current = 0;
-      
-      // Start polling logFile.txt
-      startPolling();
-    } else {
-      // Stop polling when modal closes
-      stopPolling();
-    }
+    const initModal = async () => {
+      if (isOpen) {
+        // Reset state when modal opens
+        setLogs([]);
+        setIsComplete(false);
+        
+        // Add a separator marker to the log file to mark the start of this operation
+        await addLogSeparator();
+        
+        // Small delay to ensure marker is written
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Start polling logFile.txt
+        startPolling();
+      } else {
+        // Stop polling when modal closes
+        stopPolling();
+      }
+    };
 
-    return () => stopPolling();
+    initModal();
+
+    return () => {
+      stopPolling();
+    };
   }, [isOpen]);
 
+  const addLogSeparator = async () => {
+    try {
+      const timestamp = new Date().toISOString();
+      await axios.post(`${API_BASE_URL}/api/logfile/separator/`, {
+        marker: `\n=== OPERATION START: ${timestamp} ===\n`
+      });
+      console.log('Log separator added');
+    } catch (error) {
+      console.log('Failed to add log separator:', error.message);
+    }
+  };
+
   const startPolling = () => {
-    // Poll every 100ms for immediate log updates
+    // Poll every 500ms
     pollIntervalRef.current = setInterval(async () => {
       try {
         // Add timestamp and random parameter to prevent caching
@@ -49,45 +71,44 @@ const ProgressModal = ({ isOpen, onClose, title = "Progress" }) => {
         });
         const logContent = response.data.content || '';
         
-        // Parse new log entries
-        const lines = logContent.split('\n');
+        // Find the last separator marker and only show logs after it
+        const separatorIndex = logContent.lastIndexOf('=== OPERATION START:');
+        const relevantContent = separatorIndex >= 0 
+          ? logContent.substring(separatorIndex) 
+          : logContent;
         
-        // Detect if file was reset (current content is shorter than our last position)
-        if (lines.length < lastPositionRef.current) {
-          console.log('Log file was reset, restarting from beginning');
-          setLogs([]);
-          lastPositionRef.current = 0;
-        }
+        // Parse log entries from the current operation only
+        const lines = relevantContent.split('\n').filter(line => {
+          const trimmed = line.trim();
+          // Filter out the separator line itself and empty lines
+          return trimmed && !trimmed.startsWith('=== OPERATION START:');
+        });
         
-        // Get only new lines after last position
-        const newLines = lines.slice(lastPositionRef.current);
+        // Simply set all lines - no queuing, no delays
+        setLogs(lines);
         
-        if (newLines.length > 0) {
-          const filteredNewLines = newLines.filter(line => line.trim());
-          if (filteredNewLines.length > 0) {
-            setLogs(prev => [...prev, ...filteredNewLines]);
-          }
-          lastPositionRef.current = lines.length;
-          
-          // Check for completion indicators
-          const lastLine = newLines[newLines.length - 1] || '';
+        // Check for completion indicators in the last line
+        if (lines.length > 0) {
+          const lastLine = lines[lines.length - 1] || '';
           if (
             lastLine.includes('finished') ||
             lastLine.includes('Result status')
           ) {
             setIsComplete(true);
-            stopPolling();
-            // Auto-close after 1.5 seconds
+            // Wait 2 seconds then close
             setTimeout(() => {
-              onClose();
-            }, 1500);
+              stopPolling();
+              setTimeout(() => {
+                onClose();
+              }, 1000);
+            }, 2000);
           }
         }
       } catch (error) {
         // Ignore errors during polling (file might not exist yet)
         console.log('Polling error:', error.message);
       }
-    }, 100); // Poll every 100ms for immediate updates
+    }, 500);
   };
 
   const stopPolling = () => {
@@ -111,11 +132,22 @@ const ProgressModal = ({ isOpen, onClose, title = "Progress" }) => {
           <p className="progress-message">Please wait for a moment</p>
           
           <div className="progress-logs">
-            {logs.map((log, index) => (
-              <div key={index} className="log-line">
-                {log}
-              </div>
-            ))}
+            {logs.map((log, index) => {
+              const isRX = log.includes('RX:');
+              const isTX = log.includes('TX:');
+              return (
+                <div 
+                  key={index} 
+                  className="log-line"
+                  style={{
+                    backgroundColor: isRX ? '#e8f5e9' : isTX ? '#fff3e0' : 'transparent',
+                    fontWeight: isRX ? 'bold' : 'normal'
+                  }}
+                >
+                  {log}
+                </div>
+              );
+            })}
             {/* Invisible element to scroll to */}
             <div ref={logsEndRef} />
           </div>

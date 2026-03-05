@@ -305,6 +305,8 @@ urlpatterns = [
     
     # Log file endpoint for progress monitoring
     path('api/logfile/', get_log_file, name='get-log-file'),
+    path('api/logfile/clear/', clear_log_file, name='clear-log-file'),
+    path('api/logfile/separator/', add_log_separator, name='add-log-separator'),
 ]
 
 

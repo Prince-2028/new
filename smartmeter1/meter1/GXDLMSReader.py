@@ -57,8 +57,8 @@ class GXDLMSReader:
         #pylint: disable=too-many-arguments
         self.replyBuff = bytearray(8 + 1024)
         self.waitTime = -1
-        # Open logFile with line buffering for immediate writes
-        self.logFile = open("logFile.txt", "w", buffering=1)
+        # Open logFile in append mode with line buffering for immediate writes
+        self.logFile = open("logFile.txt", "a", buffering=1)
         self.trace = trace
         self.media = media
         self.invocationCounter = invocationCounter
@@ -114,7 +114,7 @@ class GXDLMSReader:
 
     def writeTrace(self, line, level):
         if self.trace >= level:
-            print(line)
+            print(line, flush=True)
         self.logFile.write(line + "\n")
         self.logFile.flush()  # Flush immediately for real-time updates
 

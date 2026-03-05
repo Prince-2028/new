@@ -5,6 +5,7 @@ import axios from "axios";
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
 import { PERMISSIONS } from '../../permissions';
 import WriteModal from '../WriteModal';
+import AsciiHexModal from '../AsciiHexModal';
 import ProgressModal from '../ProgressModal';
 
 
@@ -38,6 +39,7 @@ const MeterInfo = () => {
 
   // Write modal state
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
+  const [isAsciiHexModalOpen, setIsAsciiHexModalOpen] = useState(false);
   const [writeModalData, setWriteModalData] = useState({ name: '', code: '', row: null });
   
   // Progress modal state
@@ -53,6 +55,38 @@ const MeterInfo = () => {
 
   const handleSubDashboardChange = (subDashboardName) => {
     setSelectedSubDashboard(subDashboardName);
+  };
+
+  // Helper function to convert hex string to ASCII
+  const hexToAscii = (hexStr) => {
+    if (!hexStr || typeof hexStr !== 'string') return hexStr;
+    
+    // Remove spaces and ensure even length
+    const cleanHex = hexStr.replace(/\s/g, '');
+    if (cleanHex.length % 2 !== 0) return hexStr; // Not valid hex
+    
+    let asciiStr = '';
+    for (let i = 0; i < cleanHex.length; i += 2) {
+      const byte = parseInt(cleanHex.substr(i, 2), 16);
+      if (isNaN(byte)) return hexStr; // Not valid hex
+      
+      // Only show printable ASCII characters (32-126)
+      if (byte >= 32 && byte <= 126) {
+        asciiStr += String.fromCharCode(byte);
+      } else if (byte === 0) {
+        // Stop at null terminator
+        break;
+      } else {
+        // Show non-printable as dot
+        asciiStr += '·';
+      }
+    }
+    return asciiStr;
+  };
+
+  // Check if a value should be displayed as ASCII (for Meter Serial Number and Customer meter equipment identifier)
+  const isAsciiHexField = (subItem, index) => {
+    return subItem === "Meter Identifier" && (index === 1 || index === 2);
   };
 
   
@@ -176,7 +210,8 @@ const MeterInfo = () => {
 
   const handleWriteClick = () => {
     let selectedRow = null;
-   
+    let selectedRowIndex = null;
+    let selectedSubItem = null;
 
     let selectedCount = 0;
 
@@ -186,6 +221,8 @@ const MeterInfo = () => {
             const row = getTableRowData(subItem, rowIndex);
             if (row) {
                 selectedRow = row;
+                selectedRowIndex = rowIndex;
+                selectedSubItem = subItem;
                 selectedCount++;
             }
         });
@@ -200,12 +237,31 @@ const MeterInfo = () => {
     if (selectedCount !== 1) {
       alert("Please select exactly one item to write.");
       return;
-  }
+    }
 
-  
-    // Open write modal instead of prompt
+    // Check if it's Meter Serial Number or Customer meter equipment identifier
+    const isAsciiHexField = selectedSubItem === "Meter Identifier" && 
+                            (selectedRowIndex === 1 || selectedRowIndex === 2);
+    
+    // Open appropriate modal
     setWriteModalData({ name: selectedRow.name, code: selectedRow.code, row: selectedRow });
-    setIsWriteModalOpen(true);
+    
+    if (isAsciiHexField) {
+      // Get current value for these fields
+      const cleanCode = selectedRow.code
+        .replace(/[()]/g, "")
+        .replace(/-/g, ".")
+        .replace(/:/g, ".")
+        .replace(/\.\.+/g, ".");
+      const codeParts = cleanCode.split(",");
+      const obisCode = codeParts[1].trim();
+      const currentValue = streamValues[obisCode] || '';
+      
+      setWriteModalData(prev => ({ ...prev, initialValue: currentValue }));
+      setIsAsciiHexModalOpen(true);
+    } else {
+      setIsWriteModalOpen(true);
+    }
   };
 
   const handleWriteSubmit = async (enteredValue) => {
@@ -489,10 +545,25 @@ const renderTableRows = (sub) =>
       .split(",")[1]
       ?.trim() || code;
 
-    // Display object or string
-    const displayValue = typeof streamValues[normalizedCode] === "object"
-      ? JSON.stringify(streamValues[normalizedCode])
-      : streamValues[normalizedCode] || "";
+    // Get the raw value
+    let rawValue = streamValues[normalizedCode];
+    
+    // Display value - always show ASCII for hex fields
+    let displayValue = "";
+    
+    if (rawValue !== undefined && rawValue !== null) {
+      if (typeof rawValue === "object") {
+        displayValue = JSON.stringify(rawValue);
+      } else {
+        // Check if this is an ASCII/Hex field (Meter Serial Number or Customer meter equipment identifier)
+        // Always display as ASCII for these fields
+        if (isAsciiHexField(sub, idx)) {
+          displayValue = hexToAscii(rawValue);
+        } else {
+          displayValue = rawValue;
+        }
+      }
+    }
 
     return (
       <tr key={idx}>
@@ -582,6 +653,15 @@ const renderTableRows = (sub) =>
         onClose={() => setIsWriteModalOpen(false)}
         itemName={writeModalData.name}
         itemCode={writeModalData.code}
+        onSubmit={handleWriteSubmit}
+      />
+      
+      <AsciiHexModal
+        isOpen={isAsciiHexModalOpen}
+        onClose={() => setIsAsciiHexModalOpen(false)}
+        itemName={writeModalData.name}
+        itemCode={writeModalData.code}
+        initialValue={writeModalData.initialValue}
         onSubmit={handleWriteSubmit}
       />
       

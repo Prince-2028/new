@@ -98,6 +98,14 @@ const Dashboard = () => {
     if (!selectedDeviceId) {
       return alert('Please select a device first!');
     }
+    
+    // Find the selected device and save its serial number to localStorage
+    const device = data.find(d => d.id === selectedDeviceId);
+    if (device) {
+      localStorage.setItem('selectedSerialNumber', device.serial_number);
+      console.log('Saved serial number to localStorage:', device.serial_number);
+    }
+    
     setIsPortPopupOpen(true);
   };
 
