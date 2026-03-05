@@ -549,21 +549,21 @@ const renderTableRows = (sub) =>
     let rawValue = streamValues[normalizedCode];
     
     // Display value - always show ASCII for hex fields
-    let displayValue = "";
+    let displayValue = rawValue;
     
-    if (rawValue !== undefined && rawValue !== null) {
-      if (typeof rawValue === "object") {
-        displayValue = JSON.stringify(rawValue);
-      } else {
-        // Check if this is an ASCII/Hex field (Meter Serial Number or Customer meter equipment identifier)
-        // Always display as ASCII for these fields
-        if (isAsciiHexField(sub, idx)) {
-          displayValue = hexToAscii(rawValue);
-        } else {
-          displayValue = rawValue;
-        }
-      }
-    }
+    // if (rawValue !== undefined && rawValue !== null) {
+    //   if (typeof rawValue === "object") {
+    //     displayValue = JSON.stringify(rawValue);
+    //   } else {
+    //     // Check if this is an ASCII/Hex field (Meter Serial Number or Customer meter equipment identifier)
+    //     // Always display as ASCII for these fields
+    //     if (isAsciiHexField(sub, idx)) {
+    //       displayValue = hexToAscii(rawValue);
+    //     } else {
+    //       displayValue = rawValue;
+    //     }
+    //   }
+    // }
 
     return (
       <tr key={idx}>
