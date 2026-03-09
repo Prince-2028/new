@@ -7,6 +7,126 @@ import { FaBookOpen, FaFileExport } from "react-icons/fa"; // Import icons
 import BASE_URL from '../../apiConfig';
 import ProgressModal from '../ProgressModal';
 
+// Shared utility functions for Maximum Demand components
+const getUnitString = (unitCode) => {
+    const unitMap = {
+        27: 'W',
+        28: 'VA',
+        29: 'var',
+        30: 'Wh',
+        31: 'VAh',
+        32: 'varh',
+        33: 'A',
+        35: 'V',
+        // Add more as needed
+    };
+    return unitMap[unitCode] || '';
+};
+
+const getUnitPrefix = (scaler) => {
+    if (scaler >= 1000000) return 'M';  // Mega
+    if (scaler >= 1000) return 'k';     // kilo
+    if (scaler <= 0.001) return 'm';    // milli
+    return '';                           // No prefix
+};
+
+const formatCaptureTime = (timeObj) => {
+    if (!timeObj || typeof timeObj !== 'object') return '';
+    const date = timeObj.Date || '';
+    const time = timeObj.Time || '';
+    return `${date} ${time}`.trim();
+};
+
+// Shared function to handle reading OBIS codes with attributes 2, 3, and 5
+const handleMaximumDemandRead = async ({
+    tableData,
+    controllerRef,
+    serialNumber,
+    setShowProgressModal,
+    setStreamValues,
+    apiEndpoint = '/api/getmeterinfo/' // Default endpoint, can be overridden
+}) => {
+    if (controllerRef.current) controllerRef.current.abort();
+
+    const selectedParams = [];
+    tableData.filter(item => item.checked).forEach((item) => {
+        const cleanCode = item.code
+            .replace(/[()]/g, "")
+            .replace(/-/g, ".")
+            .replace(/:/g, ".")
+            .replace(/\.\.+/g, ".");
+        const codeParts = cleanCode.split(",");
+        const obisCode = codeParts[1].trim();
+        
+        // Read attributes 2, 3, and 5 for each selected item
+        selectedParams.push(
+            { obis_code: obisCode, attribute_index: "2" },
+            { obis_code: obisCode, attribute_index: "3" },
+            { obis_code: obisCode, attribute_index: "5" }
+        );
+    });
+
+    if (selectedParams.length === 0) {
+        alert("Please select at least one item to read.");
+        return;
+    }
+
+    const payload = {
+        serial_number: serialNumber,
+        action: "read_obis",
+        parameters: selectedParams
+    };
+
+    console.log("Read Payload:", payload);
+
+    setShowProgressModal(true);
+
+    try {
+        controllerRef.current = new AbortController();
+        const res = await fetch(`${BASE_URL}${apiEndpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal: controllerRef.current.signal
+        });
+
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const chunks = buffer.split('\n\n');
+            buffer = chunks.pop();
+            for (let chunk of chunks) {
+                if (!chunk.startsWith('data:')) continue;
+                try {
+                    const msg = JSON.parse(chunk.replace(/^data:\s*/, ''));
+                    console.log("msg", msg);
+                    
+                    if (msg.status === "success") {
+                        const key = `${msg.obis_code}_attr${msg.attribute_index}`;
+                        setStreamValues(prev => ({ ...prev, [key]: msg.value }));
+                    }
+                } catch { }
+            }
+        }
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            console.error('Error fetching data:', error);
+            alert(`Error: ${error.message || 'Failed to retrieve data.'}`);
+        }
+    } finally {
+        setShowProgressModal(false);
+    }
+};
+
 
 const InstantaneousReadings = forwardRef((props, ref) => {
   // Helper function to get unit based on item name
@@ -1206,101 +1326,66 @@ const ActiveMaximumDemandDashboard = forwardRef((props, ref) => {
         { checked: false, no: 8, name: 'Maximum Demand Register - Active export (-A) - rate 2', code: '(4,1-0:2.6.2.255)', value: '', captureTime: '' },
         { checked: false, no: 9, name: 'Maximum Demand Register - Active export (-A) - rate 3', code: '(4,1-0:2.6.3.255)', value: '', captureTime: '' },
         { checked: false, no: 10, name: 'Maximum Demand Register - Active export (-A) - rate 4', code: '(4,1-0:2.6.4.255)', value: '', captureTime: '' },
-        { checked: false, no: 11, name: 'Maximum Demand Register - Active (+A)+(-A)', code: '(4,1-0:15.6.0.255)', value: '', captureTime: '' },
-        { checked: false, no: 12, name: 'Maximum Demand Register - Active (+A)+(-A) - rate 1', code: '(4,1-0:15.6.1.255)', value: '', captureTime: '' },
-        { checked: false, no: 13, name: 'Maximum Demand Register - Active (+A)+(-A) - rate 2', code: '(4,1-0:15.6.2.255)', value: '', captureTime: '' },
-        { checked: false, no: 14, name: 'Maximum Demand Register - Active (+A)+(-A) - rate 3', code: '(4,1-0:15.6.3.255)', value: '', captureTime: '' },
-        { checked: false, no: 15, name: 'Maximum Demand Register - Active (+A)+(-A) - rate 4', code: '(4,1-0:15.6.4.255)', value: '', captureTime: '' },
-        { checked: false, no: 16, name: 'Cumulative Maximum Demand Register - Active import (+A)', code: '(4,1-0:1.2.0.255)', value: '', captureTime: '' },
-        { checked: false, no: 17, name: 'Cumulative Maximum Demand Register - Active import (+A) - rate 1', code: '(4,1-0:1.2.1.255)', value: '', captureTime: '' },
-        { checked: false, no: 18, name: 'Cumulative Maximum Demand Register - Active import (+A) - rate 2', code: '(4,1-0:1.2.2.255)', value: '', captureTime: '' },
-        { checked: false, no: 19, name: 'Cumulative Maximum Demand Register - Active import (+A) - rate 3', code: '(4,1-0:1.2.3.255)', value: '', captureTime: '' },
-        { checked: false, no: 20, name: 'Cumulative Maximum Demand Register - Active import (+A) - rate 4', code: '(4,1-0:1.2.4.255)', value: '', captureTime: '' },
-        { checked: false, no: 21, name: 'Cumulative Maximum Demand Register - Active export (-A)', code: '(4,1-0:2.2.0.255)', value: '', captureTime: '' },
-        { checked: false, no: 22, name: 'Cumulative Maximum Demand Register - Active export (-A) - rate 1', code: '(4,1-0:2.2.1.255)', value: '', captureTime: '' },
-        { checked: false, no: 23, name: 'Cumulative Maximum Demand Register - Active export (-A) - rate 2', code: '(4,1-0:2.2.2.255)', value: '', captureTime: '' },
-        { checked: false, no: 24, name: 'Cumulative Maximum Demand Register - Active export (-A) - rate 3', code: '(4,1-0:2.2.3.255)', value: '', captureTime: '' },
-        { checked: false, no: 25, name: 'Cumulative Maximum Demand Register - Active export (-A) - rate 4', code: '(4,1-0:2.2.4.255)', value: '', captureTime: '' },
-        { checked: false, no: 26, name: 'Demand Register - Active (+A)+(-A)', code: '(5,1-0:15.4.0.255)', value: '', captureTime: '' },
-        { checked: false, no: 27, name: 'Demand Register - Active (+A)+(-A) - rate 1', code: '(5,1-0:15.4.1.255)', value: '', captureTime: '' },
-        { checked: false, no: 28, name: 'Demand Register - Active (+A)+(-A) - rate 2', code: '(5,1-0:15.4.2.255)', value: '', captureTime: '' },
-        { checked: false, no: 29, name: 'Demand Register - Active (+A)+(-A) - rate 3', code: '(5,1-0:15.4.3.255)', value: '', captureTime: '' },
-        { checked: false, no: 30, name: 'Demand Register - Active (+A)+(-A) - rate 4', code: '(5,1-0:15.4.4.255)', value: '', captureTime: '' },
-        { checked: false, no: 31, name: 'Average Demand Register - Active (+A)+(-A)', code: '(5,1-0:15.24.0.255)', value: '', captureTime: '' },
+        { checked: false, no: 11, name: 'Maximum Demand Register - Active (|+A|)+(|-A|)', code: '(4,1-0:15.6.0.255)', value: '', captureTime: '' },
+        { checked: false, no: 12, name: 'Maximum Demand Register - Active (|+A|)+(|-A|) - rate 1', code: '(4,1-0:15.6.1.255)', value: '', captureTime: '' },
+        { checked: false, no: 13, name: 'Maximum Demand Register - Active (|+A|)+(|-A|) - rate 2', code: '(4,1-0:15.6.2.255)', value: '', captureTime: '' },
+        { checked: false, no: 14, name: 'Maximum Demand Register - Active (|+A|)+(|-A|) - rate 3', code: '(4,1-0:15.6.3.255)', value: '', captureTime: '' },
+        { checked: false, no: 15, name: 'Maximum Demand Register - Active (|+A|)+(|-A|) - rate 4', code: '(4,1-0:15.6.4.255)', value: '', captureTime: '' },
+        { checked: false, no: 16, name: 'Cumulative Maximum Demand Register - Active (|+A|)+(|-A|)', code: '(4,1-0:15.2.0.255)', value: '', captureTime: '' },
+        { checked: false, no: 17, name: 'Cumulative Maximum Demand Register - Active (|+A|)+(|-A|) - rate 1', code: '(4,1-0:15.2.1.255)', value: '', captureTime: '' },
+        { checked: false, no: 18, name: 'Cumulative Maximum Demand Register - Active (|+A|)+(|-A|) - rate 2', code: '(4,1-0:15.2.2.255)', value: '', captureTime: '' },
+        { checked: false, no: 19, name: 'Cumulative Maximum Demand Register - Active (|+A|)+(|-A|) - rate 3', code: '(4,1-0:15.2.3.255)', value: '', captureTime: '' },
+        { checked: false, no: 20, name: 'Cumulative Maximum Demand Register - Active (|+A|)+(|-A|) - rate 4', code: '(4,1-0:15.2.4.255)', value: '', captureTime: '' },
+        { checked: false, no: 21, name: 'Cumulative Maximum Demand Register - Active import (|+A|)', code: '(4,1-0:1.2.0.255)', value: '', captureTime: '' },
+        { checked: false, no: 22, name: 'Cumulative Maximum Demand Register - Active import (|+A|) - rate 1', code: '(4,1-0:1.2.1.255)', value: '', captureTime: '' },
+        { checked: false, no: 23, name: 'Cumulative Maximum Demand Register - Active import (|+A|) - rate 2', code: '(4,1-0:1.2.2.255)', value: '', captureTime: '' },
+        { checked: false, no: 24, name: 'Cumulative Maximum Demand Register - Active import (|+A|) - rate 3 - rate 4', code: '(4,1-0:1.2.3.255)', value: '', captureTime: '' },
+        { checked: false, no: 25, name: 'Cumulative Maximum Demand Register - Active import (|+A|) - rate 4', code: '(4,1-0:1.2.4.255)', value: '', captureTime: '' },
+        { checked: false, no: 26, name: 'Cumulative Maximum Demand Register - Active export (|-A|)', code: '(4,1-0:2.2.0.255)', value: '', captureTime: '' },
+        { checked: false, no: 27, name: 'Cumulative Maximum Demand Register - Active export (|-A|) - rate 1', code: '(4,1-0:2.2.1.255)', value: '', captureTime: '' },
+        { checked: false, no: 28, name: 'Cumulative Maximum Demand Register - Active export (|-A|) - rate 2', code: '(4,1-0:2.2.2.255)', value: '', captureTime: '' },
+        { checked: false, no: 29, name: 'Cumulative Maximum Demand Register - Active export (|-A|) - rate 3', code: '(4,1-0:2.2.3.255)', value: '', captureTime: '' },
+        { checked: false, no: 30, name: 'Cumulative Maximum Demand Register - Active export (|-A|) - rate 4', code: '(4,1-0:2.2.4.255)', value: '', captureTime: '' },
+        { checked: false, no: 31, name: 'Demand Register - Active (|+A|)+(|-A|)', code: '(5,1-0:15.4.0.255)', value: '', captureTime: '' },
+        { checked: false, no: 32, name: 'Demand Register - Active (|+A|)+(|-A|) - rate 1', code: '(5,1-0:15.4.1.255)', value: '', captureTime: '' },
+        { checked: false, no: 33, name: 'Demand Register - Active (|+A|)+(|-A|) - rate 2', code: '(5,1-0:15.4.2.255)', value: '', captureTime: '' },
+        { checked: false, no: 34, name: 'Demand Register - Active (|+A|)+(|-A|) - rate 3', code: '(5,1-0:15.4.3.255)', value: '', captureTime: '' },
+        { checked: false, no: 35, name: 'Demand Register - Active (|+A|)+(|-A|) - rate 4', code: '(5,1-0:15.4.4.255)', value: '', captureTime: '' },
+        { checked: false, no: 36, name: 'Average Demand Register - Active (|+A|)+(|-A|)', code: '(5,1-0:15.24.0.255)', value: '', captureTime: '' },
     ]);
 
     const [streamValues, setStreamValues] = useState({});
+    const [selectAll, setSelectAll] = useState(false);
     const [showProgressModal, setShowProgressModal] = useState(false);
     const controllerRef = useRef(null);
     const serialNumber = localStorage.getItem('selectedSerialNumber');
 
-    const handleCheckboxChange = (no) => {
+    const handleSelectAllChange = (checked) => {
+        setSelectAll(checked);
         setTableData(prevData =>
-            prevData.map(item =>
-                item.no === no ? { ...item, checked: !item.checked } : item
-            )
+            prevData.map(item => ({ ...item, checked: checked }))
         );
     };
 
-    const handleReadClick = async () => {
-        if (controllerRef.current) controllerRef.current.abort();
-
-        const selectedParams = tableData
-            .filter(item => item.checked)
-            .map((item) => {
-                const cleanCode = item.code
-                    .replace(/[()]/g, "")
-                    .replace(/-/g, ".")
-                    .replace(/:/g, ".")
-                    .replace(/\.\.+/g, ".");
-                const codeParts = cleanCode.split(",");
-                const obisCode = codeParts[1].trim();
-                return {
-                    obis_code: obisCode,
-                    attribute_index: "2"
-                };
-            });
-
-        if (selectedParams.length === 0) {
-            alert("Please select at least one item to read.");
-            return;
-        }
-
-        const payload = {
-            serial_number: serialNumber,
-            action: "read_obis",
-            parameters: selectedParams
-        };
-
-        console.log("Read Payload:", payload);
-
-        controllerRef.current = new AbortController();
-        const res = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            signal: controllerRef.current.signal
+    const handleCheckboxChange = (no) => {
+        setTableData(prevData => {
+            const newData = prevData.map(item =>
+                item.no === no ? { ...item, checked: !item.checked } : item
+            );
+            setSelectAll(newData.every(item => item.checked));
+            return newData;
         });
+    };
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            const chunks = buffer.split('\n\n');
-            buffer = chunks.pop();
-            for (let chunk of chunks) {
-                if (!chunk.startsWith('data:')) continue;
-                try {
-                    const msg = JSON.parse(chunk.replace(/^data:\s*/, ''));
-                    console.log("msg", msg);
-                    setStreamValues(prev => ({ ...prev, [msg.obis_code]: msg.value }));
-                } catch { }
-            }
-        }
+    const handleReadClick = async () => {
+        await handleMaximumDemandRead({
+            tableData,
+            controllerRef,
+            serialNumber,
+            setShowProgressModal,
+            setStreamValues
+            // apiEndpoint: '/api/getmeterinfo/' // Optional: can override if needed
+        });
     };
 
     useImperativeHandle(ref, () => ({
@@ -1312,7 +1397,13 @@ const ActiveMaximumDemandDashboard = forwardRef((props, ref) => {
             <table className="data-table">
                 <thead>
                     <tr>
-                        <th>Check</th>
+                        <th>
+                            <input
+                                type="checkbox"
+                                checked={selectAll}
+                                onChange={(e) => handleSelectAllChange(e.target.checked)}
+                            />
+                        </th>
                         <th>No.</th>
                         <th>Name</th>
                         <th>Code</th>
@@ -1330,12 +1421,26 @@ const ActiveMaximumDemandDashboard = forwardRef((props, ref) => {
                             .split(",")[1]
                             ?.trim() || item.code;
 
-                        const displayValue =
-                            typeof streamValues[normalizedCode] === "object"
-                                ? JSON.stringify(streamValues[normalizedCode])
-                                : streamValues[normalizedCode] !== undefined && streamValues[normalizedCode] !== null
-                                    ? streamValues[normalizedCode]
-                                    : "";
+                        // Get attribute values
+                        const attr2 = streamValues[`${normalizedCode}_attr2`];
+                        const attr3 = streamValues[`${normalizedCode}_attr3`];
+                        const attr5 = streamValues[`${normalizedCode}_attr5`];
+
+                        // Calculate display value: attr2 / attr3[0] with dynamic unit
+                        let displayValue = '';
+                        if (attr2 !== undefined && attr2 !== null && attr3 && Array.isArray(attr3) && attr3[0]) {
+                            const scaledValue = parseFloat(attr3[0]);
+                            if (scaledValue !== 0) {
+                                const calculatedValue = attr2 / scaledValue;
+                                const unitCode = attr3[1];
+                                const baseUnit = getUnitString(unitCode);
+                                const prefix = getUnitPrefix(scaledValue);
+                                displayValue = `${calculatedValue.toFixed(3)} ${prefix}${baseUnit}`;
+                            }
+                        }
+
+                        // Format capture time
+                        const captureTime = formatCaptureTime(attr5);
 
                         return (
                             <tr key={item.no}>
@@ -1350,12 +1455,18 @@ const ActiveMaximumDemandDashboard = forwardRef((props, ref) => {
                                 <td>{item.name}</td>
                                 <td>{item.code}</td>
                                 <td>{displayValue}</td>
-                                <td>{item.captureTime}</td>
+                                <td>{captureTime}</td>
                             </tr>
                         );
                     })}
                 </tbody>
             </table>
+            
+            <ProgressModal
+                isOpen={showProgressModal}
+                onClose={() => setShowProgressModal(false)}
+                title="Reading Active Maximum Demand"
+            />
         </div>
     );
 });
@@ -1378,77 +1489,37 @@ const ReActiveMaximumDemandDashboard = forwardRef((props, ref) => {
     ]);
 
     const [streamValues, setStreamValues] = useState({});
+    const [selectAll, setSelectAll] = useState(false);
     const [showProgressModal, setShowProgressModal] = useState(false);
     const controllerRef = useRef(null);
     const serialNumber = localStorage.getItem('selectedSerialNumber');
 
-    const handleCheckboxChange = (no) => {
+    const handleSelectAllChange = (checked) => {
+        setSelectAll(checked);
         setTableData(prevData =>
-            prevData.map(item =>
-                item.no === no ? { ...item, checked: !item.checked } : item
-            )
+            prevData.map(item => ({ ...item, checked: checked }))
         );
     };
 
-    const handleReadClick = async () => {
-        if (controllerRef.current) controllerRef.current.abort();
-
-        const selectedParams = tableData
-            .filter(item => item.checked)
-            .map((item) => {
-                const cleanCode = item.code
-                    .replace(/[()]/g, "")
-                    .replace(/-/g, ".")
-                    .replace(/:/g, ".")
-                    .replace(/\.\.+/g, ".");
-                const codeParts = cleanCode.split(",");
-                const obisCode = codeParts[1].trim();
-                return {
-                    obis_code: obisCode,
-                    attribute_index: "2"
-                };
-            });
-
-        if (selectedParams.length === 0) {
-            alert("Please select at least one item to read.");
-            return;
-        }
-
-        const payload = {
-            serial_number: serialNumber,
-            action: "read_obis",
-            parameters: selectedParams
-        };
-
-        console.log("Read Payload:", payload);
-
-        controllerRef.current = new AbortController();
-        const res = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            signal: controllerRef.current.signal
+    const handleCheckboxChange = (no) => {
+        setTableData(prevData => {
+            const newData = prevData.map(item =>
+                item.no === no ? { ...item, checked: !item.checked } : item
+            );
+            setSelectAll(newData.every(item => item.checked));
+            return newData;
         });
+    };
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            const chunks = buffer.split('\n\n');
-            buffer = chunks.pop();
-            for (let chunk of chunks) {
-                if (!chunk.startsWith('data:')) continue;
-                try {
-                    const msg = JSON.parse(chunk.replace(/^data:\s*/, ''));
-                    console.log("msg", msg);
-                    setStreamValues(prev => ({ ...prev, [msg.obis_code]: msg.value }));
-                } catch { }
-            }
-        }
+    const handleReadClick = async () => {
+        await handleMaximumDemandRead({
+            tableData,
+            controllerRef,
+            serialNumber,
+            setShowProgressModal,
+            setStreamValues
+            // apiEndpoint: '/api/getmeterinfo/' // Optional: can override if needed
+        });
     };
 
     useImperativeHandle(ref, () => ({
@@ -1460,7 +1531,13 @@ const ReActiveMaximumDemandDashboard = forwardRef((props, ref) => {
             <table className="data-table">
                 <thead>
                     <tr>
-                        <th>Check</th>
+                        <th>
+                            <input
+                                type="checkbox"
+                                checked={selectAll}
+                                onChange={(e) => handleSelectAllChange(e.target.checked)}
+                            />
+                        </th>
                         <th>No.</th>
                         <th>Name</th>
                         <th>Code</th>
@@ -1478,12 +1555,26 @@ const ReActiveMaximumDemandDashboard = forwardRef((props, ref) => {
                             .split(",")[1]
                             ?.trim() || item.code;
 
-                        const displayValue =
-                            typeof streamValues[normalizedCode] === "object"
-                                ? JSON.stringify(streamValues[normalizedCode])
-                                : streamValues[normalizedCode] !== undefined && streamValues[normalizedCode] !== null
-                                    ? streamValues[normalizedCode]
-                                    : "";
+                        // Get attribute values
+                        const attr2 = streamValues[`${normalizedCode}_attr2`];
+                        const attr3 = streamValues[`${normalizedCode}_attr3`];
+                        const attr5 = streamValues[`${normalizedCode}_attr5`];
+
+                        // Calculate display value: attr2 / attr3[0] with dynamic unit
+                        let displayValue = '';
+                        if (attr2 !== undefined && attr2 !== null && attr3 && Array.isArray(attr3) && attr3[0]) {
+                            const scaledValue = parseFloat(attr3[0]);
+                            if (scaledValue !== 0) {
+                                const calculatedValue = attr2 / scaledValue;
+                                const unitCode = attr3[1];
+                                const baseUnit = getUnitString(unitCode);
+                                const prefix = getUnitPrefix(scaledValue);
+                                displayValue = `${calculatedValue.toFixed(3)} ${prefix}${baseUnit}`;
+                            }
+                        }
+
+                        // Format capture time
+                        const captureTime = formatCaptureTime(attr5);
 
                         return (
                             <tr key={item.no}>
@@ -1498,12 +1589,18 @@ const ReActiveMaximumDemandDashboard = forwardRef((props, ref) => {
                                 <td>{item.name}</td>
                                 <td>{item.code}</td>
                                 <td>{displayValue}</td>
-                                <td>{item.captureTime}</td>
+                                <td>{captureTime}</td>
                             </tr>
                         );
                     })}
                 </tbody>
             </table>
+            
+            <ProgressModal
+                isOpen={showProgressModal}
+                onClose={() => setShowProgressModal(false)}
+                title="Reading Reactive Maximum Demand"
+            />
         </div>
     );
 });
@@ -1528,77 +1625,37 @@ const ApparentMaximumDemandDashboard = forwardRef((props, ref) => {
     ]);
 
     const [streamValues, setStreamValues] = useState({});
+    const [selectAll, setSelectAll] = useState(false);
     const [showProgressModal, setShowProgressModal] = useState(false);
     const controllerRef = useRef(null);
     const serialNumber = localStorage.getItem('selectedSerialNumber');
 
-    const handleCheckboxChange = (no) => {
+    const handleSelectAllChange = (checked) => {
+        setSelectAll(checked);
         setTableData(prevData =>
-            prevData.map(item =>
-                item.no === no ? { ...item, checked: !item.checked } : item
-            )
+            prevData.map(item => ({ ...item, checked: checked }))
         );
     };
 
-    const handleReadClick = async () => {
-        if (controllerRef.current) controllerRef.current.abort();
-
-        const selectedParams = tableData
-            .filter(item => item.checked)
-            .map((item) => {
-                const cleanCode = item.code
-                    .replace(/[()]/g, "")
-                    .replace(/-/g, ".")
-                    .replace(/:/g, ".")
-                    .replace(/\.\.+/g, ".");
-                const codeParts = cleanCode.split(",");
-                const obisCode = codeParts[1].trim();
-                return {
-                    obis_code: obisCode,
-                    attribute_index: "2"
-                };
-            });
-
-        if (selectedParams.length === 0) {
-            alert("Please select at least one item to read.");
-            return;
-        }
-
-        const payload = {
-            serial_number: serialNumber,
-            action: "read_obis",
-            parameters: selectedParams
-        };
-
-        console.log("Read Payload:", payload);
-
-        controllerRef.current = new AbortController();
-        const res = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            signal: controllerRef.current.signal
+    const handleCheckboxChange = (no) => {
+        setTableData(prevData => {
+            const newData = prevData.map(item =>
+                item.no === no ? { ...item, checked: !item.checked } : item
+            );
+            setSelectAll(newData.every(item => item.checked));
+            return newData;
         });
+    };
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            const chunks = buffer.split('\n\n');
-            buffer = chunks.pop();
-            for (let chunk of chunks) {
-                if (!chunk.startsWith('data:')) continue;
-                try {
-                    const msg = JSON.parse(chunk.replace(/^data:\s*/, ''));
-                    console.log("msg", msg);
-                    setStreamValues(prev => ({ ...prev, [msg.obis_code]: msg.value }));
-                } catch { }
-            }
-        }
+    const handleReadClick = async () => {
+        await handleMaximumDemandRead({
+            tableData,
+            controllerRef,
+            serialNumber,
+            setShowProgressModal,
+            setStreamValues
+            // apiEndpoint: '/api/getmeterinfo/' // Optional: can override if needed
+        });
     };
 
     useImperativeHandle(ref, () => ({
@@ -1610,7 +1667,13 @@ const ApparentMaximumDemandDashboard = forwardRef((props, ref) => {
             <table className="data-table">
                 <thead>
                     <tr>
-                        <th>Check</th>
+                        <th>
+                            <input
+                                type="checkbox"
+                                checked={selectAll}
+                                onChange={(e) => handleSelectAllChange(e.target.checked)}
+                            />
+                        </th>
                         <th>No.</th>
                         <th>Name</th>
                         <th>Code</th>
@@ -1628,12 +1691,26 @@ const ApparentMaximumDemandDashboard = forwardRef((props, ref) => {
                             .split(",")[1]
                             ?.trim() || item.code;
 
-                        const displayValue =
-                            typeof streamValues[normalizedCode] === "object"
-                                ? JSON.stringify(streamValues[normalizedCode])
-                                : streamValues[normalizedCode] !== undefined && streamValues[normalizedCode] !== null
-                                    ? streamValues[normalizedCode]
-                                    : "";
+                        // Get attribute values
+                        const attr2 = streamValues[`${normalizedCode}_attr2`];
+                        const attr3 = streamValues[`${normalizedCode}_attr3`];
+                        const attr5 = streamValues[`${normalizedCode}_attr5`];
+
+                        // Calculate display value: attr2 / attr3[0] with dynamic unit
+                        let displayValue = '';
+                        if (attr2 !== undefined && attr2 !== null && attr3 && Array.isArray(attr3) && attr3[0]) {
+                            const scaledValue = parseFloat(attr3[0]);
+                            if (scaledValue !== 0) {
+                                const calculatedValue = attr2 / scaledValue;
+                                const unitCode = attr3[1];
+                                const baseUnit = getUnitString(unitCode);
+                                const prefix = getUnitPrefix(scaledValue);
+                                displayValue = `${calculatedValue.toFixed(3)} ${prefix}${baseUnit}`;
+                            }
+                        }
+
+                        // Format capture time
+                        const captureTime = formatCaptureTime(attr5);
 
                         return (
                             <tr key={item.no}>
@@ -1648,12 +1725,18 @@ const ApparentMaximumDemandDashboard = forwardRef((props, ref) => {
                                 <td>{item.name}</td>
                                 <td>{item.code}</td>
                                 <td>{displayValue}</td>
-                                <td>{item.captureTime}</td>
+                                <td>{captureTime}</td>
                             </tr>
                         );
                     })}
                 </tbody>
             </table>
+            
+            <ProgressModal
+                isOpen={showProgressModal}
+                onClose={() => setShowProgressModal(false)}
+                title="Reading Apparent Maximum Demand"
+            />
         </div>
     );
 });
