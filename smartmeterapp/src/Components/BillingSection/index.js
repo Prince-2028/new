@@ -1365,16 +1365,16 @@ const ActiveMaximumDemandDashboard = forwardRef((props, ref) => {
 
 const ReActiveMaximumDemandDashboard = forwardRef((props, ref) => {
     const [tableData, setTableData] = useState([
-        { checked: false, no: 1, name: 'Maximum Demand Register - Reactive import (+R)', code: '(4,1-0:3.6.0.255)', value: '' },
-        { checked: false, no: 2, name: 'Maximum Demand Register - Reactive import (+R) - rate 1', code: '(4,1-0:3.6.1.255)', value: '' },
-        { checked: false, no: 3, name: 'Maximum Demand Register - Reactive import (+R) - rate 2', code: '(4,1-0:3.6.2.255)', value: '' },
-        { checked: false, no: 4, name: 'Maximum Demand Register - Reactive import (+R) - rate 3', code: '(4,1-0:3.6.3.255)', value: '' },
-        { checked: false, no: 5, name: 'Maximum Demand Register - Reactive import (+R) - rate 4', code: '(4,1-0:3.6.4.255)', value: '' },
-        { checked: false, no: 6, name: 'Maximum Demand Register - Reactive export (-R)', code: '(4,1-0:4.6.0.255)', value: '' },
-        { checked: false, no: 7, name: 'Maximum Demand Register - Reactive export (-R) - rate 1', code: '(4,1-0:4.6.1.255)', value: '' },
-        { checked: false, no: 8, name: 'Maximum Demand Register - Reactive export (-R) - rate 2', code: '(4,1-0:4.6.2.255)', value: '' },
-        { checked: false, no: 9, name: 'Maximum Demand Register - Reactive export (-R) - rate 3', code: '(4,1-0:4.6.3.255)', value: '' },
-        { checked: false, no: 10, name: 'Maximum Demand Register - Reactive export (-R) - rate 4', code: '(4,1-0:4.6.4.255)', value: '' },
+        { checked: false, no: 1, name: 'Maximum Demand Register - Reactive import (+R)', code: '(4,1-0:3.6.0.255)', value: '', captureTime: '' },
+        { checked: false, no: 2, name: 'Maximum Demand Register - Reactive import (+R) - rate 1', code: '(4,1-0:3.6.1.255)', value: '', captureTime: '' },
+        { checked: false, no: 3, name: 'Maximum Demand Register - Reactive import (+R) - rate 2', code: '(4,1-0:3.6.2.255)', value: '', captureTime: '' },
+        { checked: false, no: 4, name: 'Maximum Demand Register - Reactive import (+R) - rate 3', code: '(4,1-0:3.6.3.255)', value: '', captureTime: '' },
+        { checked: false, no: 5, name: 'Maximum Demand Register - Reactive import (+R) - rate 4', code: '(4,1-0:3.6.4.255)', value: '', captureTime: '' },
+        { checked: false, no: 6, name: 'Maximum Demand Register - Reactive export (-R)', code: '(4,1-0:4.6.0.255)', value: '', captureTime: '' },
+        { checked: false, no: 7, name: 'Maximum Demand Register - Reactive export (-R) - rate 1', code: '(4,1-0:4.6.1.255)', value: '', captureTime: '' },
+        { checked: false, no: 8, name: 'Maximum Demand Register - Reactive export (-R) - rate 2', code: '(4,1-0:4.6.2.255)', value: '', captureTime: '' },
+        { checked: false, no: 9, name: 'Maximum Demand Register - Reactive export (-R) - rate 3', code: '(4,1-0:4.6.3.255)', value: '', captureTime: '' },
+        { checked: false, no: 10, name: 'Maximum Demand Register - Reactive export (-R) - rate 4', code: '(4,1-0:4.6.4.255)', value: '', captureTime: '' },
     ]);
 
     const [streamValues, setStreamValues] = useState({});
@@ -1465,6 +1465,7 @@ const ReActiveMaximumDemandDashboard = forwardRef((props, ref) => {
                         <th>Name</th>
                         <th>Code</th>
                         <th>Value</th>
+                        <th>Capture time</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1497,6 +1498,7 @@ const ReActiveMaximumDemandDashboard = forwardRef((props, ref) => {
                                 <td>{item.name}</td>
                                 <td>{item.code}</td>
                                 <td>{displayValue}</td>
+                                <td>{item.captureTime}</td>
                             </tr>
                         );
                     })}
