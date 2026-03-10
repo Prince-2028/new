@@ -666,63 +666,109 @@ setResult(extracted);
       });
 
       console.log("Full Response:", response);
-      console.log("Response.data type:", typeof response.data);
       console.log("Response.data:", response.data);
       
       // Check if response.data is a string that needs parsing
       let parsedData = response.data;
       if (typeof parsedData === 'string') {
-        console.log("Response is a string, attempting to parse...");
-        try {
-          // Try to parse as JSON
-          parsedData = JSON.parse(parsedData);
-          console.log("Parsed successfully:", parsedData);
-        } catch (parseError) {
-          console.error("Failed to parse response as JSON:", parseError);
-          // If it's a string like "data: {...}", extract the JSON part
-          const match = parsedData.match(/data:\s*(\{.*\})/);
-          if (match) {
-            console.log("Found data: pattern, extracting JSON...");
-            parsedData = JSON.parse(match[1]);
-            console.log("Extracted and parsed:", parsedData);
+      const lines = parsedData.split('\n');
+      const allResults = [];
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('data:')) {
+          try {
+            const jsonStr = trimmed.slice(5).trim();
+            const parsed = JSON.parse(jsonStr);
+            if (parsed.status === 'success' && parsed.attribute_index) {
+              allResults.push(parsed);
+            }
+          } catch (e) {
+            // skip malformed lines
           }
         }
       }
+
+      if (allResults.length > 0) {
+        const extracted = allResults.map(item => {
+          const opt = OPTIONS.find(o => o.index === parseInt(item.attribute_index));
+          const value = item.value;
+          const displayValue =
+            value && typeof value === 'object' && 'Date' in value && 'Time' in value
+              ? `${value.Date} ${value.Time}`
+              : String(value ?? 'N/A');
+          return {
+            label: opt ? opt.label : `Parameter ${item.attribute_index}`,
+            value: displayValue,
+          };
+        });
+        setResult(extracted);
+        setLoading(false);
+        setShowProgressModal(false);
+        return;
+      }
+    }
       
-      console.log("Parsed data type:", typeof parsedData);
       console.log("Parsed data:", parsedData);
 
       // Navigate through nested data structures
       let actualData = parsedData;
-      
-      // Keep unwrapping 'data' properties until we find the actual data with 'status'
-      while (actualData && typeof actualData === 'object' && 'data' in actualData && !('status' in actualData)) {
+      while (actualData && typeof actualData === 'object' && 'data' in actualData && !('status' in actualData) && !('results' in actualData)) {
         console.log("Unwrapping nested data layer");
         actualData = actualData.data;
       }
       
       console.log("Final actualData:", actualData);
-      console.log("Final actualData type:", typeof actualData);
-      console.log("Status:", actualData?.status);
-      console.log("Value:", actualData?.value);
+      console.log("Has results array?", actualData?.results ? "YES" : "NO");
+      console.log("Results:", actualData?.results);
       
       if (actualData && actualData.status === "success") {
-        const opt = OPTIONS.find(o => o.index === parseInt(actualData.attribute_index));
-        const value = actualData.value;
-        
-        const displayValue =
-          value && typeof value === "object" && "Date" in value && "Time" in value
-            ? `${value.Date} ${value.Time}`
-            : String(value);
+        // Check if we have multiple results (batch read)
+        if (actualData.results && Array.isArray(actualData.results) && actualData.results.length > 0) {
+          // Multiple results - process array
+          console.log("Processing multiple results:", actualData.results);
+          const extracted = actualData.results
+            .filter(item => item.status === "success")
+            .map(item => {
+              const opt = OPTIONS.find(o => o.index === parseInt(item.attribute_index));
+              const value = item.value;
+              
+              console.log(`Processing item - attribute_index: ${item.attribute_index}, value:`, value);
+              
+              const displayValue =
+                value && typeof value === "object" && "Date" in value && "Time" in value
+                  ? `${value.Date} ${value.Time}`
+                  : String(value);
 
-        setResult([
-          {
-            label: opt ? opt.label : `Parameter ${actualData.attribute_index}`,
-            value: displayValue,
-          },
-        ]);
-        
-        alert(`Success! Retrieved clock data.`);
+              return {
+                label: opt ? opt.label : `Parameter ${item.attribute_index}`,
+                value: displayValue,
+              };
+            });
+          
+          console.log("Extracted results:", extracted);
+          setResult(extracted);
+          alert(`Success! Retrieved ${extracted.length} clock parameter(s).`);
+        } else {
+          // Single result
+          console.log("Processing single result");
+          const opt = OPTIONS.find(o => o.index === parseInt(actualData.attribute_index));
+          const value = actualData.value;
+          
+          const displayValue =
+            value && typeof value === "object" && "Date" in value && "Time" in value
+              ? `${value.Date} ${value.Time}`
+              : String(value);
+
+          setResult([
+            {
+              label: opt ? opt.label : `Parameter ${actualData.attribute_index}`,
+              value: displayValue,
+            },
+          ]);
+          
+          alert(`Success! Retrieved clock data.`);
+        }
       } else {
         throw new Error(actualData?.message || 'Failed to read data');
       }

@@ -5,6 +5,7 @@ import datetime
 from datetime import datetime
 import re
 import traceback # For detailed error logging
+import copy  # For deep copying objects
 from django.utils.dateparse import parse_datetime 
 from typing import Union, List
 
@@ -28,6 +29,9 @@ from enum import IntFlag
 from .GXDLMSReader import GXDLMSReader
 # Configure logging for this module
 logger = logging.getLogger(__name__)
+
+# Module-level storage for Association View objects (persists until server restart)
+_association_view_store = {}
 
 def datetime_to_dlms_octet_string(iso_string: str) -> bytes:
     # Parse the ISO 8601 timestamp including timezone
@@ -769,17 +773,40 @@ def execute_dlms_action(config, action_details):
         if interface == InterfaceType.HDLC:
             reader.waitTime = 5000
 
-        # --- 5. Connect & Get Association View ---
-        logger.info("Opening media connection...")
-        media.open()
-        logger.info("Initializing DLMS connection (AARQ)...")
-        reader.initializeConnection() # Sends AARQ, parses AARE
-        logger.info("Connection established. Reading Association View...")
-        reader.getAssociationView()   # Get object list
-        logger.info(f"Association View retrieved. Found {len(client.objects)} objects.")
-        reader.close()
-        if interface == InterfaceType.WRAPPER:
-            time.sleep(2.5)
+        # --- 5. Connect & Get Association View (or restore from memory) ---
+        connection_key = f"{port_info}_{client_addr}_{server_addr}"
+        
+        if connection_key not in _association_view_store:
+            # First action for this connection - do full initialization
+            logger.info("Opening media connection...")
+            media.open()
+            logger.info("Initializing DLMS connection (AARQ)...")
+            reader.initializeConnection() # Sends AARQ, parses AARE
+            logger.info("Connection established. Reading Association View...")
+            reader.getAssociationView()   # Get object list
+            logger.info(f"Association View retrieved. Found {len(client.objects)} objects.")
+            
+            # Store a DEEP COPY of the objects to avoid reference issues
+            try:
+                _association_view_store[connection_key] = copy.deepcopy(client.objects)
+                logger.info(f"Stored deep copy of Association View in memory for connection: {connection_key}")
+            except Exception as copy_error:
+                logger.warning(f"Could not deep copy objects, storing reference instead: {copy_error}")
+                _association_view_store[connection_key] = client.objects
+            
+            reader.close()
+            if interface == InterfaceType.WRAPPER:
+                time.sleep(2.5)
+        else:
+            # Subsequent actions - restore from memory
+            logger.info(f"Restoring Association View from memory for connection: {connection_key}")
+            try:
+                # Restore a DEEP COPY to avoid modifying the stored version
+                client.settings.objects = copy.deepcopy(_association_view_store[connection_key])
+                logger.info(f"Restored deep copy of {len(client.objects)} objects from memory. Skipping initialization.")
+            except Exception as copy_error:
+                logger.warning(f"Could not deep copy stored objects, using reference: {copy_error}")
+                client.settings.objects = _association_view_store[connection_key]
 
         # --- 6. Perform Action ---
         logger.info(f"Executing action: '{action}'")
