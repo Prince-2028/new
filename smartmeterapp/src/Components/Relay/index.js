@@ -1,6 +1,9 @@
 import React, { useState,useEffect} from 'react';
 import axios from 'axios';
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
+import ProgressModal from '../ProgressModal';
+import DisconnectControlNew from './DisconnectControlNew';
+import LoadControlNew from './LoadControlNew';
 import './index.css'
 
 const monthNames = [
@@ -8,40 +11,55 @@ const monthNames = [
   "July","August","September","October","November","December"
 ];
 const LoadControlComponent = () => {
+  const serialNumber = localStorage.getItem('selectedSerialNumber');
+
+  // Checkbox selections
+  const [selected, setSelected] = useState(new Set());
+
+  // Form data state
   const [formData, setFormData] = useState({
-   
-    
     monitoredValueText: "Instantaneous active power ( |+A| + |-A| )",
     thresholdActive: 0,
     thresholdNormal: 0,
+    thresholdEmergency: 0,
     minOverThresholdDuration: 0,
     minUnderThresholdDuration: 0,
-    emergencyProfileId: '',
+    emergencyProfileId: 0,
     emergencyActivationTime: '',
     emergencyDuration: 0,
     emergencyProfileGroupIds: '',
-    emergencyProfileActive: 'Enable',  // Default to "Enable"
+    emergencyProfileActive: 'Enable',
     actionOverThreshold: 'Set ready for reconnection',
     actionUnderThreshold: 'Set connected'
   });
 
-   // Time popup state
-   const [showTimePopup, setShowTimePopup] = useState(false);
-   const [yearType, setYearType] = useState('Every Year');
-   const [specialYear, setSpecialYear] = useState('');
-   const [month, setMonth] = useState('January');
-   const [day, setDay] = useState('1');
-   const [hour, setHour] = useState('00');
-   const [minute, setMinute] = useState('00');
-   const [second, setSecond] = useState('00');
+  // UI state
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
-   // Handle Emergency Activation Time click
-  const handleTimeClick = () => {
-    setShowTimePopup(true);
+  // Time popup state
+  const [showTimePopup, setShowTimePopup] = useState(false);
+  const [yearType, setYearType] = useState('Every Year');
+  const [specialYear, setSpecialYear] = useState('');
+  const [month, setMonth] = useState('January');
+  const [day, setDay] = useState('1');
+  const [hour, setHour] = useState('00');
+  const [minute, setMinute] = useState('00');
+  const [second, setSecond] = useState('00');
+
+  // Toggle checkbox selection
+  const toggleCheckbox = (index) => {
+    const newSelected = new Set(selected);
+    if (newSelected.has(index)) {
+      newSelected.delete(index);
+    } else {
+      newSelected.add(index);
+    }
+    setSelected(newSelected);
   };
 
-
-  // Handle input and checkbox changes
+  // Handle input changes
   const handleChange = (e) => {
     const { name, type, checked, value } = e.target;
     setFormData({
@@ -50,231 +68,595 @@ const LoadControlComponent = () => {
     });
   };
 
-  
+  // Handle Emergency Activation Time click
+  const handleTimeClick = () => {
+    setShowTimePopup(true);
+  };
 
-   // Handle save time from popup
-   const handleSaveTime = () => {
+  // Handle save time from popup
+  const handleSaveTime = () => {
     const formattedTime = `${yearType === 'Every Year' ? 'Every Year' : specialYear}, ${month} ${day}, ${hour}:${minute}:${second}`;
     setFormData({ ...formData, emergencyActivationTime: formattedTime });
     setShowTimePopup(false);
   };
 
+  // Handle Read button
+  const handleRead = async () => {
+    if (!serialNumber) {
+      setError('No serial number selected');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    if (selected.size === 0) {
+      setError('Please select at least one attribute');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
 
-  const formatEmergencyTime = () => {
-    const months = {
-        January: "01", February: "02", March: "03", April: "04",
-        May: "05", June: "06", July: "07", August: "08",
-        September: "09", October: "10", November: "11", December: "12"
-    };
+    setLoading(true);
+    setError(null);
+    setShowProgressModal(true);
 
-    let formattedYear = yearType === "Every Year" ? "ffff" : (specialYear || new Date().getFullYear());
-    let formattedMonth = month === "Every Month" ? "ff" : months[month];
-    let formattedDay = day.padStart(2, "0");
-    let formattedHour = hour.padStart(2, "0");
-    let formattedMinute = minute.padStart(2, "0");
-    let formattedSecond = second.padStart(2, "0");
-
-    return `${formattedYear}-${formattedMonth}-${formattedDay} ${formattedHour}:${formattedMinute}:${formattedSecond}`;
-};
-
-
-const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
-    useEffect(() => {
-      const storedId = localStorage.getItem('selectedDeviceId');
-      setDeviceId(storedId);
-    }, []);
-
-const handleSubmit = async () => {
-  const formattedData = {
-      device_id: formData.deviceId || 1,
-      monitored_value: formData.monitoredValueText.trim(),
-      threshold_active_kw: Number(formData.thresholdActive) || 0,
-      threshold_normal_kw: Number(formData.thresholdNormal) || 0,
-      min_over_threshold_duration_s: Number(formData.minOverThresholdDuration) || 0,
-      min_under_threshold_duration_s: Number(formData.minUnderThresholdDuration) || 0,
-      emergency_profile_id: formData.emergencyProfileId.trim(),
-      emergency_activation_time: formatEmergencyTime(),  // ✅ Now in custom format
-      emergency_duration: Number(formData.emergencyDuration) || 0,
-      emergency_profile_group_id_list: formData.emergencyProfileGroupIds
-          ? formData.emergencyProfileGroupIds.split(',').map(id => id.trim()) // Convert to list
-          : [],
-      emergency_profile_active: formData.emergencyProfileActive === "Enable",
-      action_over_threshold: formData.actionOverThreshold.trim(),
-      action_under_threshold: formData.actionUnderThreshold.trim(),
+    try {
+      // TODO: Implement read logic for Load Control
+      alert('Read functionality to be implemented');
+    } catch (e) {
+      setError(`Read failed: ${e.message}`);
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+      setShowProgressModal(false);
+    }
   };
 
-  try {
-      const response = await axios.post(`${BASE_URL}/api/load-control-settings/`, formattedData);
-      alert('Data saved successfully!');
-      console.log(response.data);
-  } catch (error) {
-      console.error('Error saving data:', error?.response?.data || error.message);
-      alert('Failed to save data. Check input values.');
-  }
-};
+  // Handle Write button
+  const handleWrite = async () => {
+    if (!serialNumber) {
+      setError('No serial number selected');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    if (selected.size === 0) {
+      setError('Please select at least one attribute');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setShowProgressModal(true);
+
+    try {
+      // TODO: Implement write logic for Load Control
+      alert('Write functionality to be implemented');
+    } catch (e) {
+      setError(`Write failed: ${e.message}`);
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+      setShowProgressModal(false);
+    }
+  };
 
   return (
     <>
-    
+      <div style={{ padding: '20px' }}>
+        {/* Header with Read/Write buttons */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px', gap: '10px' }}>
+          <button
+            onClick={handleRead}
+            disabled={loading}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              minWidth: '70px'
+            }}
+          >
+            {loading ? 'Reading...' : 'Read'}
+          </button>
+          <button
+            onClick={handleWrite}
+            disabled={loading}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#FF9800',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              minWidth: '70px'
+            }}
+          >
+            {loading ? 'Writing...' : 'Write'}
+          </button>
+        </div>
 
-    <div className="load-control-container">
+        {/* Load Control Table */}
+        <div style={{ border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden' }}>
+          {/* Monitored value */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
+            <div style={{
+              width: '40px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <input
+                type="checkbox"
+                checked={selected.has(1)}
+                onChange={() => toggleCheckbox(1)}
+              />
+            </div>
+            <div style={{
+              flex: '0 0 200px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              fontWeight: 'bold',
+              backgroundColor: '#f5f5f5'
+            }}>
+              Monitored value
+            </div>
+            <div style={{ flex: '1', padding: '12px' }}>
+              <input
+                type="text"
+                value={formData.monitoredValueText}
+                readOnly
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  backgroundColor: '#f0f0f0',
+                  padding: '4px',
+                  color: '#666'
+                }}
+              />
+            </div>
+          </div>
 
-  {/* Monitored Value */}
-  <div className="lc-row">
-    <label className="lc-label">Monitored Value :</label>
-    <input
-      className="lc-input"
-      value="Instantaneous active power (|+A| + |-A|)"
-      readOnly
-    />
-  </div>
+          {/* Threshold active */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
+            <div style={{
+              width: '40px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <input
+                type="checkbox"
+                checked={selected.has(2)}
+                onChange={() => toggleCheckbox(2)}
+              />
+            </div>
+            <div style={{
+              flex: '0 0 200px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              fontWeight: 'bold'
+            }}>
+              Threshold active
+            </div>
+            <div style={{ flex: '1', padding: '12px' }}>
+              <input
+                type="number"
+                name="thresholdActive"
+                value={formData.thresholdActive}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  padding: '4px'
+                }}
+              />
+            </div>
+          </div>
 
-  {/* Thresholds */}
-  <div className="lc-row">
-    <label className="lc-label">Threshold Active (KW):</label>
-    <input
-      className="lc-input"
-      type="number"
-      name="thresholdActive"
-      value={formData.thresholdActive}
-      onChange={handleChange}
-    />
-  </div>
+          {/* Threshold normal */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
+            <div style={{
+              width: '40px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <input
+                type="checkbox"
+                checked={selected.has(3)}
+                onChange={() => toggleCheckbox(3)}
+              />
+            </div>
+            <div style={{
+              flex: '0 0 200px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              fontWeight: 'bold'
+            }}>
+              Threshold normal
+            </div>
+            <div style={{ flex: '1', padding: '12px' }}>
+              <input
+                type="number"
+                name="thresholdNormal"
+                value={formData.thresholdNormal}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  padding: '4px'
+                }}
+              />
+            </div>
+          </div>
 
-  <div className="lc-row">
-    <label className="lc-label">Threshold Normal (KW):</label>
-    <input
-      className="lc-input"
-      type="number"
-      name="thresholdNormal"
-      value={formData.thresholdNormal}
-      onChange={handleChange}
-    />
-  </div>
+          {/* Threshold emergency */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
+            <div style={{
+              width: '40px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <input
+                type="checkbox"
+                checked={selected.has(4)}
+                onChange={() => toggleCheckbox(4)}
+              />
+            </div>
+            <div style={{
+              flex: '0 0 200px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              fontWeight: 'bold'
+            }}>
+              Threshold emergency
+            </div>
+            <div style={{ flex: '1', padding: '12px' }}>
+              <input
+                type="number"
+                name="thresholdEmergency"
+                value={formData.thresholdEmergency}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  padding: '4px'
+                }}
+              />
+            </div>
+          </div>
 
-  {/* Min Duration */}
-  <div className="lc-row">
-    <label className="lc-label">Min Over Threshold Duration (s):</label>
-    <input
-      className="lc-input"
-      type="number"
-      name="minOverThresholdDuration"
-      value={formData.minOverThresholdDuration}
-      onChange={handleChange}
-    />
-  </div>
+          {/* Min over threshold duration */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
+            <div style={{
+              width: '40px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <input
+                type="checkbox"
+                checked={selected.has(5)}
+                onChange={() => toggleCheckbox(5)}
+              />
+            </div>
+            <div style={{
+              flex: '0 0 200px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              fontWeight: 'bold'
+            }}>
+              Min over threshold duration
+            </div>
+            <div style={{ flex: '1', padding: '12px' }}>
+              <input
+                type="number"
+                name="minOverThresholdDuration"
+                value={formData.minOverThresholdDuration}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  padding: '4px'
+                }}
+              />
+            </div>
+          </div>
 
-  <div className="lc-row">
-    <label className="lc-label">Min Under Threshold Duration (s):</label>
-    <input
-      className="lc-input"
-      type="number"
-      name="minUnderThresholdDuration"
-      value={formData.minUnderThresholdDuration}
-      onChange={handleChange}
-    />
-  </div>
+          {/* Min under threshold duration */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
+            <div style={{
+              width: '40px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <input
+                type="checkbox"
+                checked={selected.has(6)}
+                onChange={() => toggleCheckbox(6)}
+              />
+            </div>
+            <div style={{
+              flex: '0 0 200px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              fontWeight: 'bold'
+            }}>
+              Min under threshold duration
+            </div>
+            <div style={{ flex: '1', padding: '12px' }}>
+              <input
+                type="number"
+                name="minUnderThresholdDuration"
+                value={formData.minUnderThresholdDuration}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  padding: '4px'
+                }}
+              />
+            </div>
+          </div>
 
-  {/* Emergency Profile */}
-  <div className="lc-row">
-    <label className="lc-label">Emergency Profile ID:</label>
-    <input
-      className="lc-input"
-      type="text"
-      name="emergencyProfileId"
-      value={formData.emergencyProfileId}
-      onChange={handleChange}
-    />
-  </div>
+          {/* Emergency profile */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
+            <div style={{
+              width: '40px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <input
+                type="checkbox"
+                checked={selected.has(7)}
+                onChange={() => toggleCheckbox(7)}
+              />
+            </div>
+            <div style={{
+              flex: '0 0 200px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              fontWeight: 'bold'
+            }}>
+              Emergency profile
+            </div>
+            <div style={{ flex: '1', padding: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ minWidth: '150px', fontSize: '14px' }}>Emergency profile id</span>
+                  <input
+                    type="number"
+                    name="emergencyProfileId"
+                    value={formData.emergencyProfileId}
+                    onChange={handleChange}
+                    style={{
+                      flex: '1',
+                      border: '1px solid #ccc',
+                      padding: '4px',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ minWidth: '150px', fontSize: '14px' }}>Emergency activation time</span>
+                  <input
+                    type="text"
+                    name="emergencyActivationTime"
+                    value={formData.emergencyActivationTime}
+                    onClick={handleTimeClick}
+                    readOnly
+                    style={{
+                      flex: '1',
+                      border: '1px solid #ccc',
+                      padding: '4px',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ minWidth: '150px', fontSize: '14px' }}>Emergency duration</span>
+                  <input
+                    type="number"
+                    name="emergencyDuration"
+                    value={formData.emergencyDuration}
+                    onChange={handleChange}
+                    style={{
+                      flex: '1',
+                      border: '1px solid #ccc',
+                      padding: '4px',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
 
-  <div className="lc-row">
-    <label className="lc-label">Emergency Activation Time:</label>
-    <input
-      className="lc-input"
-      type="text"
-      name="emergencyActivationTime"
-      value={formData.emergencyActivationTime}
-      onClick={handleTimeClick}
-      readOnly
-    />
-  </div>
+          {/* Emergency profile group id list */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
+            <div style={{
+              width: '40px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <input
+                type="checkbox"
+                checked={selected.has(8)}
+                onChange={() => toggleCheckbox(8)}
+              />
+            </div>
+            <div style={{
+              flex: '0 0 200px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              fontWeight: 'bold'
+            }}>
+              Emergency profile group id list
+            </div>
+            <div style={{ flex: '1', padding: '12px' }}>
+              <input
+                type="text"
+                name="emergencyProfileGroupIds"
+                value={formData.emergencyProfileGroupIds}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  padding: '4px'
+                }}
+              />
+            </div>
+          </div>
 
-  {/* Emergency Duration */}
-  <div className="lc-row">
-    <label className="lc-label">Emergency Duration:</label>
-    <input
-      className="lc-input"
-      type="number"
-      name="emergencyDuration"
-      value={formData.emergencyDuration}
-      onChange={handleChange}
-    />
-  </div>
+          {/* Emergency profile active */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
+            <div style={{
+              width: '40px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <input
+                type="checkbox"
+                checked={selected.has(9)}
+                onChange={() => toggleCheckbox(9)}
+              />
+            </div>
+            <div style={{
+              flex: '0 0 200px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              fontWeight: 'bold'
+            }}>
+              Emergency profile active
+            </div>
+            <div style={{ flex: '1', padding: '12px' }}>
+              <select
+                name="emergencyProfileActive"
+                value={formData.emergencyProfileActive}
+                onChange={handleChange}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  padding: '4px',
+                  backgroundColor: '#f0f0f0'
+                }}
+              >
+                <option value="Enable">Enable</option>
+                <option value="Disable">Disable</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
 
-  {/* Emergency Profile Group */}
-  <div className="lc-row">
-    <label className="lc-label">Emergency Profile Group ID List:</label>
-    <input
-      className="lc-input"
-      type="text"
-      name="emergencyProfileGroupIds"
-      value={formData.emergencyProfileGroupIds}
-      onChange={handleChange}
-    />
-  </div>
-  
+          {/* Actions */}
+          <div style={{ display: 'flex' }}>
+            <div style={{
+              width: '40px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <input
+                type="checkbox"
+                checked={selected.has(10)}
+                onChange={() => toggleCheckbox(10)}
+              />
+            </div>
+            <div style={{
+              flex: '0 0 200px',
+              padding: '12px',
+              borderRight: '1px solid #ccc',
+              fontWeight: 'bold'
+            }}>
+              actions
+            </div>
+            <div style={{ flex: '1', padding: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ minWidth: '150px', fontSize: '14px' }}>Action over threshold</span>
+                  <select
+                    name="actionOverThreshold"
+                    value={formData.actionOverThreshold}
+                    onChange={handleChange}
+                    style={{
+                      flex: '1',
+                      border: '1px solid #ccc',
+                      padding: '4px',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    <option value="Set ready for reconnection">Set ready for reconnection</option>
+                    <option value="No action">No action</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ minWidth: '150px', fontSize: '14px' }}>Action under threshold</span>
+                  <select
+                    name="actionUnderThreshold"
+                    value={formData.actionUnderThreshold}
+                    onChange={handleChange}
+                    style={{
+                      flex: '1',
+                      border: '1px solid #ccc',
+                      padding: '4px',
+                      borderRadius: '4px'
+                    }}
+                  >
+                    <option value="Set connected">Set connected</option>
+                    <option value="No action">No action</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-  {/* Emergency Profile Active */}
-  <div className="lc-row">
-    <label className="lc-label">Emergency Profile Active:</label>
-    <select
-      className="lc-select"
-      name="emergencyProfileActive"
-      value={formData.emergencyProfileActive}
-      onChange={handleChange}
-    >
-      <option value="Enable">Enable</option>
-      <option value="Disable">Disable</option>
-      <option value="Active">Active</option>
-      <option value="Inactive">Inactive</option>
-    </select>
-  </div>
+        {/* Error message */}
+        {error && (
+          <div style={{
+            padding: '10px',
+            backgroundColor: '#ffebee',
+            color: '#c62828',
+            borderRadius: '4px',
+            marginTop: '10px'
+          }}>
+            {error}
+          </div>
+        )}
+      </div>
 
-  {/* Actions */}
-  <div className="lc-row">
-    <label className="lc-label">Action Over Threshold:</label>
-    <select
-      className="lc-select"
-      name="actionOverThreshold"
-      value={formData.actionOverThreshold}
-      onChange={handleChange}
-    >
-      <option value="0001">0001 Set ready for reconnection</option>
-      <option value="0000">0000 No action</option>
-    </select>
-  </div>
-
-  <div className="lc-row">
-    <label className="lc-label">Action Under Threshold:</label>
-    <select
-      className="lc-select"
-      name="actionUnderThreshold"
-      value={formData.actionUnderThreshold}
-      onChange={handleChange}
-    >
-      <option value="0002">0002 Set connected</option>
-      <option value="0000">0000 No action</option>
-    </select>
-  </div>
-
-  {/* Submit */}
-  <div className="lc-actions">
-    <button className="lc-btn" onClick={handleSubmit}>
-      Save Values
-    </button>
-  </div>
- {/* Time selection modal */}
+      {/* Time selection modal */}
       {showTimePopup && (
         <div className="modal" role="dialog" id="time-popup" aria-modal="true">
           <div className="modal-content" role="document">
@@ -334,191 +716,525 @@ const handleSubmit = async () => {
           </div>
         </div>
       )}
-</div>
- </>
-    
+
+      <ProgressModal
+        isOpen={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+        title="Load Control Operation"
+      />
+    </>
   );
-};
+}
 
 
 
 
 const DisconnectControl = () => {
-  const [formData, setFormData] = useState({
-    disconnectControl: false,
-    relaySelect: "Disconnect control (Main relay)",
-    outputState: "connected",
-    controlState: "Disconnected",
-    controlMode: "Mode 0",
-    method: "(0) Reconnected",
-    testTimes: 1,
-    holdConnectionMS: 5000,
-    holdDisconnectionMS: 5000,
-  });
+  const serialNumber = localStorage.getItem('selectedSerialNumber');
+  
+  // Checkbox selections
+  const [selected, setSelected] = useState(new Set());
+  
+  // Dropdown values
+  const [relaySelect, setRelaySelect] = useState("Disconnect control (Main relay)");
+  const [outputState, setOutputState] = useState("0");
+  const [controlState, setControlState] = useState("0");
+  const [controlMode, setControlMode] = useState("0");
+  const [method, setMethod] = useState("2");
+  
+  // Results display
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
-  // Handle input, checkbox, and dropdown changes
-  const handleChange = (e) => {
-    const { name, type, checked, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    });
+  const OBIS_CODE = "0.0.96.3.10.255";
+
+  // Attribute definitions
+  const ATTRIBUTES = [
+    { index: 2, label: "Output State", key: "outputState", writable: false },
+    { index: 3, label: "Control State", key: "controlState", writable: false },
+    { index: 4, label: "Control Mode", key: "controlMode", writable: true },
+    { index: 5, label: "Method", key: "method", writable: true, isMethod: true }
+  ];
+
+  // Dropdown options
+  const OUTPUT_STATE_OPTIONS = [
+    { value: "0", label: "(0) Disconnected" },
+    { value: "1", label: "(1) Connected" },
+    { value: "2", label: "(2) Ready for reconnection" }
+  ];
+
+  const CONTROL_STATE_OPTIONS = [
+    { value: "0", label: "(0) Disconnected" },
+    { value: "1", label: "(1) Connected" },
+    { value: "2", label: "(2) Ready for reconnection" }
+  ];
+
+  const CONTROL_MODE_OPTIONS = [
+    { value: "0", label: "Mode 0" },
+    { value: "1", label: "Mode 1" },
+    { value: "2", label: "Mode 2" },
+    { value: "3", label: "Mode 3" },
+    { value: "4", label: "Mode 4" },
+    { value: "5", label: "Mode 5" },
+    { value: "6", label: "Mode 6" }
+  ];
+
+  const METHOD_OPTIONS = [
+    { value: "1", label: "(1) Disconnect" },
+    { value: "2", label: "(2) Reconnect" }
+  ];
+
+  // Toggle checkbox selection
+  const toggleCheckbox = (index) => {
+    const newSelected = new Set(selected);
+    if (newSelected.has(index)) {
+      newSelected.delete(index);
+    } else {
+      newSelected.add(index);
+    }
+    setSelected(newSelected);
   };
 
-  const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
-    useEffect(() => {
-      const storedId = localStorage.getItem('selectedDeviceId');
-      setDeviceId(storedId);
-    }, []);
-  
+  // Format value for display
+  const formatValue = (attrIndex, value) => {
+    if (attrIndex === 2) {
+      const opt = OUTPUT_STATE_OPTIONS.find(o => o.value === String(value));
+      return opt ? opt.label : String(value);
+    }
+    if (attrIndex === 3) {
+      const opt = CONTROL_STATE_OPTIONS.find(o => o.value === String(value));
+      return opt ? opt.label : String(value);
+    }
+    if (attrIndex === 4) {
+      const opt = CONTROL_MODE_OPTIONS.find(o => o.value === String(value));
+      return opt ? opt.label : String(value);
+    }
+    return String(value);
+  };
 
-  const handleSubmit = async () => {
-    const device_id = deviceId; // Replace with the actual device ID
-    if (!device_id) {
-      alert("Device ID is required.");
+  // Handle Read button
+  const handleRead = async () => {
+    if (!serialNumber) {
+      setError('No serial number selected');
+      setTimeout(() => setError(null), 3000);
       return;
     }
-  
-    // Validate required fields
-    const requiredFields = {
-      relaySelect: formData.relaySelect,
-      outputState: formData.outputState,
-      controlState: formData.controlState,
-      controlMode: formData.controlMode,
-      method: formData.method,
-      testTimes: formData.testTimes,
-      holdConnectionMS: formData.holdConnectionMS,
-      holdDisconnectionMS: formData.holdDisconnectionMS,
-    };
-  
-    for (const [key, value] of Object.entries(requiredFields)) {
-      if (value === "" || value === null || value === undefined) {
-        alert(`Please fill in the ${key.replace(/([A-Z])/g, ' $1')}`);
-        return;
-      }
+    if (selected.size === 0) {
+      setError('Please select at least one attribute');
+      setTimeout(() => setError(null), 3000);
+      return;
     }
-  
-    // Prepare payload with correct field names
-    const payload = {
-      device_id,
-      relay_select: formData.relaySelect,
-      output_state: formData.outputState,
-      control_state: formData.controlState,
-      control_mode: formData.controlMode,
-      method: formData.method,
-      test_times: formData.testTimes,
-      hold_connection_ms: formData.holdConnectionMS,
-      hold_disconnection_ms: formData.holdDisconnectionMS
-    };
-   
+
+    setLoading(true);
+    setError(null);
+    setResults([]);
+    setShowProgressModal(true);
+
+    // Build parameters for read (exclude Method since it's not readable)
+    const parameters = Array.from(selected)
+      .filter(idx => idx !== 5) // Exclude Method
+      .map(idx => ({
+        obis_code: OBIS_CODE,
+        attribute_index: String(idx)
+      }));
+
+    if (parameters.length === 0) {
+      setError('Method cannot be read. Please select other attributes.');
+      setLoading(false);
+      setShowProgressModal(false);
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    console.log("Read parameters:", parameters);
+
     try {
-      const response = await axios.post(`${BASE_URL}/api/disconnect-control/`, payload);
-      alert(response.data.message || "Data saved successfully!");
-      console.log(response.data);
-    } catch (error) {
-      console.error("Error saving data:", error.response?.data || error.message);
-      alert("Failed to save data.");
+      const response = await axios.post(`${BASE_URL}/api/getmeterinfo/`, {
+        serial_number: serialNumber,
+        action: "read_obis",
+        parameters
+      });
+
+      console.log("Full Read response:", response);
+      console.log("Response.data:", response.data);
+      console.log("Response.data type:", typeof response.data);
+
+      let actualData = response.data;
+      
+      // Check if it's a string (SSE format with multiple "data:" lines)
+      if (typeof actualData === 'string') {
+        console.log("Response is string (SSE format), parsing multiple data lines");
+        
+        // Split by newlines and parse each "data:" line
+        const lines = actualData.split('\n');
+        const parsedResults = [];
+        
+        for (const line of lines) {
+          if (line.trim().startsWith('data:')) {
+            try {
+              const jsonStr = line.substring(5).trim(); // Remove "data:" prefix
+              const parsed = JSON.parse(jsonStr);
+              if (parsed.status === 'success' && parsed.action === 'read') {
+                parsedResults.push(parsed);
+              }
+            } catch (e) {
+              console.warn("Failed to parse line:", line, e);
+            }
+          }
+        }
+        
+        console.log("Parsed SSE results:", parsedResults);
+        
+        if (parsedResults.length > 0) {
+          // Process the parsed results - UPDATE DROPDOWNS ONLY, NO RESULTS TABLE
+          parsedResults.forEach(item => {
+            const attrIdx = parseInt(item.attribute_index);
+            // Handle boolean values
+            let value = item.value;
+            if (typeof value === 'boolean') {
+              value = value ? 1 : 0;
+            }
+            
+            if (attrIdx === 2) setOutputState(String(value));
+            if (attrIdx === 3) setControlState(String(value));
+            if (attrIdx === 4) setControlMode(String(value));
+          });
+          
+          console.log("Updated dropdown values from read");
+          setLoading(false);
+          setShowProgressModal(false);
+          return;
+        } else {
+          throw new Error('No valid results found in SSE response');
+        }
+      }
+
+      console.log("Parsed actualData:", actualData);
+
+      // Unwrap nested data layers (for non-SSE responses)
+      let unwrapCount = 0;
+      while (actualData && typeof actualData === 'object' && 'data' in actualData && !('status' in actualData) && !('results' in actualData)) {
+        console.log(`Unwrapping layer ${++unwrapCount}`);
+        actualData = actualData.data;
+      }
+
+      console.log("Final actualData after unwrapping:", actualData);
+
+      if (actualData && actualData.status === "success") {
+        console.log("Status is success");
+        
+        if (actualData.results && Array.isArray(actualData.results) && actualData.results.length > 0) {
+          // Multiple results - UPDATE DROPDOWNS ONLY, NO RESULTS TABLE
+          console.log("Processing multiple results:", actualData.results);
+          
+          // Update dropdown values
+          actualData.results.forEach(item => {
+            const attrIdx = parseInt(item.attribute_index);
+            // Handle boolean values
+            let value = item.value;
+            if (typeof value === 'boolean') {
+              value = value ? 1 : 0;
+            }
+            
+            if (attrIdx === 2) setOutputState(String(value));
+            if (attrIdx === 3) setControlState(String(value));
+            if (attrIdx === 4) setControlMode(String(value));
+          });
+        } else if (actualData.attribute_index && actualData.value !== undefined) {
+          // Single result - UPDATE DROPDOWN ONLY, NO RESULTS TABLE
+          console.log("Processing single result");
+          
+          // Update dropdown value
+          const attrIdx = parseInt(actualData.attribute_index);
+          // Handle boolean values
+          let value = actualData.value;
+          if (typeof value === 'boolean') {
+            value = value ? 1 : 0;
+          }
+          
+          if (attrIdx === 2) setOutputState(String(value));
+          if (attrIdx === 3) setControlState(String(value));
+          if (attrIdx === 4) setControlMode(String(value));
+        } else {
+          console.error("Unexpected response structure:", actualData);
+          throw new Error('Unexpected response structure');
+        }
+      } else {
+        console.error("Status is not success or actualData is invalid:", actualData);
+        throw new Error(actualData?.message || 'Failed to read data');
+      }
+    } catch (e) {
+      console.error("Read error:", e);
+      console.error("Error response:", e.response?.data);
+      setError(`Error: ${e.message || 'Failed to read data'}`);
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+      setShowProgressModal(false);
     }
   };
 
-  
-  return (
-    <div className="load-control-container" style={{paddingTop:'5%'}}>
+  // Handle Write button
+  const handleWrite = async () => {
+    if (!serialNumber) {
+      setError('No serial number selected');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    if (selected.size === 0) {
+      setError('Please select at least one attribute');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setResults([]);
+    setShowProgressModal(true);
+
+    const writeOperations = [];
+
+    // Process selected items
+    for (const idx of selected) {
+      const attr = ATTRIBUTES.find(a => a.index === idx);
       
+      // Skip read-only attributes (Output State, Control State)
+      if (!attr || !attr.writable) {
+        continue;
+      }
 
-     
-{/* Relay Select */}
-<div className='lc-row'>
-  <label className="lc-label">Relay Select:</label>
-  <select
-    className="lc-select"
-    name="relaySelect"
-    value={formData.relaySelect}
-    onChange={handleChange}
-  >
-    <option value="Disconnect control (Main relay)">
-      Disconnect control (Main relay)
-    </option>
-  </select>
-</div>
+      if (attr.isMethod) {
+        // Execute method
+        writeOperations.push({
+          type: 'method',
+          methodIndex: method,
+          label: attr.label
+        });
+      } else if (idx === 4) {
+        // Write Control Mode
+        writeOperations.push({
+          type: 'write',
+          attributeIndex: idx,
+          value: controlMode,
+          label: attr.label
+        });
+      }
+    }
 
-      {/* Output State Select */}
-<div className='lc-row'>
-  <label className="lc-label">Output State:</label>
-  <select
-   className="lc-select"
-    name="outputState"
-    value={formData.outputState}
-    onChange={handleChange}
-  >
-    <option value="Connected">Connected</option>
-  </select>
-</div>
+    if (writeOperations.length === 0) {
+      setError('No writable attributes selected. Output State and Control State are read-only.');
+      setLoading(false);
+      setShowProgressModal(false);
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
 
+    try {
+      const writeResults = [];
 
-     
+      // Execute write operations sequentially
+      for (const op of writeOperations) {
+        if (op.type === 'write') {
+          // Write attribute
+          const response = await axios.post(`${BASE_URL}/api/getmeterinfo/`, {
+            serial_number: serialNumber,
+            action: "write_obis",
+            parameters: {
+              obis_code: OBIS_CODE,
+              attribute_index: String(op.attributeIndex),
+              value: op.value
+            }
+          });
 
-     {/* Control State Select */}
-<div className='lc-row'>
-  <label className="lc-label">Control State:</label>
-  <select
-   className="lc-select"
-    name="controlState"
-    value={formData.controlState}
-    onChange={handleChange}
-  >
-    <option value="Disconnected">(0) Disconnected</option>
-  </select>
-</div>
+          console.log("Write response:", response.data);
+          writeResults.push({
+            label: op.label,
+            value: `Written: ${formatValue(op.attributeIndex, op.value)}`
+          });
+        } else if (op.type === 'method') {
+          // Execute method
+          const response = await axios.post(`${BASE_URL}/api/getmeterinfo/`, {
+            serial_number: serialNumber,
+            action: "execute_method",
+            parameters: {
+              obis_code: OBIS_CODE,
+              method_index: op.methodIndex,
+              data: 0
+            }
+          });
 
-      {/* Control Mode Dropdown */}
+          console.log("Method response:", response.data);
+          const methodLabel = METHOD_OPTIONS.find(m => m.value === op.methodIndex)?.label || `Method ${op.methodIndex}`;
+          writeResults.push({
+            label: op.label,
+            value: `Executed: ${methodLabel}`
+          });
+        }
+      }
+
+      // Don't set results for write operations - just show alert
+      alert(`Successfully completed ${writeResults.length} operation(s)`);
+    } catch (e) {
+      console.error("Write error:", e);
+      setError(`Error: ${e.message || 'Failed to write data'}`);
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+      setShowProgressModal(false);
+    }
+  };
+
+  return (
+    <div className="load-control-container" style={{ paddingTop: '2%' }}>
+      {/* Header with Read/Write buttons */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h3 style={{ margin: 0 }}>Disconnect Control (Class 70)</h3>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            className="lc-btn" 
+            onClick={handleRead}
+            disabled={loading}
+            style={{ minWidth: '100px' }}
+          >
+            {loading ? 'Reading...' : 'Read'}
+          </button>
+          <button 
+            className="lc-btn" 
+            onClick={handleWrite}
+            disabled={loading}
+            style={{ minWidth: '100px' }}
+          >
+            {loading ? 'Writing...' : 'Write'}
+          </button>
+        </div>
+      </div>
+
+      {/* Relay Select */}
       <div className='lc-row'>
-        <label className="lc-label">Control Mode:</label>
-        <select  className="lc-select" value={formData.controlMode} onChange={handleChange}>
-          <option value="Mode 0">Mode 0</option>
-          <option value="Mode 1">Mode 1</option>
-          <option value="Mode 2">Mode 2</option>
-          <option value="Mode 3">Mode 3</option>
-          <option value="Mode 4">Mode 4</option>
-          <option value="Mode 5">Mode 5</option> 
-          <option value="Mode 6">Mode 6</option>
-                
+        <label className="lc-label">Relay Select:</label>
+        <select
+          className="lc-select"
+          value={relaySelect}
+          onChange={(e) => setRelaySelect(e.target.value)}
+        >
+          <option value="Disconnect control (Main relay)">
+            Disconnect control (Main relay)
+          </option>
         </select>
       </div>
 
-      {/* Method Dropdown */}
-      <div className='lc-row'>
-        <label className="lc-label">Method:</label>
-        <select className="lc-select" name="method" value={formData.method} onChange={handleChange}>
-          <option value="(0) Reconnected">(0) Reconnected</option>
-          <option value="(1) Disconnected">(1) Disconnected</option>
+      {/* Output State - Read Only */}
+      <div className='lc-row' style={{ backgroundColor: '#f5f5f5' }}>
+        <label className="lc-label">
+          <input
+            type="checkbox"
+            checked={selected.has(2)}
+            onChange={() => toggleCheckbox(2)}
+            style={{ marginRight: '10px' }}
+          />
+          Output State:
+        </label>
+        <select
+          className="lc-select"
+          value={outputState}
+          onChange={(e) => setOutputState(e.target.value)}
+          disabled
+        >
+          {OUTPUT_STATE_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
         </select>
       </div>
 
-      {/* Test Times */}
-      <div className='lc-row'>
-        <label className="lc-label">Test Times:</label>
-        <input  className="lc-input" type="number" name="testTimes" value={formData.testTimes} onChange={handleChange} min="1" />
+      {/* Control State - Read Only */}
+      <div className='lc-row' style={{ backgroundColor: '#f5f5f5' }}>
+        <label className="lc-label">
+          <input
+            type="checkbox"
+            checked={selected.has(3)}
+            onChange={() => toggleCheckbox(3)}
+            style={{ marginRight: '10px' }}
+          />
+          Control State:
+        </label>
+        <select
+          className="lc-select"
+          value={controlState}
+          onChange={(e) => setControlState(e.target.value)}
+          disabled
+        >
+          {CONTROL_STATE_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
 
-      {/* Hold Connection (MS) */}
+      {/* Control Mode - Writable */}
       <div className='lc-row'>
-        <label className="lc-label">Hold Connection (MS):</label>
-        <input  className="lc-input" type="number" name="holdConnectionMS" value={formData.holdConnectionMS} onChange={handleChange} min="1" />
+        <label className="lc-label">
+          <input
+            type="checkbox"
+            checked={selected.has(4)}
+            onChange={() => toggleCheckbox(4)}
+            style={{ marginRight: '10px' }}
+          />
+          Control Mode:
+        </label>
+        <select
+          className="lc-select"
+          value={controlMode}
+          onChange={(e) => setControlMode(e.target.value)}
+        >
+          {CONTROL_MODE_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
 
-      {/* Hold Disconnection (MS) */}
+      {/* Method - Executable */}
       <div className='lc-row'>
-        <label className="lc-label">Hold Disconnection (MS):</label>
-        <input  className="lc-input" type="number" name="holdDisconnectionMS" value={formData.holdDisconnectionMS} onChange={handleChange} min="1" />
+        <label className="lc-label">
+          <input
+            type="checkbox"
+            checked={selected.has(5)}
+            onChange={() => toggleCheckbox(5)}
+            style={{ marginRight: '10px' }}
+          />
+          Method:
+        </label>
+        <select
+          className="lc-select"
+          value={method}
+          onChange={(e) => setMethod(e.target.value)}
+        >
+          {METHOD_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
       </div>
-          
 
-       <div className="lc-actions">
-      {/* Submit Button */}
-      <button className='lc-btn' onClick={handleSubmit}>Save Values</button>
-      </div>
+      {/* Error message */}
+      {error && (
+        <div style={{ 
+          padding: '10px', 
+          backgroundColor: '#ffebee', 
+          color: '#c62828', 
+          borderRadius: '4px',
+          marginTop: '10px'
+        }}>
+          {error}
+        </div>
+      )}
+
+      {/* Results display - Removed completely, only alert messages for write operations */}
+      
+      <ProgressModal
+        isOpen={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+        title="Disconnect Control Operation"
+      />
     </div>
   );
 };
@@ -1050,8 +1766,8 @@ const Relay = () => {
 
       {/* Conditional Rendering of Components */}
       <div className="component-display">
-        {activeComponent === "loadControl" && <LoadControlComponent />}
-        {activeComponent === "disconnect" && <DisconnectControl />}
+        {activeComponent === "loadControl" && <LoadControlNew />}
+        {activeComponent === "disconnect" && <DisconnectControlNew />}
         {activeComponent === "loadRelated" && <LoadControlRelated />}
         {activeComponent === "controlConfig" && <ControlConfiguration />}
       </div>

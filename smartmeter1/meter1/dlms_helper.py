@@ -919,104 +919,222 @@ def execute_dlms_action(config, action_details):
         elif action == "write_obis":
             media.open()  # Ensure media is open
             reader.initializeConnection()
-            obis = parameters.get('obis_code')
-            attr_str = parameters.get('attribute_index')
-            value_to_write_str = parameters.get('value')
-            data_type_str = None
-            print(f"Values writing: {obis} {attr_str} {value_to_write_str}")
-            if not obis or attr_str is None:  #or value_to_write_str is None
-                print(f"Values writing: {obis} {attr_str} {value_to_write_str}")
-                raise ValueError("Missing params for write.")
-            try:
-                attr = int(attr_str)
-            except:
-                raise ValueError("Invalid 'attribute_index'.")
-
-            # print(f"Finding object {obis} for writing.")
-            # target_obj = None
-            # for obj in client.objects:
-            #     # Make comparison robust (handle potential whitespace)
-            #     if hasattr(obj, 'logicalName') and obj.logicalName.strip() == obis.strip():
-            #         target_obj = obj
-            #         break
-
-            # if target_obj:
-            #     object_type_name = "Unknown Type"
-            #     try:
-            #         object_type_name = ObjectType(target_obj.objectType).name
-            #     except ValueError:
-            #         object_type_name = f"Unknown Type ({target_obj.objectType})"
-
-            #     print(f"Found object: Type={object_type_name}, LN={target_obj.logicalName}, ClassID={target_obj.objectType}")
-
-            target_obj = client.objects.findByLN(ObjectType.NONE, obis)
-            # print(f"Target Object Found: {target_obj}")
-            # print(f"Type: {type(target_obj)}")
-            # print(f"Vars: {vars(target_obj)}") # Log internal attributes
             
-            reader.read(target_obj, attr)
-
-            if not target_obj:
-                raise ValueError(f"Object '{obis}' not found. Cannot proceed.")
-
-            access_rights = get_access_rights(target_obj, attr)
-            can_write = access_rights in ["Write Only", "Read & Write",
-                                        "Write (Auth)", "Read/Write (Auth)"]
-    
-            print(f"  Access Mode: {access_rights}")
-            if not can_write:
-                logger.warning(f"  ERROR: Attribute {attr} is not writable.")
-                return {"status": "error", "message": f"Access denied for writing {obis} attr {attr}. Access: {access_rights}"}
-            
-            # 2. Determine Data Type
-            data_type = None
-            if data_type_str:
-                 try: data_type = DataType(int(data_type_str)); logger.debug(f"Using provided DataType: {data_type.name}")
-                 except: raise ValueError(f"Invalid 'data_type': {data_type_str}")
-            else:
-                #  print(type(target_obj))
-                 data_type = target_obj.getDataType(attr)
-                #  print(f"This is the data type : {data_type}")
-                 if data_type == DataType.NONE: raise ValueError(f"Auto-detect failed for {obis} attr {attr}. Provide 'data_type'.")
-                 print(f"Auto-determined DataType: {DataType(data_type).name}")
-
-            # print(f"this is the data_type final : {data_type}")
-
-            # 3. Convert Value
-            converted_value = _convert_write_value(value_to_write_str, data_type)
-            logger.info(f"Converted write value: {converted_value} (Type: {type(converted_value)})")
-
-            # 4. Update Local Object Value using setValue
-            try:
-                logger.info(f"Attempting target_obj.setValue for {obis} attr {attr}")
-                # Log details about the object and value being set
-                # logger.debug(f"Target Object Type: {type(target_obj).__name__}, LN: {target_obj.logicalName}")
-                logger.debug(f"Value to set: {converted_value}, Type: {type(converted_value)}")
-                logger.debug(f"Target DataType enum: {DataType(data_type).name} ({DataType(data_type).value})")
-
-                e_args = ValueEventArgs(client.settings, target_obj, attr, 0, None)
-                e_args.value = converted_value
+            # Handle both single write and batch writes
+            if isinstance(parameters, list):
+                # Batch write processing
+                results = []
                 
-                # === THE ACTUAL CALL ===
-                target_obj.setValue(client.settings, e_args)
-                # =======================
-                logger.info(f"Local object value potentially updated via setValue for {obis} attr {attr}.")
-                # Add a check AFTER setValue if possible? Some objects might have a getter...
-                # test_get_value = target_obj.getValue(client.settings, ValueEventArgs(client.settings, target_obj, attr, 0, None))
-                # logger.debug(f"Value AFTER setValue (using getValue): {test_get_value}")
+                for index, write_item in enumerate(parameters):
+                    if not isinstance(write_item, dict):
+                        error_result = {
+                            "status": "error",
+                            "obis_code": "Unknown",
+                            "attribute_index": "Unknown",
+                            "message": f"Write item {index+1} must be a dictionary with obis_code, attribute_index, and value."
+                        }
+                        results.append(error_result)
+                        continue
+                    
+                    obis = write_item.get('obis_code')
+                    attr_str = write_item.get('attribute_index')
+                    value_to_write_str = write_item.get('value')
+                    data_type_str = write_item.get('data_type')  # Optional
+                    
+                    if not obis or attr_str is None or value_to_write_str is None:
+                        error_result = {
+                            "status": "error",
+                            "obis_code": obis,
+                            "attribute_index": attr_str,
+                            "message": "Missing obis_code, attribute_index, or value for write operation."
+                        }
+                        results.append(error_result)
+                        continue
+                    
+                    try:
+                        attr = int(attr_str)
+                    except (ValueError, TypeError):
+                        error_result = {
+                            "status": "error",
+                            "obis_code": obis,
+                            "attribute_index": attr_str,
+                            "message": "Invalid attribute_index - must be a number."
+                        }
+                        results.append(error_result)
+                        continue
+                    
+                    try:
+                        # Process individual write operation
+                        logger.info(f"Writing OBIS: {obis}, Attribute: {attr}, Value: {value_to_write_str}")
+                        
+                        # Find target object
+                        target_obj = client.objects.findByLN(ObjectType.NONE, obis)
+                        if not target_obj:
+                            error_result = {
+                                "status": "error",
+                                "obis_code": obis,
+                                "attribute_index": attr,
+                                "message": f"Object '{obis}' not found."
+                            }
+                            results.append(error_result)
+                            continue
+                        
+                        # Read current value first (required for write operations)
+                        reader.read(target_obj, attr)
+                        
+                        # Check access rights
+                        access_rights = get_access_rights(target_obj, attr)
+                        can_write = access_rights in ["Write Only", "Read & Write", "Write (Auth)", "Read/Write (Auth)"]
+                        
+                        if not can_write:
+                            error_result = {
+                                "status": "error",
+                                "obis_code": obis,
+                                "attribute_index": attr,
+                                "message": f"Access denied for writing {obis} attr {attr}. Access: {access_rights}"
+                            }
+                            results.append(error_result)
+                            continue
+                        
+                        # Determine data type
+                        data_type = None
+                        if data_type_str:
+                            try:
+                                data_type = DataType(int(data_type_str))
+                                logger.debug(f"Using provided DataType: {data_type.name}")
+                            except:
+                                logger.warning(f"Invalid data_type: {data_type_str}. Will auto-detect.")
+                                data_type = target_obj.getDataType(attr)
+                        else:
+                            data_type = target_obj.getDataType(attr)
+                            if data_type == DataType.NONE:
+                                error_result = {
+                                    "status": "error",
+                                    "obis_code": obis,
+                                    "attribute_index": attr,
+                                    "message": f"Auto-detect failed for {obis} attr {attr}. Provide 'data_type'."
+                                }
+                                results.append(error_result)
+                                continue
+                        
+                        # Convert value
+                        converted_value = _convert_write_value(value_to_write_str, data_type)
+                        logger.info(f"Converted write value: {converted_value} (Type: {type(converted_value)})")
+                        
+                        # Update local object value using setValue
+                        e_args = ValueEventArgs(client.settings, target_obj, attr, 0, None)
+                        e_args.value = converted_value
+                        target_obj.setValue(client.settings, e_args)
+                        
+                        # Send write request
+                        reader.write(target_obj, attr)
+                        logger.info(f"Write request sent successfully for {obis} attr {attr}.")
+                        
+                        success_result = {
+                            "status": "success",
+                            "action": "write",
+                            "obis_code": obis,
+                            "attribute_index": attr,
+                            "written_value": value_to_write_str,
+                            "message": "Write successful (command sent)."
+                        }
+                        results.append(success_result)
+                        
+                    except Exception as write_error:
+                        logger.error(f"Error writing {obis} attr {attr}: {write_error}")
+                        error_result = {
+                            "status": "error",
+                            "obis_code": obis,
+                            "attribute_index": attr,
+                            "message": f"Write failed: {str(write_error)}"
+                        }
+                        results.append(error_result)
+                
+                # Return consolidated batch results
+                successful_writes = [r for r in results if r["status"] == "success"]
+                failed_writes = [r for r in results if r["status"] == "error"]
+                
+                result = {
+                    "status": "success" if successful_writes else "error",
+                    "action": "write_obis",
+                    "total_requested": len(parameters),
+                    "successful_writes": len(successful_writes),
+                    "failed_writes": len(failed_writes),
+                    "results": results,
+                    "message": f"Batch write completed. {len(successful_writes)} successful, {len(failed_writes)} failed."
+                }
+                
+            else:
+                # Single write (existing logic)
+                obis = parameters.get('obis_code')
+                attr_str = parameters.get('attribute_index')
+                value_to_write_str = parameters.get('value')
+                data_type_str = None
+                print(f"Values writing: {obis} {attr_str} {value_to_write_str}")
+                if not obis or attr_str is None:  #or value_to_write_str is None
+                    print(f"Values writing: {obis} {attr_str} {value_to_write_str}")
+                    raise ValueError("Missing params for write.")
+                try:
+                    attr = int(attr_str)
+                except:
+                    raise ValueError("Invalid 'attribute_index'.")
 
-            except Exception as e_setval:
-                 logger.error(f"CRITICAL: Failed during target_obj.setValue for {obis}: {e_setval}", exc_info=True)
-                 raise RuntimeError(f"Failed setting local value before write: {e_setval}") from e_setval
+                target_obj = client.objects.findByLN(ObjectType.NONE, obis)
+                
+                reader.read(target_obj, attr)
 
-    
-            logger.info(f"Sending WRITE request using reader.write(target_obj, attr)")
-            reader.write(target_obj, attr) # <<< Using the object and index
-            logger.info(f"Write request sent successfully for {obis} attr {attr}.") # Note: Success here just means sent, check meter logs/state
+                if not target_obj:
+                    raise ValueError(f"Object '{obis}' not found. Cannot proceed.")
 
-            result = {"status": "success", "action": "write", "obis_code": obis,
-                      "attribute_index": attr, "written_value": value_to_write_str,
-                      "message": "Write successful (command sent)."}
+                access_rights = get_access_rights(target_obj, attr)
+                can_write = access_rights in ["Write Only", "Read & Write",
+                                            "Write (Auth)", "Read/Write (Auth)"]
+        
+                print(f"  Access Mode: {access_rights}")
+                if not can_write:
+                    logger.warning(f"  ERROR: Attribute {attr} is not writable.")
+                    return {"status": "error", "message": f"Access denied for writing {obis} attr {attr}. Access: {access_rights}"}
+                
+                # 2. Determine Data Type
+                data_type = None
+                if data_type_str:
+                     try: data_type = DataType(int(data_type_str)); logger.debug(f"Using provided DataType: {data_type.name}")
+                     except: raise ValueError(f"Invalid 'data_type': {data_type_str}")
+                else:
+                     data_type = target_obj.getDataType(attr)
+                     if data_type == DataType.NONE: raise ValueError(f"Auto-detect failed for {obis} attr {attr}. Provide 'data_type'.")
+                     print(f"Auto-determined DataType: {DataType(data_type).name}")
+
+                # 3. Convert Value
+                converted_value = _convert_write_value(value_to_write_str, data_type)
+                logger.info(f"Converted write value: {converted_value} (Type: {type(converted_value)})")
+
+                # 4. Update Local Object Value using setValue
+                try:
+                    logger.info(f"Attempting target_obj.setValue for {obis} attr {attr}")
+                    logger.debug(f"Value to set: {converted_value}, Type: {type(converted_value)}")
+                    logger.debug(f"Target DataType enum: {DataType(data_type).name} ({DataType(data_type).value})")
+
+                    e_args = ValueEventArgs(client.settings, target_obj, attr, 0, None)
+                    e_args.value = converted_value
+                    
+                    # === THE ACTUAL CALL ===
+                    target_obj.setValue(client.settings, e_args)
+                    # =======================
+                    logger.info(f"Local object value potentially updated via setValue for {obis} attr {attr}.")
+
+                except Exception as e_setval:
+                     logger.error(f"CRITICAL: Failed during target_obj.setValue for {obis}: {e_setval}", exc_info=True)
+                     raise RuntimeError(f"Failed setting local value before write: {e_setval}") from e_setval
+
+        
+                logger.info(f"Sending WRITE request using reader.write(target_obj, attr)")
+                reader.write(target_obj, attr) # <<< Using the object and index
+                logger.info(f"Write request sent successfully for {obis} attr {attr}.") # Note: Success here just means sent, check meter logs/state
+
+                result = {"status": "success", "action": "write", "obis_code": obis,
+                          "attribute_index": attr, "written_value": value_to_write_str,
+                          "message": "Write successful (command sent)."}
 
         elif action == "read_profile":
   
@@ -1425,6 +1543,18 @@ def execute_dlms_action(config, action_details):
                     "message": f"Combined image transfer failed: {str(transfer_error)}",
                     "transfer_log": transfer_log
                 }
+
+        elif action == "refresh_relay":
+            # Simple refresh action - just open media and initialize connection
+            logger.info("Executing refresh_relay action...")
+            media.open()
+            reader.initializeConnection()
+            logger.info("Refresh relay action completed successfully")
+            result = {
+                "status": "success",
+                "action": "refresh_relay",
+                "message": "Relay refresh completed successfully."
+            }
 
         else:
             logger.warning(f"Unknown DLMS action requested: {action}")

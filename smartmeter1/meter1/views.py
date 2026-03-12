@@ -1867,8 +1867,28 @@ class MeterDetailAPIView(OBISStreamingMixin, APIView):
                     
                     return Response(error_results, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            elif action in ['write_obis', 'execute_method', 'image_transfer_combined', 'combined_image_transfer']:
-                # --- Handle Write, Execute Method, or Image Transfer Combined ---
+            elif action == 'write_obis':
+                # --- Handle Write OBIS (both single and batch) ---
+                if not parameters:
+                    return Response({"error": "Parameters required for write_obis"}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Check if parameters is a list (batch) or dict (single)
+                if isinstance(parameters, list):
+                    # Batch write - use streaming for real-time progress
+                    logger.info(f"Executing batch write_obis for {len(parameters)} operations")
+                    return self.stream_obis_writes(serial_number, parameters)
+                else:
+                    # Single write - existing logic
+                    logger.info(f"Executing single write_obis via helper.")
+                    result = execute_dlms_action(dlms_config, action_details={"action": action, "parameters": parameters})
+                    
+                    if result.get("status") == "error":
+                        return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    else:
+                        return Response(result, status=status.HTTP_200_OK)
+
+            elif action in ['execute_method', 'image_transfer_combined', 'combined_image_transfer','refresh_relay']:
+                # --- Handle Execute Method, Image Transfer Combined, or Refresh Relay ---
                 # Directly call the main helper, DO NOT update/clear DB 'value'
                 logger.info(f"Executing DLMS action '{action}' via helper.")
                 result = execute_dlms_action(dlms_config, action_details={"action": action, "parameters": parameters})
