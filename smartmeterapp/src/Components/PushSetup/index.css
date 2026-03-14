@@ -1,3 +1,88 @@
+/* view toggle container */
+.view-toggle {
+  display: inline-flex;
+  
+ 
+  background: #f3f4f6;        /* light neutral background */
+  border-radius: 10px;
+  align-items: center;
+  box-shadow: inset 0 -1px 0 rgba(0,0,0,0.02);
+  margin-top:0.3%;
+ 
+}
+
+/* button base */
+.view-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #374151;             /* gray-700 */
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, transform 120ms ease;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1;
+}
+
+/* inactive hover */
+.view-btn:not(.active):hover {
+  background: rgba(15, 23, 42, 0.04); /* subtle hover */
+  transform: translateY(-1px);
+}
+
+/* active state (distinct) */
+.view-btn.active {
+  background: #ff7300;        /* brand blue */
+  color: white;
+  box-shadow: 0 6px 18px rgba(11, 99, 214, 0.14);
+}
+
+/* keyboard focus (visible) */
+.view-btn:focus {
+  box-shadow: 0 0 0 3px rgba(11, 99, 214, 0.18);
+}
+
+/* small arrow / badge on active (optional) */
+.view-btn.active::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  margin-left: 6px;
+  transform: translateY(-1px);
+}
+
+/* responsive: stack on very small screens */
+@media (max-width: 420px) {
+  .view-toggle {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+  .view-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+
+
+
+
+
+
+
+
 .pushsetup-container {
     padding:5px;
     background-color:#e0e0e0;
@@ -217,25 +302,7 @@ input[type="checkbox"] {
 
 
 
-  /* Table styling */
-  .table-pushsetup  {
-    min-width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-   
-  }
-  
-  .table-pushsetup th, .table-pushsetup td {
-    border: 1px solid #ff8e0e;
-    padding: 4px;
-    text-align: left;
-  }
-  
- .table-pushsetup th {
-    background-color: #f2f2f2;
-    font-weight: bold;
-  }
-
+ 
 
   
     /* Table styling */
@@ -252,37 +319,6 @@ input[type="checkbox"] {
       }
     
     
-      .table-pushsetup th{
-        background-color: #ff5500;
-        border:0px;
-        height:30px;
-        font-weight:650;
-        font-size:18px;
-        text-align: center;
-      }
-      .table-pushsetup td 
-      {
-       border:0px;
-        text-align: center;
-      }
-
-
-
-      .table-pushsetup tbody tr:nth-child(odd) {
-        background-color:#bcc3c3; /* Light gray background for odd rows */
-        height:35px;
-        font-size:16px;
-      
-       
-      }
-      
-      .table-pushsetup tbody tr:nth-child(even) {
-        background-color:#fffafa; /* Lighter gray background for even rows */
-        height:35px;
-        font-size:16px;
-        
-      }
-
 
       /*........... other parameter  css ...............*/
 
@@ -398,6 +434,7 @@ input[type="checkbox"] {
   box-shadow: 3px 3px 3px rgba(255, 89, 0, 0.6); /* Example of a light blue shadow on focus */
   outline: none; /* Remove default outline */
 }
+
 
 
 

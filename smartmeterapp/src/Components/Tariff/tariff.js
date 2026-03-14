@@ -5,8 +5,7 @@ import BASE_URL from '../../apiConfig'; // Adjust path based on your file struct
 import SpecialDaysForm from "../TariffSpecialdays/specialday"; // Importing SpecialDaysForm component
 
 
-const deviceId = localStorage.getItem('selectedDeviceId');
-const serialNumber = localStorage.getItem('selectedSerialNumber'); 
+
 
 const TariffParameter = () => {
   // Mock data directly in the component
@@ -81,7 +80,7 @@ const [data, setData] = useState([
     <div className="tou_container">
      
 
-      <table className="tableTariff">
+      <table className="tableTariff1">
         <thead>
           <tr>
             <th>Checked</th>
@@ -111,7 +110,7 @@ const [data, setData] = useState([
           ))}
         </tbody>
       </table>
-      <button onClick={handleGetValues}>Get Values</button>
+      <button style={{marginLeft:"40%"}} className="scheduler-add-button" onClick={handleGetValues}>Get Values</button>
     </div>
   );
 };
@@ -136,6 +135,132 @@ const CalendarManager = () => {
   const [isOpenWeek, setIsOpenWeek] = useState(false); 
   const [isOPenSeason , setIsOpenSeason]=useState(false)
   const [weekName, setWeekName] = useState('');
+
+ 
+
+
+// when editing a single profile row inside modal
+const [editingProfileIndex, setEditingProfileIndex] = useState(null);
+
+// Edit modal state
+const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+const [editingCalendarId, setEditingCalendarId] = useState(null);
+const [editingDayId, setEditingDayId] = useState(null);
+const [editProfiles, setEditProfiles] = useState([]); // [{ start_time: "00:00", script_selector: "T1" }, ...]
+
+// Open the edit modal and load selected row's data
+const openEditModal = () => {
+  if (!selectItem || selectItem === 'null') {
+    alert('Please select a row to edit.');
+    return;
+  }
+  // only allow editing in Day view (you can adapt for Week/Season later)
+  if (activeView !== 'Day') {
+    alert('Edit is supported currently only for Day view.');
+    return;
+  }
+
+  const selectedDay = data.days.find((d) => d.calendar_id === selectItem);
+  if (!selectedDay) {
+    alert('Selected item not found in data.');
+    return;
+  }
+
+  // Map server start_time -> "HH:MM" for time input
+  const mappedProfiles = (selectedDay.profiles || []).map((p) => {
+    let t = p.start_time || '00:00';
+    // If server returned seconds like "08:30:00", trim
+    if (t.length >= 5 && t[2] === ':') t = t.slice(0,5);
+    return { ...p, start_time: t, script_selector: p.script_selector || 'T1' };
+  });
+
+  setEditingCalendarId(selectedDay.calendar_id);
+  setEditingDayId(selectedDay.day_id ?? selectedDay.dayId ?? null);
+  setEditProfiles(mappedProfiles.length ? mappedProfiles : [{ start_time: '00:00', script_selector: 'T1' }]);
+  setIsEditModalOpen(true);
+};
+
+// Edit profile row change
+const handleEditProfileChange = (index, field, value) => {
+  setEditProfiles((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
+};
+
+// Add/Delete edit rows
+const addEditProfile = () => {
+  if (editProfiles.length >= 12) {
+    alert('Max 12 profiles allowed.');
+    return;
+  }
+  setEditProfiles((prev) => [...prev, { start_time: '00:00', script_selector: 'T1' }]);
+};
+
+const deleteEditProfile = (index) => {
+  setEditProfiles((prev) => prev.filter((_, i) => i !== index));
+};
+
+
+
+const saveEditedDay = async () => {
+  if (!editingCalendarId) {
+    alert('No editing calendar selected.');
+    return;
+  }
+  // basic validation: at least one profile
+  if (!editProfiles.length) {
+    alert('Add at least one profile before saving.');
+    return;
+  }
+
+  try {
+    const payload = {
+      device_id: deviceId,
+      calendar_name: calendarName,
+      entity_type: 'Day',
+      status: calendarStatus,
+      calendar_datetime: calendarTime,
+      profiles: editProfiles.map((p, idx) => ({
+        id: idx + 1,
+        // ensure start_time format matches backend expectations. Send "HH:MM" or "HH:MM:SS" if needed.
+        start_time: p.start_time.length === 5 ? `${p.start_time}:00` : p.start_time,
+        script_selector: p.script_selector,
+      })),
+      day_id: editingDayId,
+    };
+
+    const response = await axios.put(
+      `${BASE_URL}/api/tou-calendar/update/${editingCalendarId}/`,
+      payload
+    );
+
+    if (response.status === 200 || response.status === 201) {
+      // success
+      setIsEditModalOpen(false);
+      setEditingCalendarId(null);
+      setEditingDayId(null);
+      setEditProfiles([]);
+      fetchCalendars(); // refresh the table
+      alert('Day updated successfully.');
+    } else {
+      alert('Unexpected response from server. See console for details.');
+      console.error('Update response:', response);
+    }
+  } catch (error) {
+    console.error('Error updating day:', error);
+    if (error.response && error.response.data) {
+      const msg = error.response.data.error || JSON.stringify(error.response.data);
+      alert(`Error: ${msg}`);
+    } else {
+      alert('Error updating data. Check console for details.');
+    }
+  }
+};
+
+
+
+
+
+
+
   
 
   const [seasonStart, setSeasonStart] = useState('00:00'); // Store time in "hh:mm" format 
@@ -166,7 +291,24 @@ const CalendarManager = () => {
   const dayOptions = ['Day1', 'Day0', 'Day5', 'Day7']; 
 
   
+    const [selectedIndex, setSelectedIndex] = useState(null);
 
+function handleSelectRow(index) {
+  console.log("index",index)
+  setSelectedIndex(index); // toggle selection
+}
+
+function handleDeleteRow(index) {
+  setProfiles(prev => prev.filter((_, i) => i !== index));
+  // clear or adjust selection
+  if (selectedIndex === index) setSelectedIndex(null);
+  else if (selectedIndex != null && selectedIndex > index) setSelectedIndex(prev => prev - 1);
+}
+
+function handleDeleteSelected() {
+  if (selectedIndex == null) { alert("No row selected."); return; }
+  handleDeleteRow(selectedIndex);
+}
 
   
   const [calendarTime, setCalendarTime] = useState(() => {
@@ -322,7 +464,7 @@ const CalendarManager = () => {
         payload
       );
 
-      if (response.status === 200) { // Ensure that the response is successful
+      if (response.status === 201) { // Ensure that the response is successful
         console.log('Data saved successfully:', response.data);
         
         // If successful, apply the following
@@ -557,7 +699,7 @@ const CalendarManager = () => {
         return (
           <div class="tou_table_wrap" role="region" aria-label="Scrollable table" tabindex="0">
            
-            <table className="tou_table">
+            <table className="tableTariff1">
               <thead>
                 <tr>
                   <th>Day ID</th>
@@ -569,11 +711,11 @@ const CalendarManager = () => {
               <tbody>
                 {data.days.map((day) => (
                   <tr onClick={() => selectRow(day.calendar_id)}  
-                  style={{ backgroundColor: selectItem === day.calendar_id ? 'pink' : 'transparent' }}   key={day.day_id}>
+                  style={{ backgroundColor: selectItem === day.calendar_id ? '#ff7e14' : "" }}   key={day.day_id}>
                     <td>{day.day_id}</td>
                     {day.profiles.map((profile, profileIndex) => (
                       <td key={profileIndex}>
-                        {profile.script_selector} {profile.start_time}
+                        {profile.start_time}  ({profile.script_selector})
                       </td>
                     ))}
                     {Array.from({ length: 12 - day.profiles.length }).map(
@@ -586,14 +728,35 @@ const CalendarManager = () => {
               </tbody>
             </table>
 
+           <div
+           
+            style={{
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+    flexWrap: "wrap", 
+    marginLeft:'30%'    // will wrap on very small screens
+  }}
 
-            <button className="tou_button" onClick={handleAdd}>
+           > 
+            <button className="scheduler-add-button"  onClick={handleAdd}>
               Add Day
             </button> 
 
-            <button className="tou_button" onClick={DeleteItem}> 
+            <button className="scheduler-delete-button" onClick={DeleteItem}> 
             Delete Day
             </button>
+
+           <button
+  className="scheduler-add-button"
+  onClick={(e) => {
+    e.stopPropagation();
+    openEditModal();
+  }}
+>
+  Edit
+</button>
+            </div>
           </div>
         );
       
@@ -637,17 +800,30 @@ const CalendarManager = () => {
       })}
     </tbody>
   </table>
-  <button className="tou_button" onClick={()=>setIsOpenWeek(true)}>
+  <div 
+
+  style={{
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+    flexWrap: "wrap", 
+    marginLeft:'10%'    // will wrap on very small screens
+  }}
+>
+  
+  
+  <button className="scheduler-add-button"  onClick={()=>setIsOpenWeek(true)}>
     Add Week
   </button>
 
-  <button className="tou_button" onClick={DeleteItem}> 
+  <button className="scheduler-delete-button" onClick={DeleteItem}> 
             Delete Week
             </button>
 
-            <button className="tou_button" onClick={updateWeek}> 
+            <button className="scheduler-add-button"   onClick={updateWeek}> 
             Update Week
             </button>
+            </div>
 </div>
   );
  
@@ -676,12 +852,25 @@ const CalendarManager = () => {
                     ))}
                 </tbody>  
             </table>
-        <button className="tou_button" onClick={()=>setIsOpenSeason(true)}>
+            <div 
+
+            
+  style={{
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+    flexWrap: "wrap", 
+    marginLeft:'20%'    // will wrap on very small screens
+  }}
+            
+            > 
+        <button  className="scheduler-add-button" onClick={()=>setIsOpenSeason(true)}>
           Add Season
         </button>
-        <button className="tou_button" onClick={DeleteItem}> 
+        <button  className="scheduler-delete-button" onClick={DeleteItem}> 
             Delete Season
             </button>
+            </div>
       </div>
         );
       
@@ -934,12 +1123,20 @@ const CalendarManager = () => {
               <button className="tou_button" onClick={handleSave}>
                 Save
               </button>
+
+              <button
+    className="tou_button"
+    onClick={handleDeleteSelected}
+    disabled={selectedIndex == null}
+  >
+    Delete Selected
+  </button>
             </div>
             </div>  
             
             <div className="profile_Container2"> 
 
-            <table className="tou_table">
+            <table className="">
               <thead>
                 <tr>
                   <th>Day ID</th>
@@ -949,7 +1146,12 @@ const CalendarManager = () => {
               </thead>
               <tbody>
                 {profiles.map((profile, index) => (
-                  <tr key={index}>
+                  <tr 
+
+                  onClick={() => handleSelectRow(index)}
+          className={selectedIndex === index ? "selected-row" : ""}
+                  
+                  key={index}>
                     <td>{newProfile.dayId}</td>
                     <td>{profile.startTime}</td>
                     <td>{profile.scriptSelector}</td>
@@ -963,6 +1165,89 @@ const CalendarManager = () => {
           </div>
         </div>
       )}
+
+
+      {isEditModalOpen && (
+  <div className="tou_modal" onClick={closePopupOutside}>
+    <div className="tou_modal-content" onClick={(e) => e.stopPropagation()}>
+      <div style={{ width: '100%' }}>
+        <h3>Edit Day — {editingDayId != null ? `Day ID ${editingDayId}` : ''}</h3>
+
+        <div style={{ overflowX: 'auto', marginTop: 8 }}>
+          <table className="tou_table" style={{ minWidth: 600 }}>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Start Time</th>
+                <th>Script Selector</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {editProfiles.map((p, idx) => (
+                <tr key={idx}>
+                  <td style={{ textAlign: 'center' }}>{idx + 1}</td>
+
+                  <td style={{ textAlign: 'center' }}>
+                    <input
+                      type="time"
+                      value={p.start_time?.slice(0,5) ?? '00:00'}
+                      onChange={(e) => handleEditProfileChange(idx, 'start_time', e.target.value)}
+                      className="tou_input"
+                    />
+                  </td>
+
+                  <td style={{ textAlign: 'center' }}>
+                    <select
+                      value={p.script_selector || 'T1'}
+                      onChange={(e) => handleEditProfileChange(idx, 'script_selector', e.target.value)}
+                      className="tou_input"
+                    >
+                      <option value="T1">T1</option>
+                      <option value="T2">T2</option>
+                      <option value="T3">T3</option>
+                      <option value="T4">T4</option>
+                      <option value="T5">T5</option>
+                    </select>
+                  </td>
+
+                  <td style={{ textAlign: 'center' }}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteEditProfile(idx); }}
+                      className="tou_button small"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center' }}>
+          <button className="tou_button" onClick={addEditProfile} disabled={editProfiles.length >= 12}>
+            Add Profile
+          </button>
+
+          <button className="tou_button" onClick={saveEditedDay}>
+            Save
+          </button>
+
+          <button
+            className="tou_button"
+            onClick={() => {
+              setIsEditModalOpen(false);
+              setEditingCalendarId(null);
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
 
 
@@ -1129,7 +1414,7 @@ const CalendarManager = () => {
 
 
 
-
+const deviceId = localStorage.getItem('selectedDeviceId');
 
 
 
@@ -1144,6 +1429,10 @@ const ThresholdActionTable = () => {
   const [actionDown, setActionDown] = useState('step1');
   const [threshold, setThreshold] = useState(0.0);
   const maxCount = 9;
+
+
+  const deviceId = localStorage.getItem('selectedDeviceId');
+
   
 
   const fetchData = async () => {
@@ -1170,6 +1459,8 @@ const ThresholdActionTable = () => {
         device_id: deviceId,
         thresholds: [{ threshold_type: "active", value: parseFloat(threshold) }]
       };
+
+      
 
       try {
         const response = await axios.post(`${BASE_URL}/api/tariff/threshold-actions/`, newThreshold);
@@ -1284,13 +1575,24 @@ const ThresholdActionTable = () => {
             </tbody>
           </table>
           </div>
+
+          <div
+          style={{
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+    flexWrap: "wrap",     // will wrap on very small screens
+  }}> 
+           <button className="scheduler-add-button" onClick={() => setOpenAddThresholds(true)}>Add Threshold</button>
           <button  
             onClick={() => handleDelete('threshold')}
             disabled={!selectedThreshold}
+            className="scheduler-delete-button"
           >
-            Delete Selected Threshold
+            Delete  Threshold
           </button>
-          <button  onClick={() => setOpenAddThresholds(true)}>Add Threshold</button>
+          </div>
+         
         </div>
 
         {/* Actions Table */}
@@ -1327,13 +1629,24 @@ const ThresholdActionTable = () => {
             </tbody>
           </table>
           </div>
+
+          <div
+          style={{
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+    flexWrap: "wrap",     // will wrap on very small screens
+  }}> 
+
+           <button  className="scheduler-add-button"  onClick={() => setOpenAddAction(true)}>Add Actions</button>
           <button  
              onClick={() => handleDelete('action')}
             disabled={!selectedAction}
+             className="scheduler-delete-button"
           >
-            Delete Selected Action
+            Delete  Action
           </button>
-          <button  onClick={() => setOpenAddAction(true)}>Add Actions</button>
+         </div>
         </div>
       </div>
 
@@ -1539,13 +1852,25 @@ const PassiveThresholdActionTable = () => {
             </tbody>
           </table>
            </div>
+           <div 
+            style={{
+    display: "flex",
+    gap: 5,
+    alignItems: "center",
+    flexWrap: "wrap", 
+      // will wrap on very small screens
+  }}> 
+         
+           <button className="scheduler-add-button" onClick={() => setOpenAddThresholds(true)}>Add Threshold</button>
           <button
             onClick={() => handleDelete('threshold')}
             disabled={!selectedThreshold}
+            className="scheduler-delete-button"
           >
-            Delete Selected Threshold
+            Delete  Threshold
           </button>
-          <button onClick={() => setOpenAddThresholds(true)}>Add Threshold</button>
+        
+          </div>
         </div>
        
 
@@ -1582,13 +1907,26 @@ const PassiveThresholdActionTable = () => {
             </tbody>
           </table>
           </div>
+          <div
+          style={{
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+    flexWrap: "wrap",     // will wrap on very small screens
+  }}
+          
+          > 
+
+           <button className="scheduler-add-button"  onClick={() => setOpenAddAction(true)}>Add Actions</button>
           <button
             onClick={() => handleDelete('action')}
             disabled={!selectedAction}
+            className="scheduler-delete-button" 
           >
-            Delete Selected Action
+            Delete  Action
           </button>
-          <button onClick={() => setOpenAddAction(true)}>Add Actions</button>
+         
+        </div>
         </div>
       </div>
 
@@ -1697,21 +2035,29 @@ const Tariff = () => {
 
   return (
     <div className="tariff_Container">
-  
-    
-        {["TOU", "Special Days", "Active Step", "Passive Step", "Tariff Parameters"].map((subItem) => (
-          <button key={subItem}>
-            <label className="option-label">
-              <input
-                type="checkbox"
-                className="option-checkbox"
-                onChange={() => handleSubDashboardChange(subItem)}
-                checked={selectedSubDashboard === subItem}
-              />
-              {subItem}
-            </label>
-          </button>
-        ))}
+    <div
+  className="view-toggle"
+  role="tablist"
+  aria-label="Sub dashboard selection"
+>
+  {["TOU", "Special Days", "Active Step", "Passive Step", "Tariff Parameters"].map((subItem) => (
+    <button
+      key={subItem}
+      type="button"
+      role="tab"
+      aria-pressed={selectedSubDashboard === subItem}
+      className={`view-btn ${
+        selectedSubDashboard === subItem ? "active" : ""
+      }`}
+      onClick={() => {
+        setSelectedSubDashboard(subItem);
+        handleSubDashboardChange(subItem);
+      }}
+    >
+      {subItem}
+    </button>
+  ))}
+</div>
      
      
         {renderSubDashboard()}
@@ -1725,3 +2071,4 @@ const Tariff = () => {
 
 
 export default Tariff;
+

@@ -1,4 +1,5 @@
-import React, { useState ,useEffect} from "react";
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import './index.css'
 import axios from "axios";
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
@@ -239,54 +240,196 @@ const manualCategories = [
 
 
 
+
+
+
+// Ensure BASE_URL and manualCategories are available in scope
+
+
+
+
+// Ensure BASE_URL and manualCategories are available in scope
+
 const ManualDisplayCaptureObjects = () => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [addedItems, setAddedItems] = useState([]);
+  const [deviceId, setDeviceId] = useState(() => localStorage.getItem("selectedDeviceId"));
+  const [selectedRow, setSelectedRow] = useState(null); // index of selected row in addedItems
+  const rowRefs = useRef([]);
 
-  const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
- 
+  // collapsedCategories behaves like Loadprofile: names present => collapsed
+  const [collapsedCategories, setCollapsedCategories] = useState(() => {
+    return new Set((manualCategories || []).map((c) => c.name));
+  });
+
   useEffect(() => {
-    const storedId = localStorage.getItem('selectedDeviceId');
+    const storedId = localStorage.getItem("selectedDeviceId");
     setDeviceId(storedId);
   }, []);
-  
 
+  /* -------------------------
+     Helper: set of saved codes for quick checks
+  -------------------------- */
+  const savedCodes = useMemo(() => {
+    return new Set((addedItems || []).map((it) => it.code));
+  }, [addedItems]);
 
-  const handleCheckboxChange = (categoryName, label, code, checked) => {
+  /* -------------------------
+     Single checkbox logic (mirrors Loadprofile behavior)
+  -------------------------- */
+  const handleCheckboxChange = async (category, label, code, checked) => {
+    // If checking a box
     if (checked) {
-      setSelectedItems((prev) => [...prev, { category: categoryName, label, code }]);
-    } else {
-      setSelectedItems((prev) => prev.filter((item) => !(item.label === label && item.code === code)));
+      // If item is already saved on server, ensure it's NOT re-added to selectedItems
+      if (savedCodes.has(code)) {
+        setSelectedItems((prev) => prev.filter((s) => !(s.code === code)));
+        return;
+      }
+      // Otherwise add to selectedItems (avoid duplicates)
+      setSelectedItems((prev) => {
+        const exists = prev.some((p) => p.code === code);
+        if (exists) return prev;
+        return [...prev, { category, label, code }];
+      });
+      return;
+    }
+
+    // If unchecking:
+    // 1) If it's present in selectedItems (not saved yet) -> remove locally
+    if (selectedItems.some((s) => s.code === code)) {
+      setSelectedItems((prev) => prev.filter((s) => s.code !== code));
+      return;
+    }
+
+    // 2) If item exists on server (savedCodes), confirm deletion and delete from server
+    if (savedCodes.has(code)) {
+      const saved = addedItems.find((it) => it.code === code);
+      if (!saved || !saved.id) {
+        // no server id => remove locally from addedItems
+        setAddedItems((prev) => prev.filter((it) => it.code !== code));
+        return;
+      }
+
+      const ok = window.confirm(`Remove saved item "${saved.name}"?`);
+      if (!ok) return;
+
+      try {
+        await axios.delete(`${BASE_URL}/api/manual-display/${deviceId}/${saved.id}/`);
+        await fetchManualDisplayData();
+      } catch (err) {
+        console.error("Failed to delete saved item", err);
+        alert("Failed to delete saved item. Try again.");
+      }
+      return;
+    }
+
+    // fallback: remove from selectedItems
+    setSelectedItems((prev) => prev.filter((s) => s.code !== code));
+  };
+
+  /* -------------------------
+     Category-level toggle (select / deselect entire category)
+     - when checked: select all items in category (but skip saved items)
+     - when unchecked: remove newly-selected items from selectedItems, and if there are saved items in that category, confirm and delete them on server
+  -------------------------- */
+  const handleCategoryToggle = async (categoryObj, checked) => {
+    const categoryName = categoryObj.name;
+    const items = categoryObj.items || [];
+
+    if (checked) {
+      setSelectedItems((prev) => {
+        const prevCodes = new Set(prev.map((p) => p.code));
+        const toAdd = items
+          .filter((it) => !savedCodes.has(it.code) && !prevCodes.has(it.code))
+          .map((it) => ({ category: categoryName, label: it.label ?? it.name ?? it.code, code: it.code }));
+
+        if (!toAdd.length) return prev;
+        return [...prev, ...toAdd];
+      });
+      return;
+    }
+
+    // unchecked: remove newly-selected (not-saved) items from this category
+    setSelectedItems((prev) => prev.filter((p) => p.category !== categoryName));
+
+    // if there are saved items in this category, confirm and delete them on server
+    const savedInCategory = (addedItems || []).filter((it) => it.category === categoryName);
+    if (savedInCategory.length) {
+      const ok = window.confirm(
+        `This category has ${savedInCategory.length} saved item(s). Unchecking will DELETE them from the server. Proceed?`
+      );
+      if (!ok) return;
+
+      try {
+        await Promise.all(
+          savedInCategory.map((it) =>
+            axios.delete(`${BASE_URL}/api/manual-display/${deviceId}/${it.id}/`)
+          )
+        );
+        await fetchManualDisplayData();
+      } catch (err) {
+        console.error("Failed to delete saved category items", err);
+        alert("Failed to delete some saved items. Refresh and try again.");
+        await fetchManualDisplayData();
+      }
     }
   };
 
-  
+  /* -------------------------
+     Collapse / Expand a category
+  -------------------------- */
+  const toggleCollapseCategory = (categoryName) => {
+    setCollapsedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryName)) next.delete(categoryName);
+      else next.add(categoryName);
+      return next;
+    });
+  };
 
+  /* -------------------------
+     Fetch manual display data
+  -------------------------- */
   const fetchManualDisplayData = async () => {
-
-  
-
-    
-       try {
+    if (!deviceId) return;
+    try {
       const response = await axios.get(`${BASE_URL}/api/manual-display/${deviceId}/`);
-      setAddedItems(response.data);
-      const preSelectedItems = response.data.map((item) => ({
+      const list = response.data || [];
+      setAddedItems(list);
+      const preSelectedItems = list.map((item) => ({
         category: item.category,
         label: item.name,
         code: item.code,
         value: item.value || 100,
       }));
       setSelectedItems(preSelectedItems);
+      setSelectedRow(null);
     } catch (error) {
-      console.error('Error fetching manual display data:', error);
+      console.error("Error fetching manual display data:", error);
+      setAddedItems([]);
+      setSelectedItems([]);
+      setSelectedRow(null);
     }
   };
 
   useEffect(() => {
     fetchManualDisplayData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deviceId]);
 
+  /* -------------------------
+     Add / Insert / Delete / Clear (unchanged but kept)
+  -------------------------- */
   const handleAdd = async () => {
+    if (!deviceId) {
+      alert("Select a device first.");
+      return;
+    }
+    if (!selectedItems.length) {
+      alert("Select at least one item to add.");
+      return;
+    }
+
     const itemsWithDeviceId = selectedItems.map((item) => ({
       category: item.category,
       name: item.label,
@@ -294,70 +437,317 @@ const ManualDisplayCaptureObjects = () => {
       device_id: deviceId,
       value: item.value || 100,
     }));
+
     try {
-      const response = await axios.post(`${BASE_URL}/api/manual-display/`, itemsWithDeviceId);
-      console.log('Data sent successfully:', response.data);
-      fetchManualDisplayData();
+      await axios.post(`${BASE_URL}/api/manual-display/`, itemsWithDeviceId);
+      await fetchManualDisplayData();
       setSelectedItems([]);
     } catch (error) {
-      console.error('Error sending data:', error);
+      console.error("Error sending data:", error);
+      alert("Failed to add items. See console.");
     }
   };
 
-  const handleSave = () => {
-    console.log('Selected Items:', addedItems);
+  const handleInsert = async () => {
+    if (!deviceId) {
+      alert("Select a device first.");
+      return;
+    }
+    if (!selectedItems.length) {
+      alert("Select at least one item to insert.");
+      return;
+    }
+
+    const insertIndex = selectedRow === null ? addedItems.length : selectedRow + 1;
+
+    const itemsToSend = selectedItems.map((item) => ({
+      category: item.category,
+      name: item.label,
+      code: item.code,
+      device_id: deviceId,
+      value: item.value || 100,
+    }));
+
+    try {
+      await axios.post(`${BASE_URL}/api/manual-display/`, itemsToSend);
+
+      // Insert locally for instant feedback
+      const newList = [...addedItems];
+      const insertedObjs = itemsToSend.map((it) => ({
+        name: it.name,
+        code: it.code,
+        category: it.category,
+        value: it.value,
+      }));
+      newList.splice(insertIndex, 0, ...insertedObjs);
+      setAddedItems(newList);
+      setSelectedRow(insertIndex);
+      await fetchManualDisplayData();
+      setSelectedItems([]);
+    } catch (error) {
+      console.error("Error inserting items:", error);
+      alert("Failed to insert items. See console.");
+    }
   };
 
+  const handleDelete = async () => {
+    if (selectedRow === null) {
+      alert("Please select a row to delete.");
+      return;
+    }
+
+    const item = addedItems[selectedRow];
+    if (!item) return;
+
+    const ok = window.confirm("Are you sure you want to delete the selected item?");
+    if (!ok) return;
+
+    try {
+      if (item.id) {
+        await axios.delete(`${BASE_URL}/api/manual-display/${deviceId}/${item.id}/`);
+        await fetchManualDisplayData();
+      } else {
+        const newList = addedItems.filter((_, i) => i !== selectedRow);
+        setAddedItems(newList);
+        setSelectedRow(null);
+      }
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      alert("Failed to delete. See console.");
+    }
+  };
+
+  const handleClear = async () => {
+    const ok = window.confirm("Are you sure you want to clear all display items?");
+    if (!ok) return;
+
+    try {
+      await axios.delete(`${BASE_URL}/api/manual-display/${deviceId}/clear/`);
+      setAddedItems([]);
+      setSelectedRow(null);
+    } catch (error) {
+      console.warn("Backend clear failed or endpoint not available, clearing locally.", error);
+      setAddedItems([]);
+      setSelectedRow(null);
+    }
+  };
+
+  /* -------------------------
+     moveItem: reorder local array and update selectedRow
+     (mirrors Loadprofile behavior)
+  -------------------------- */
+  const moveItem = (fromIndex, toIndex) => {
+    if (fromIndex == null || fromIndex === undefined) return;
+
+    setAddedItems((prev) => {
+      if (!Array.isArray(prev) || fromIndex < 0 || fromIndex >= prev.length) return prev;
+      const next = [...prev];
+      const [item] = next.splice(fromIndex, 1);
+      const insertIndex = Math.max(0, Math.min(toIndex, next.length));
+      next.splice(insertIndex, 0, item);
+
+      // update selectedRow to the new position
+      setSelectedRow(insertIndex);
+      return next;
+    });
+  };
+
+  // Navigation handlers that REORDER rows
+  const handleFirst = () => {
+    if (selectedRow === null) {
+      alert("Select a row");
+      return;
+    }
+    if (selectedRow === 0) return;
+    moveItem(selectedRow, 0);
+  };
+
+  const handlePrevious = () => {
+    if (selectedRow === null) {
+      alert("Select a row");
+      return;
+    }
+    if (selectedRow <= 0) return;
+    moveItem(selectedRow, selectedRow - 1);
+  };
+
+  const handleNext = () => {
+    if (selectedRow === null) {
+      alert("Select a row");
+      return;
+    }
+    const lastIndex = addedItems.length - 1;
+    if (selectedRow >= lastIndex) return;
+    moveItem(selectedRow, selectedRow + 1);
+  };
+
+  const handleLast = () => {
+    if (selectedRow === null) {
+      alert("Select a row");
+      return;
+    }
+    const lastIndex = addedItems.length - 1;
+    if (selectedRow === lastIndex) return;
+    moveItem(selectedRow, lastIndex);
+  };
+
+  // scroll into view when selection changes
+  useEffect(() => {
+    if (selectedRow !== null && rowRefs.current[selectedRow]) {
+      rowRefs.current[selectedRow].scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [selectedRow]);
+
+  // button state helpers
+  const hasSelected = selectedRow !== null;
+  const atFirst = hasSelected && selectedRow === 0;
+  const atLast = hasSelected && selectedRow === addedItems.length - 1;
+
+  /* -------------------------
+     UI
+  -------------------------- */
   return (
-    <div className="DisplayContainer">
-      <div className="sub_container_display">
-        {manualCategories.map((category, index) => (
-          <div key={index}>
-            <label>
-              <input type="checkbox" /> {category.name}
-            </label>
+    <div className="display-root" style={{ display: "flex", gap: 12 }}>
+      {/* Left: categories (flex:1) */}
+      <div className="sub_container_display" style={{ flex: 1, overflowY: "auto" }}>
+        {manualCategories.map((category, index) => {
+          const codesInCat = (category.items || []).map((it) => it.code);
+          const allChecked =
+            codesInCat.length > 0 &&
+            codesInCat.every((c) => selectedItems.some((s) => s.code === c) || savedCodes.has(c));
+
+          return (
             <div
-              style={{ textAlign: 'start', border: '1px solid black', padding: '10px', marginBottom: '10px' }}>
-              {category.items.map((item, idx) => (
-                <label key={idx} style={{ display: 'block' }}>
+              key={index}
+              className="category-block"
+              style={{ marginBottom: 12, border: "1px solid #f0f0f0", padding: 8, borderRadius: 6 }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <input
                     type="checkbox"
-                    checked={selectedItems.some(
-                      (selected) => selected.label === item.label && selected.code === item.code
-                    )}
-                    onChange={(e) => handleCheckboxChange(category.name, item.label, item.code, e.target.checked)}
-                  />{' '}
-                  {item.label} ({item.code})
-                </label>
-              ))}
+                    checked={allChecked}
+                    onChange={(e) => handleCategoryToggle(category, e.target.checked)}
+                  />
+                  <strong>{category.name}</strong>
+                </div>
+
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={() => toggleCollapseCategory(category.name)}
+                    title={collapsedCategories.has(category.name) ? "Expand category" : "Collapse category"}
+                    style={{ padding: "4px 6px", cursor: "pointer" }}
+                  >
+                    {collapsedCategories.has(category.name) ? "▸" : "◂"}
+                  </button>
+                </div>
+              </div>
+
+              {!collapsedCategories.has(category.name) && (
+                <div style={{ marginTop: 8 }}>
+                  {(category.items || []).map((item, idx) => {
+                    // item.label or item.name depending on shape
+                    const label = item.label ?? item.name ?? item.code;
+                    const checked = selectedItems.some((s) => s.code === item.code) || savedCodes.has(item.code);
+
+                    return (
+                      <label key={idx} className="item-label" style={{ display: "block", margin: "6px 0" }}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => handleCheckboxChange(category.name, label, item.code, e.target.checked)}
+                        />
+                        <span style={{ marginLeft: 8 }}>{label}</span>
+                        <span className="code-text" style={{ marginLeft: 8, color: "#666" }}>
+                          ({item.code})
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      <div className="sub_container_display_2">
-        <div className="display_buttons_container">
-          <button style={{ margin: '5px' }} onClick={handleAdd}>
-            Add
-          </button>
-          <button onClick={handleSave}>Save</button>
-        </div>
+      {/* Center: toolbar */}
+      <div className="vertical-toolbar" >
+        <button className="tool-btn" onClick={handleAdd} title="Add selected to end">
+          <span className="tool-icon">+</span>
+          <span className="tool-text">Add</span>
+        </button>
 
+        <button className="tool-btn" onClick={handleInsert} title="Insert after selected row">
+          <span className="tool-icon red-dot"></span>
+          <span className="tool-text">Insert</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleDelete} title="Delete selected row" disabled={!hasSelected}>
+          <span className="tool-icon">−</span>
+          <span className="tool-text">Delete</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleClear} title="Clear all" disabled={!addedItems.length}>
+          <span className="tool-icon">×</span>
+          <span className="tool-text">Clear</span>
+        </button>
+
+        <div className="tool-separator" style={{ height: 1, background: "#eee", margin: "8px 0" }} />
+
+        <button className="tool-btn" onClick={handleFirst} title="First" disabled={!hasSelected || atFirst}>
+          <span className="tool-icon">|◀</span>
+          <span className="tool-text">First</span>
+        </button>
+
+        <button className="tool-btn" onClick={handlePrevious} title="Previous" disabled={!hasSelected || atFirst}>
+          <span className="tool-icon">◀</span>
+          <span className="tool-text">Previous</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleNext} title="Next" disabled={!hasSelected || atLast}>
+          <span className="tool-icon">▶</span>
+          <span className="tool-text">Next</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleLast} title="Last" disabled={!hasSelected || atLast}>
+          <span className="tool-icon">▶|</span>
+          <span className="tool-text">Last</span>
+        </button>
+      </div>
+
+      {/* Right: table */}
+      <div className="sub_container_display_2" style={{ flex: 1, overflowY: "auto" }}>
         <div className="display_table">
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+          <table className="tableTariff1" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Name</th>
-                <th style={{ border: '1px solid #ddd', padding: '8px' }}>Code</th>
+                <th style={{ border: "1px solid #ddd", padding: 2, textAlign: "left" }}>Name</th>
+                <th style={{ border: "1px solid #ddd", padding: 2, textAlign: "left" }}>Code</th>
               </tr>
             </thead>
             <tbody>
-              {addedItems.map((item, index) => (
-                <tr key={index}>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.name}</td>
-                  <td style={{ border: '1px solid #ddd', padding: '8px' }}>{item.code}</td>
+              {addedItems.length === 0 ? (
+                <tr>
+                  <td colSpan={2} style={{ padding: 8 }}>No items</td>
                 </tr>
-              ))}
+              ) : (
+                addedItems.map((item, index) => (
+                  <tr
+                    key={item.id ?? index}
+                    ref={(el) => (rowRefs.current[index] = el)}
+                    className={selectedRow === index ? "selected-row" : ""}
+                    onClick={() => setSelectedRow(index)}
+                    style={{
+                      background: selectedRow === index ? "#eef" : "",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <td style={{ padding: 1, borderBottom: "1px solid #f0f0f0" }}>{item.name}</td>
+                    <td style={{ padding: 1, borderBottom: "1px solid #f0f0f0" }}>{item.code}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -369,7 +759,7 @@ const ManualDisplayCaptureObjects = () => {
 
 
 
-const ScrollableCaptureObjects = () => {
+const ScrollableCaptureObjects1 = () => {
   const [selectedItems, setSelectedItems] = useState([]);
  
   
@@ -424,7 +814,7 @@ const ScrollableCaptureObjects = () => {
       category:item.category, 
       name:item.label,
       code:item.code,
-      device_id: 1, // Replace with the actual device ID
+      device_id: deviceId, // Replace with the actual device ID
       value: item.value || 100 // Include value, default to empty string if not provided
     })); 
     try {
@@ -445,7 +835,7 @@ const ScrollableCaptureObjects = () => {
 
   return (
     <>
-    <div className="DisplayContainer"> 
+    <div className="display-root"> 
     <div className="sub_container_display">
       {categories.map((category, index) => (
         <div key={index}>
@@ -469,34 +859,72 @@ const ScrollableCaptureObjects = () => {
      
      </div>
 
- <div className="sub_container_display_2"> 
-     <div className="display_buttons_container"> 
+      <div className="vertical-toolbar">
+        {/* Action buttons */}
+        <button className="tool-btn" onClick={handleAdd} title="Add selected to end">
+          <span className="tool-icon">+</span>
+          <span className="tool-text">Add</span>
+        </button>
 
-      <button style={{margin:'5px'}} onClick={handleAdd}>
-        Add 
-      </button>
-      <button onClick={handleSave}>
-        Save
-      </button>
+        <button className="tool-btn"  title="Insert after selected row">
+          <span className="tool-icon red-dot"></span>
+          <span className="tool-text">Insert</span>
+        </button>
+
+        <button className="tool-btn"  title="Delete selected row">
+          <span className="tool-icon">−</span>
+          <span className="tool-text">Delete</span>
+        </button>
+
+        <button className="tool-btn"  title="Clear all">
+          <span className="tool-icon">×</span>
+          <span className="tool-text">Clear</span>
+        </button>
+
+        <div className="tool-separator" />
+
+        {/* Navigation buttons */}
+        <button className="tool-btn"  title="First">
+          <span className="tool-icon">|◀</span>
+          <span className="tool-text">First</span>
+        </button>
+
+        <button className="tool-btn"  title="Previous">
+          <span className="tool-icon">◀</span>
+          <span className="tool-text">Previous</span>
+        </button>
+
+        <button className="tool-btn"  title="Next">
+          <span className="tool-icon">▶</span>
+          <span className="tool-text">Next</span>
+        </button>
+
+        <button className="tool-btn"  title="Last">
+          <span className="tool-icon">▶|</span>
+          <span className="tool-text">Last</span>
+        </button>
       </div>
+
+ <div className="sub_container_display_2"> 
+     
 
 
       <div className="display_table">
  
-  <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
+  <table>
     <thead>
       <tr>
         
-        <th style={{ border: "1px solid #ddd", padding: "8px" }}>name</th>
-        <th style={{ border: "1px solid #ddd", padding: "8px" }}>Code</th>
+        <th style={{ border: "1px solid #ddd",padding:'10px'}}>name</th>
+        <th style={{ border: "1px solid #ddd",padding:'10px'}}>Code</th>
       </tr>
     </thead>
     <tbody>
       {addedItems.map((item, index) => (
         <tr key={index}>
          
-          <td style={{ border: "1px solid #ddd", padding: "8px" }}>{item.name}</td>
-          <td style={{ border: "1px solid #ddd", padding: "8px" }}>{item.code}</td>
+          <td >{item.name}</td>
+          <td >{item.code}</td>
         </tr>
       ))}
     </tbody>
@@ -510,6 +938,350 @@ const ScrollableCaptureObjects = () => {
     
   );
 };
+
+
+
+
+// Make sure BASE_URL and categories are available in the file's scope
+
+const ScrollableCaptureObjects = () => {
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [deviceId, setDeviceId] = useState(() => localStorage.getItem("selectedDeviceId"));
+  const [addedItems, setAddedItems] = useState([]);
+  const [selectedRow, setSelectedRow] = useState(null); // index of selected row
+  const rowRefs = useRef([]);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("selectedDeviceId");
+    setDeviceId(storedId);
+  }, []);
+
+  const handleCheckboxChange = (categoryName, label, code, checked) => {
+    if (checked) {
+      setSelectedItems((prev) => [...prev, { category: categoryName, label, code }]);
+    } else {
+      setSelectedItems((prev) => prev.filter((item) => !(item.label === label && item.code === code)));
+    }
+  };
+
+  const fetchScrollData = async () => {
+    if (!deviceId) return;
+    try {
+      const response = await axios.get(`${BASE_URL}/api/scroll-display/${deviceId}/`);
+      const list = response.data || [];
+      setAddedItems(list);
+
+      // Pre-select items that are already in the backend
+      const preSelectedItems = list.map((item) => ({
+        category: item.category,
+        label: item.name,
+        code: item.code,
+        value: item.value || 100,
+      }));
+      setSelectedItems(preSelectedItems);
+      setSelectedRow(null);
+    } catch (error) {
+      console.error("Error fetching scroll display data:", error);
+      setAddedItems([]);
+      setSelectedItems([]);
+      setSelectedRow(null);
+    }
+  };
+
+  useEffect(() => {
+    fetchScrollData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deviceId]);
+
+  const handleAdd = async () => {
+    if (!deviceId) {
+      alert("Select a device first.");
+      return;
+    }
+    if (!selectedItems.length) {
+      alert("Select at least one item to add.");
+      return;
+    }
+
+    const itemsWithDeviceId = selectedItems.map((item) => ({
+      category: item.category,
+      name: item.label,
+      code: item.code,
+      device_id: deviceId,
+      value: item.value || 100,
+    }));
+
+    try {
+      await axios.post(`${BASE_URL}/api/scroll-display/`, itemsWithDeviceId);
+      await fetchScrollData();
+      setSelectedItems([]); // Clear selected items after adding
+    } catch (error) {
+      console.error("Error sending data:", error);
+      alert("Failed to add items. See console.");
+    }
+  };
+
+  // Optional insert (append after selectedRow). If no selectedRow, append.
+  const handleInsert = async () => {
+    if (!deviceId) {
+      alert("Select a device first.");
+      return;
+    }
+    if (!selectedItems.length) {
+      alert("Select at least one item to insert.");
+      return;
+    }
+
+    const insertIndex = selectedRow === null ? addedItems.length : selectedRow + 1;
+    const itemsToSend = selectedItems.map((item) => ({
+      category: item.category,
+      name: item.label,
+      code: item.code,
+      device_id: deviceId,
+      value: item.value || 100,
+    }));
+
+    try {
+      await axios.post(`${BASE_URL}/api/scroll-display/`, itemsToSend);
+
+      // Local optimistic insert for immediate feedback (we re-fetch afterwards)
+      const newList = [...addedItems];
+      const insertedObjs = itemsToSend.map((it) => ({ name: it.name, code: it.code, category: it.category, value: it.value }));
+      newList.splice(insertIndex, 0, ...insertedObjs);
+      setAddedItems(newList);
+      setSelectedRow(insertIndex);
+      await fetchScrollData();
+      setSelectedItems([]);
+    } catch (err) {
+      console.error("Error inserting items:", err);
+      alert("Failed to insert items. See console.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (selectedRow === null) {
+      alert("Please select a row to delete.");
+      return;
+    }
+
+    const item = addedItems[selectedRow];
+    if (!item) return;
+
+    const ok = window.confirm("Are you sure you want to delete the selected item?");
+    if (!ok) return;
+
+    try {
+      if (item.id) {
+        await axios.delete(`${BASE_URL}/api/scroll-display/${deviceId}/${item.id}/`);
+        await fetchScrollData();
+      } else {
+        // remove locally if no server id
+        const newList = addedItems.filter((_, i) => i !== selectedRow);
+        setAddedItems(newList);
+        setSelectedRow(null);
+      }
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      alert("Failed to delete. See console.");
+    }
+  };
+
+  const handleClear = async () => {
+    const ok = window.confirm("Are you sure you want to clear all scroll display items?");
+    if (!ok) return;
+
+    try {
+      await axios.delete(`${BASE_URL}/api/scroll-display/${deviceId}/clear/`);
+      setAddedItems([]);
+      setSelectedRow(null);
+    } catch (error) {
+      console.warn("Backend clear failed or endpoint not available, clearing locally.", error);
+      setAddedItems([]);
+      setSelectedRow(null);
+    }
+  };
+
+  /* -------------------------
+     moveItem: reorder local array and update selectedRow
+     (same behavior as ManualDisplay / LoadProfile)
+  -------------------------- */
+  const moveItem = (fromIndex, toIndex) => {
+    if (fromIndex == null || fromIndex === undefined) return;
+    setAddedItems((prev) => {
+      if (!Array.isArray(prev) || fromIndex < 0 || fromIndex >= prev.length) return prev;
+      const next = [...prev];
+      const [item] = next.splice(fromIndex, 1);
+      const insertIndex = Math.max(0, Math.min(toIndex, next.length));
+      next.splice(insertIndex, 0, item);
+      // update selected row inside updater so it stays consistent with new array
+      // (this is ok — React will batch)
+      setSelectedRow(insertIndex);
+      return next;
+    });
+  };
+
+  const handleFirst = () => {
+    if (selectedRow === null) {
+      alert("Select a row");
+      return;
+    }
+    if (selectedRow === 0) return;
+    moveItem(selectedRow, 0);
+  };
+
+  const handlePrevious = () => {
+    if (selectedRow === null) {
+      alert("Select a row");
+      return;
+    }
+    if (selectedRow <= 0) return;
+    moveItem(selectedRow, selectedRow - 1);
+  };
+
+  const handleNext = () => {
+    if (selectedRow === null) {
+      alert("Select a row");
+      return;
+    }
+    const lastIndex = (addedItems || []).length - 1;
+    if (selectedRow >= lastIndex) return;
+    moveItem(selectedRow, selectedRow + 1);
+  };
+
+  const handleLast = () => {
+    if (selectedRow === null) {
+      alert("Select a row");
+      return;
+    }
+    const lastIndex = (addedItems || []).length - 1;
+    if (selectedRow === lastIndex) return;
+    moveItem(selectedRow, lastIndex);
+  };
+
+  // auto-scroll selected row into view
+  useEffect(() => {
+    if (selectedRow !== null && rowRefs.current[selectedRow]) {
+      rowRefs.current[selectedRow].scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [selectedRow]);
+
+  const hasSelected = selectedRow !== null;
+  const atFirst = hasSelected && selectedRow === 0;
+  const atLast = hasSelected && selectedRow === (addedItems || []).length - 1;
+
+  return (
+    <>
+      <div className="display-root" style={{ display: "flex", gap: 12 }}>
+        <div className="sub_container_display" style={{ flex: 1, overflowY: "auto" }}>
+          {categories.map((category, index) => (
+            <div key={index} style={{ marginBottom: 12, border: "1px solid #f0f0f0", padding: 8, borderRadius: 6 }}>
+              <label style={{ display: "block", marginBottom: 6 }}>
+                <input type="checkbox" /> <strong>{category.name}</strong>
+              </label>
+
+              <div style={{ textAlign: "start", border: "1px solid #ddd", padding: 10, marginBottom: 10 }}>
+                {category.items.map((item, idx) => (
+                  <label key={idx} style={{ display: "block", margin: "6px 0" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.some((selected) => selected.label === item.label && selected.code === item.code)}
+                      onChange={(e) => handleCheckboxChange(category.name, item.label, item.code, e.target.checked)}
+                    />{" "}
+                    {item.label} ({item.code})
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="vertical-toolbar" >
+          <button className="tool-btn" onClick={handleAdd} title="Add selected to end">
+            <span className="tool-icon">+</span>
+            <span className="tool-text">Add</span>
+          </button>
+
+          <button className="tool-btn" onClick={handleInsert} title="Insert after selected row">
+            <span className="tool-icon red-dot"></span>
+            <span className="tool-text">Insert</span>
+          </button>
+
+          <button className="tool-btn" onClick={handleDelete} title="Delete selected row" disabled={!hasSelected}>
+            <span className="tool-icon">−</span>
+            <span className="tool-text">Delete</span>
+          </button>
+
+          <button className="tool-btn" onClick={handleClear} title="Clear all" disabled={!addedItems.length}>
+            <span className="tool-icon">×</span>
+            <span className="tool-text">Clear</span>
+          </button>
+
+          <div className="tool-separator" style={{ height: 1, background: "#eee", margin: "8px 0" }} />
+
+          <button className="tool-btn" onClick={handleFirst} title="First" disabled={!hasSelected || atFirst}>
+            <span className="tool-icon">|◀</span>
+            <span className="tool-text">First</span>
+          </button>
+
+          <button className="tool-btn" onClick={handlePrevious} title="Previous" disabled={!hasSelected || atFirst}>
+            <span className="tool-icon">◀</span>
+            <span className="tool-text">Previous</span>
+          </button>
+
+          <button className="tool-btn" onClick={handleNext} title="Next" disabled={!hasSelected || atLast}>
+            <span className="tool-icon">▶</span>
+            <span className="tool-text">Next</span>
+          </button>
+
+          <button className="tool-btn" onClick={handleLast} title="Last" disabled={!hasSelected || atLast}>
+            <span className="tool-icon">▶|</span>
+            <span className="tool-text">Last</span>
+          </button>
+        </div>
+
+        <div className="sub_container_display_2" style={{ flex: 1, overflowY: "auto" }}>
+          <div className="display_table">
+            <table className="tableTariff1">
+              <thead>
+                <tr>
+                  <th style={{ border: "1px solid #ddd", padding: 2 }}>name</th>
+                  <th style={{ border: "1px solid #ddd", padding: 2 }}>Code</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(addedItems || []).length === 0 ? (
+                  <tr>
+                    <td colSpan={2} style={{ padding: 8 }}>No items</td>
+                  </tr>
+                ) : (
+                  addedItems.map((item, index) => (
+                    <tr
+                      key={item.id ?? index}
+                      ref={(el) => (rowRefs.current[index] = el)}
+                      className={selectedRow === index ? "selected-row" : ""}
+                      onClick={() => setSelectedRow(index)}
+                      style={{
+                        background: selectedRow === index ? "#eef" : "",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <td style={{ padding: 1, borderBottom: "1px solid #f0f0f0" }}>{item.name}</td>
+                      <td style={{ padding: 1, borderBottom: "1px solid #f0f0f0" }}>{item.code}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
 
 
 
@@ -643,31 +1415,27 @@ const LcdDisplayFormat = () => {
   
   
   return (
-    <div style={{ textAlign: "center", marginTop: "20px" }}>
+    <div className="display-root-lcd" >
+     
       <table
-        style={{
-          width: "50%",
-          margin: "0 auto",
-          borderCollapse: "collapse",
-          border: "1px solid black",
-        }}
+      className="tableTariff2"
       >
         <thead>
           <tr>
-            <th style={{ border: "1px solid black", padding: "10px" }}>Name</th>
-            <th style={{ border: "1px solid black", padding: "10px" }}>Value</th>
+            <th >Name</th>
+            <th >Value</th>
           </tr>
         </thead>
         <tbody>
           {lcdData.map((item, index) => (
             <tr key={index}>
-              <td style={{ border: "1px solid black", padding: "10px" }}>{item.name}</td>
-              <td style={{ border: "1px solid black", padding: "10px" }}>
+              <td>{item.name}</td>
+              <td>
                 {item.type === "select" ? (
                   <select
                     value={item.value}
                     onChange={(e) => handleChange(index, e.target.value)}
-                    style={{ padding: "5px" }}
+                    style={{ padding: "1%" ,width: "100%"}}
                   >
                     {item.options.map((option, idx) => (
                       <option key={idx} value={option}>
@@ -680,7 +1448,7 @@ const LcdDisplayFormat = () => {
                     type="number"
                     value={item.value}
                     onChange={(e) => handleChange(index, e.target.value)}
-                    style={{ padding: "5px", width: "50px" }}
+                    style={{ padding: "1%", width: "100%" }}
                   />
                 )}
               </td>
@@ -689,9 +1457,11 @@ const LcdDisplayFormat = () => {
         </tbody>
       </table>
 
-      <button onClick={handleSave} style={{ marginTop: "20px" }}>
+      <div className="lcd-save-button-container"> 
+      <button style={{marginLeft:"40%"}} className="scheduler-add-button" onClick={handleSave} >
         Save
       </button>
+      </div>
     </div>
   );
 };
@@ -752,15 +1522,12 @@ const DisplayParameters = () => {
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "20px" }}>
-      <h2>Display Parameters</h2>
+    <div   className="display-root-lcd">
+    
 
-      <div>
-       
-        <button onClick={fetchDisplayParameters}>Get Values</button>
-      </div>
+     
 
-      <table border="1" style={{ margin: "auto", width: "80%", textAlign: "left" }}>
+      <table style={{marginTop:"5%"}} className="tableTariff1"  >
         <thead>
           <tr>
             <th>Checked</th>
@@ -789,6 +1556,10 @@ const DisplayParameters = () => {
           ))}
         </tbody>
       </table>
+       <div className="lcd-save-button-container">
+       
+        <button style={{marginLeft:"40%"}} className="scheduler-add-button" onClick={fetchDisplayParameters}>Get Values</button>
+      </div>
     </div>
   );
 };
@@ -803,21 +1574,54 @@ const Display = () => {
   const [view, setView] = useState("manual"); // Default to Manual Display
 
   return (
-    <div style={{ textAlign: "center", marginTop: "20px" }}>
-      <button onClick={() => setView("manual")} style={{ margin: "10px", padding: "10px" }}>
-        Manual Display
-      </button>
-      <button onClick={() => setView("scrollable")} style={{ margin: "10px", padding: "10px" }}>
-        Scrollable Display
-      </button>
-      <button onClick={() => setView("lcd")} style={{ margin: "10px", padding: "10px" }}>
-        LCD Display Format
-      </button>
-      <button onClick={() => setView("parameters")} style={{ margin: "10px", padding: "10px" }}>
-        Display Parameters
-      </button>
+    <div className="Display_Container">
+      <div
+  className="view-toggle"
+  role="tablist"
+  aria-label="Display view selection"
+>
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={view === "manual"}
+    className={`view-btn ${view === "manual" ? "active" : ""}`}
+    onClick={() => setView("manual")}
+  >
+    Manual Display
+  </button>
 
-      <div style={{ marginTop: "20px" }}>
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={view === "scrollable"}
+    className={`view-btn ${view === "scrollable" ? "active" : ""}`}
+    onClick={() => setView("scrollable")}
+  >
+    Scrollable Display
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={view === "lcd"}
+    className={`view-btn ${view === "lcd" ? "active" : ""}`}
+    onClick={() => setView("lcd")}
+  >
+    LCD Display Format
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={view === "parameters"}
+    className={`view-btn ${view === "parameters" ? "active" : ""}`}
+    onClick={() => setView("parameters")}
+  >
+    Display Parameters
+  </button>
+</div>
+
+      <div> 
         {view === "manual" && <ManualDisplayCaptureObjects />}
         {view === "scrollable" && <ScrollableCaptureObjects />}
         {view === "lcd" && <LcdDisplayFormat />}

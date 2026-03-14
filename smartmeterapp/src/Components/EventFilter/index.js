@@ -65,7 +65,7 @@ const EventReportFilter = () => {
         }
 
         return (
-            <table className="event-table">
+            <table className="tableTariff1">
                 <thead>
                     <tr>
                         <th>Checked</th>
@@ -101,17 +101,26 @@ const EventReportFilter = () => {
 
     return (
         <div className='relay-container'>
-            <div>
-                {filters.map((filter) => (
-                    <button 
-                        key={filter.id} 
-                        onClick={() => handleFilterClick(filter.id)}
-                        className={activeFilter === filter.id ? 'active' : ''}
-                    >
-                        {filter.name}
-                    </button>
-                ))}
-            </div>
+            <div
+  className="view-toggle"
+  role="tablist"
+  aria-label="Filter selection"
+>
+  {filters.map((filter) => (
+    <button
+      key={filter.id}
+      type="button"
+      role="tab"
+      aria-pressed={activeFilter === filter.id}
+      className={`view-btn ${
+        activeFilter === filter.id ? "active" : ""
+      }`}
+      onClick={() => handleFilterClick(filter.id)}
+    >
+      {filter.name}
+    </button>
+  ))}
+</div>
             <div className="filter-content">
                 <h2>{filters.find(f => f.id === activeFilter).name}</h2>
                 {renderTable()}

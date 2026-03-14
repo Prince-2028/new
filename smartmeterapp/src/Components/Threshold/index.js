@@ -146,7 +146,7 @@ const ThresholdTable = () => {
   };
 
   return (
-    <div className="threshold-table-container">
+      <div className="load-control-container-threshold">
       <button onClick={handleReadClick}>Read Values</button>
       <table className="threshold-table">
         <thead>

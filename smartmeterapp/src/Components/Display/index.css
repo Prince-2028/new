@@ -8,6 +8,54 @@
  
 }
 
+   /* height:60vh; Table styling #f5f5f5 */
+    .tableTariff2 {
+      width: 90%;
+      margin-left:5%;
+      margin-top:5%;
+      border-collapse: collapse;
+      
+      box-shadow: 0 0 4px #717070,
+    0 0 4px #717070,
+    0 0 4px #717070,
+    0 0 4px #717070; 
+    text-align: center; 
+   
+    }
+  
+  
+    .tableTariff2 th{
+      background-color: #ff5500;
+       padding:1%;
+      font-weight:550;
+      font-size:14px;
+      border:none;
+      text-align:center;
+    }
+    .tableTariff2 td 
+    {
+     border:0px;
+    text-align:center;
+    padding:0.5%;
+    }
+    
+
+     .tableTariff2 tbody tr:nth-child(odd) {
+    background-color:#bcc3c3; /* Light gray background for odd rows */
+
+    font-size:14px;
+  
+   
+  }
+  
+  .tableTariff2 tbody tr:nth-child(even) {
+    background-color:#fffafa; /* Lighter gray background for even rows */
+    /* border:1px solid black; */
+    font-size:14px;
+    
+  }
+  
+
 
 
 :root {

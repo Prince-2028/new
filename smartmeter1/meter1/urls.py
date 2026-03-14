@@ -98,6 +98,7 @@ urlpatterns = [
 
     path('api/create_ipv4_setup/', IPv4SetupCreateView.as_view(), name='create_ipv4_setup'),
     path('api/get_ipv4_setup/<int:device_id>/', IPv4SetupCreateView.as_view(), name='ipv4-setup-detail'),
+    path('api/delete-auto-answer-settings/<str:type>/<int:id>/',AutoAnswerSettingsCreateView.as_view(),name='delete_auto_answer_settings'),
     
     path('api/create_update_tcpudpsetup/', CreateOrUpdateTcpUdpSetup.as_view(), name='create_or_update_tcp_udp_setup'),
     path('api/get_tcpudpsetup/<int:device_id>/',CreateOrUpdateTcpUdpSetup.as_view(),name='get_tcp_udp_setup'),
@@ -107,6 +108,7 @@ urlpatterns = [
 
     path('api/create-ppp-setup/', PPPSetupView.as_view(), name='create-ppp-setup'),
     path('api/get-ppp-setup/<int:device_id>/<str:type>/', PPPSetupView.as_view(), name='create-ppp-setup'),
+    path('api/delete-ppp-setup/<int:id>/', PPPSetupView.as_view(), name='delete-ppp-setup-by-id'),
 
     path('api/create-gprs-setup/', GprsSetupView.as_view(), name='gprs-setup'),
 
@@ -208,6 +210,12 @@ urlpatterns = [
    
     path('api/friendly-periods/', FriendlyPeriodAPI.as_view(), name="friendly_periods"),
     path('api/friendly-periods/<int:device_id>/', FriendlyPeriodAPI.as_view(), name="friendly_periods_by_device"),
+
+        path('api/friendly-periods/item/<int:item_id>/', FriendlyPeriodItemDeleteAPI.as_view()),
+
+    # clean all by device
+    path('api/friendly-periods/clean/<int:device_id>/', FriendlyPeriodAPI.as_view()),
+  
     path('api/friendly-weekdays/<int:device_id>/',FriendlyWeekdayView.as_view(), name="friendly_weekday"),
     path('api/friendly-weekdays/', FriendlyWeekdayView.as_view(), name="friendly_weekday"),  # POST method
    
@@ -225,8 +233,27 @@ urlpatterns = [
 
     path('api/scroll-display/', ScrollDisplayView.as_view(), name='scroll-display-list'),
     path('api/scroll-display/<int:device_id>/', ScrollDisplayView.as_view(), name='scroll-display-get'),
+
+    #new 
+        path('api/scroll-display/<int:device_id>/<int:item_id>/', ScrollDisplayItemView.as_view(), name='scroll-display-item-delete'),
+
+    # Clear all for a device
+    path('api/scroll-display/<int:device_id>/clear/', ScrollDisplayClearView.as_view(), name='scroll-display-clear'),
+   
+    # delete single item:  DELETE ${BASE_URL}/api/manual-display/<deviceId>/<itemId>/
+    path('api/manual-display/<int:device_id>/<int:item_id>/', ManualDisplayView1.as_view(), name='manual-display-delete'),
+
+    # clear all for a device: DELETE ${BASE_URL}/api/manual-display/<deviceId>/clear/
+    path('api/manual-display/<int:device_id>/clear/', ManualDisplayView.as_view(), name='manual-display-clear'),
+
+
+
+
+
     path('api/manual-display/', ManualDisplayView.as_view(), name='manual-display-list-create'),
     path('api/manual-display/<int:device_id>/', ManualDisplayView.as_view(), name='manual-display-detail'),
+   
+   
     path('api/lcd-display-format/', LcdDisplayFormatView.as_view(), name='create-update-lcd-display-format'),
     path('api/lcd-display-format/<int:device_id>/', LcdDisplayFormatView.as_view(), name='get-lcd-display-format'),
     path('api/display-parameters/', DisplayParameterListCreateUpdateView.as_view(), name='display-parameter-list-create-update'),

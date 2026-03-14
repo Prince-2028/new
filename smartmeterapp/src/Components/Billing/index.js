@@ -308,7 +308,7 @@ import './index.css'
 
 
 
-const MonthlyBillingCaptureObjects = () => {
+const MonthlyBillingCaptureObjects1 = () => {
   const [selectedItems, setSelectedItems] = useState([]); // items to POST
   const [addedItems, setAddedItems] = useState([]); // items fetched from backend
   const [deviceId, setDeviceId] = useState(() =>
@@ -703,11 +703,11 @@ const MonthlyBillingCaptureObjects = () => {
       {/* RIGHT: saved table */}
       <div className="sub_container_display_2" > 
         <div className="display_table"> 
-        <table >
+        <table className='tableTariff1' >
           <thead>
             <tr>
-              <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Name</th>
-              <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Code</th>
+              <th  >Name</th>
+              <th >Code</th>
              
             </tr>
           </thead>
@@ -745,6 +745,509 @@ const MonthlyBillingCaptureObjects = () => {
 
 
 
+
+/**
+ * MonthlyBillingCaptureObjects
+ * - Category collapse/expand
+ * - Category-level select/deselect (auto-selects subitems, prevents duplicates with saved items)
+ * - Single checkbox logic (handles saved vs newly-selected items)
+ * - Add / Insert / Delete / Clear (left as original behavior)
+ * - Navigation (First / Previous / Next / Last) now moves the selected row in the local list
+ *   and selection follows the moved row. Navigation buttons are disabled when not applicable.
+ *
+ * Assumes these globals are available in your project:
+ *  - BASE_URL
+ *  - manualCategories (array of categories with items)
+ *
+ * Paste/replace your existing component file with this code.
+ */
+
+const MonthlyBillingCaptureObjects = () => {
+  const [selectedItems, setSelectedItems] = useState([]); // items to POST (not-yet-saved)
+  const [addedItems, setAddedItems] = useState([]); // items fetched from backend (saved items)
+  const [deviceId, setDeviceId] = useState(() =>
+    localStorage.getItem("selectedDeviceId")
+  );
+  const [selectedRow, setSelectedRow] = useState(null); // index in addedItems
+  const rowRefs = useRef([]);
+
+  // categories collapsed by default (names present => collapsed)
+  const [collapsedCategories, setCollapsedCategories] = useState(() =>
+    new Set((manualCategories || []).map((c) => c.name))
+  );
+
+  /* -------------------------
+     Load device id on mount
+  -------------------------- */
+  useEffect(() => {
+    setDeviceId(localStorage.getItem("selectedDeviceId"));
+  }, []);
+
+  /* -------------------------
+     Fetch saved (monthly billing) items
+  -------------------------- */
+  const fetchMonthlyBillingData = async () => {
+    if (!deviceId) {
+      setAddedItems([]);
+      setSelectedRow(null);
+      return;
+    }
+    try {
+      const res = await axios.get(`${BASE_URL}/api/monthly-billing/${deviceId}/`);
+      setAddedItems(res.data || []);
+      setSelectedRow(null);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setAddedItems([]);
+      setSelectedRow(null);
+    }
+  };
+
+  useEffect(() => {
+    fetchMonthlyBillingData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deviceId]);
+
+  /* -------------------------
+     Helper: set of saved codes for quick checks
+  -------------------------- */
+  const savedCodes = useMemo(() => new Set((addedItems || []).map((it) => it.code)), [addedItems]);
+
+  /* -------------------------
+     Single checkbox logic:
+     - when checking: if saved skip re-adding, otherwise add to selectedItems (avoid duplicates)
+     - when unchecking: remove from selectedItems if new; if saved -> confirm then delete on server
+  -------------------------- */
+  const handleCheckboxChange = async (category, name, code, checked) => {
+    if (checked) {
+      // if already saved -> ensure not added to selectedItems (avoid duplicate)
+      if (savedCodes.has(code)) {
+        setSelectedItems((prev) => prev.filter((s) => s.code !== code));
+        return;
+      }
+
+      // otherwise add if not already present
+      setSelectedItems((prev) => {
+        if (prev.some((p) => p.code === code)) return prev;
+        return [...prev, { category, name, code }];
+      });
+      return;
+    }
+
+    // unchecked
+    // if it's a newly-selected item (not yet saved) -> remove locally
+    if (selectedItems.some((s) => s.code === code)) {
+      setSelectedItems((prev) => prev.filter((s) => s.code !== code));
+      return;
+    }
+
+    // if it's saved on server -> ask and delete
+    if (savedCodes.has(code)) {
+      const saved = addedItems.find((it) => it.code === code);
+      if (!saved || !saved.id) {
+        // fallback: remove locally
+        setAddedItems((prev) => prev.filter((it) => it.code !== code));
+        return;
+      }
+
+      const ok = window.confirm(`Remove saved item "${saved.name}"?`);
+      if (!ok) return;
+
+      try {
+        await axios.delete(`${BASE_URL}/api/monthly-billing/item/${saved.id}/`);
+        await fetchMonthlyBillingData();
+      } catch (err) {
+        console.error("Failed to delete saved item", err);
+        alert("Failed to delete saved item. Try again.");
+      }
+      return;
+    }
+
+    // fallback: remove from selectedItems
+    setSelectedItems((prev) => prev.filter((s) => s.code !== code));
+  };
+
+  /* -------------------------
+     Category-level toggle:
+     - check => add all sub-items that are not saved and not already selected
+     - uncheck => remove newly-selected items from this category AND
+                 if there are saved items in this category, confirm & delete them
+  -------------------------- */
+  const handleCategoryToggle = async (categoryObj, checked) => {
+    const categoryName = categoryObj.name;
+    const items = categoryObj.items || [];
+
+    if (checked) {
+      setSelectedItems((prev) => {
+        const prevCodes = new Set(prev.map((p) => p.code));
+        const toAdd = items
+          .filter((it) => !savedCodes.has(it.code) && !prevCodes.has(it.code))
+          .map((it) => ({ category: categoryName, name: it.name ?? it.label ?? it.code, code: it.code }));
+        if (!toAdd.length) return prev;
+        return [...prev, ...toAdd];
+      });
+      return;
+    }
+
+    // unchecked: remove new/seleted items from this category
+    setSelectedItems((prev) => prev.filter((p) => p.category !== categoryName));
+
+    // if any saved items in this category -> confirm & delete them on server
+    const savedInCategory = (addedItems || []).filter((it) => it.category === categoryName);
+    if (savedInCategory.length) {
+      const ok = window.confirm(
+        `This category has ${savedInCategory.length} saved item(s). Unchecking will DELETE them from the server. Proceed?`
+      );
+      if (!ok) return;
+
+      try {
+        await Promise.all(savedInCategory.map((it) => axios.delete(`${BASE_URL}/api/monthly-billing/item/${it.id}/`)));
+        await fetchMonthlyBillingData();
+      } catch (err) {
+        console.error("Failed to delete saved category items", err);
+        alert("Failed to delete some saved items. Refresh and try again.");
+        await fetchMonthlyBillingData();
+      }
+    }
+  };
+
+  /* -------------------------
+     Collapse / Expand a category
+  -------------------------- */
+  const toggleCollapseCategory = (categoryName) => {
+    setCollapsedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryName)) next.delete(categoryName);
+      else next.add(categoryName);
+      return next;
+    });
+  };
+
+  /* -------------------------
+     View category on right table:
+     picks first saved index with same category and selects it (scrolls into view)
+  -------------------------- */
+  const viewCategoryOnRight = (categoryName) => {
+    const idx = (addedItems || []).findIndex((it) => it.category === categoryName);
+    if (idx === -1) {
+      alert("No saved items for this category to view on the right.");
+      return;
+    }
+    setSelectedRow(idx);
+  };
+
+  /* -------------------------
+     Add / Insert / Delete / Clear (POST/DELETE endpoints)
+  -------------------------- */
+  const handleAdd = async () => {
+    if (!deviceId) return alert("Select a device");
+    if (!selectedItems.length) return alert("Select at least one item");
+
+    const payload = selectedItems.map((item) => ({
+      device_id: deviceId,
+      category: item.category,
+      name: item.name,
+      code: item.code,
+      value: 100,
+    }));
+
+    try {
+      await axios.post(`${BASE_URL}/api/monthly-billing/`, payload);
+      setSelectedItems([]);
+      await fetchMonthlyBillingData();
+    } catch (err) {
+      console.error("Add failed:", err);
+      alert("Add failed");
+    }
+  };
+
+  const handleInsert = async () => {
+    if (!deviceId) return alert("Select a device");
+    if (!selectedItems.length) return alert("Select at least one item");
+
+    const insertIndex = selectedRow === null ? (addedItems || []).length : selectedRow + 1;
+    const itemsToSend = selectedItems.map((item) => ({
+      device_id: deviceId,
+      category: item.category,
+      name: item.name,
+      code: item.code,
+      value: 100,
+    }));
+
+    try {
+      await axios.post(`${BASE_URL}/api/monthly-billing/`, itemsToSend);
+      // optimistic local insert for quick feedback
+      const newList = [...addedItems];
+      const inserted = itemsToSend.map((it) => ({ name: it.name, code: it.code, category: it.category, value: it.value }));
+      newList.splice(insertIndex, 0, ...inserted);
+      setAddedItems(newList);
+      setSelectedRow(insertIndex);
+      await fetchMonthlyBillingData();
+      setSelectedItems([]);
+    } catch (err) {
+      console.error("Insert failed:", err);
+      alert("Insert failed");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (selectedRow === null) return alert("Select a row");
+    const item = addedItems[selectedRow];
+    if (!item?.id) return;
+
+    const ok = window.confirm("Delete selected item?");
+    if (!ok) return;
+
+    try {
+      await axios.delete(`${BASE_URL}/api/monthly-billing/item/${item.id}/`);
+      await fetchMonthlyBillingData();
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Delete failed");
+    }
+  };
+
+  const handleClear = async () => {
+    if (!deviceId) return alert("Select a device");
+    const ok = window.confirm("Clear all items for this device?");
+    if (!ok) return;
+    try {
+      await axios.delete(`${BASE_URL}/api/monthly-billing/clean/${deviceId}/`);
+      setAddedItems([]);
+      setSelectedRow(null);
+    } catch (err) {
+      console.error("Clear failed:", err);
+      alert("Clear failed");
+    }
+  };
+
+  /* -------------------------
+     moveItem: reorder local array and update selectedRow
+     (used by First/Prev/Next/Last so selection follows the moved item)
+  -------------------------- */
+  const moveItem = (fromIndex, toIndex) => {
+    if (fromIndex == null || fromIndex === undefined) return;
+    if (!Array.isArray(addedItems) || fromIndex < 0 || fromIndex >= addedItems.length) return;
+
+    setAddedItems((prev) => {
+      const next = [...prev];
+      const [item] = next.splice(fromIndex, 1);
+      // when inserting, clamp between 0 and next.length (append allowed)
+      const insertIndex = Math.max(0, Math.min(toIndex, next.length));
+      next.splice(insertIndex, 0, item);
+      // update selection to item's new index
+      // (we set selection after updating state below to ensure it's in sync)
+      return next;
+    });
+
+    // compute new selection index (note: when moving forward/backward this is fine)
+    // We compute relative to current addedItems length.
+    const len = addedItems.length;
+    const clamped = Math.max(0, Math.min(toIndex, len - 1));
+    setSelectedRow(clamped);
+  };
+
+  /* -------------------------
+     Navigation helpers (reorder rows)
+     Buttons will be disabled in UI when not applicable
+  -------------------------- */
+  const handleFirst = () => {
+    if (selectedRow === null) return;
+    if (selectedRow === 0) return;
+    moveItem(selectedRow, 0);
+  };
+
+  const handlePrevious = () => {
+    if (selectedRow === null) return;
+    if (selectedRow <= 0) return;
+    moveItem(selectedRow, selectedRow - 1);
+  };
+
+  const handleNext = () => {
+    if (selectedRow === null) return;
+    const last = (addedItems || []).length - 1;
+    if (selectedRow >= last) return;
+    moveItem(selectedRow, selectedRow + 1);
+  };
+
+  const handleLast = () => {
+    if (selectedRow === null) return;
+    const last = (addedItems || []).length - 1;
+    if (selectedRow === last) return;
+    moveItem(selectedRow, last);
+  };
+
+  /* -------------------------
+     Auto-scroll selected row into view
+  -------------------------- */
+  useEffect(() => {
+    if (selectedRow !== null && rowRefs.current[selectedRow]) {
+      rowRefs.current[selectedRow].scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [selectedRow]);
+
+  /* -------------------------
+     Button state helpers
+  -------------------------- */
+  const hasSelected = selectedRow !== null;
+  const atFirst = hasSelected && selectedRow === 0;
+  const atLast = hasSelected && selectedRow === (addedItems || []).length - 1;
+
+  /* -------------------------
+     UI
+  -------------------------- */
+  return (
+    <div className="display-root" style={{ display: "flex", gap: 12 }}>
+      {/* LEFT: categories & checkboxes */}
+      <div className="sub_container_display" style={{ flex: 1, overflowY: "auto" }}>
+        {(manualCategories || []).map((cat, i) => {
+          const codesInCat = (cat.items || []).map((it) => it.code);
+          const allChecked = codesInCat.length > 0 && codesInCat.every((c) => selectedItems.some(s => s.code === c) || savedCodes.has(c));
+          const someChecked = codesInCat.some((c) => selectedItems.some(s => s.code === c) || savedCodes.has(c));
+
+          return (
+            <div key={i} className="category-block" style={{ marginBottom: 12, border: "1px solid #f0f0f0", padding: 8, borderRadius: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={allChecked}
+                    onChange={(e) => handleCategoryToggle(cat, e.target.checked)}
+                    // Note: you can set indeterminate programmatically if desired
+                  />
+                  <strong>{cat.name}</strong>
+                </div>
+
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button
+                    onClick={() => toggleCollapseCategory(cat.name)}
+                    title={collapsedCategories.has(cat.name) ? "Expand category" : "Collapse category"}
+                    style={{ padding: "4px 6px", cursor: "pointer" }}
+                  >
+                    {collapsedCategories.has(cat.name) ? "▸" : "◂"}
+                  </button>
+
+                 
+                </div>
+              </div>
+
+              {!collapsedCategories.has(cat.name) && (
+                <div style={{ marginTop: 8 }}>
+                  {(cat.items || []).map((item, idx) => {
+                    const checked = selectedItems.some((s) => s.code === item.code) || savedCodes.has(item.code);
+                    return (
+                      <label key={idx} className="item-label" style={{ display: "block", margin: "6px 0" }}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => handleCheckboxChange(cat.name, item.name, item.code, e.target.checked)}
+                        />
+                        <span style={{ marginLeft: 8 }}>{item.name}</span>
+                        <span className="code-text" style={{ marginLeft: 8, color: "#666" }}>({item.code})</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* CENTER: toolbar */}
+      <div className="vertical-toolbar">
+        <button className="tool-btn" onClick={handleAdd} title="Add selected to end">
+          <span className="tool-icon">+</span>
+          <span className="tool-text">Add</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleInsert} title="Insert after selected row">
+          <span className="tool-icon red-dot"></span>
+          <span className="tool-text">Insert</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleDelete} title="Delete selected row" disabled={!hasSelected}>
+          <span className="tool-icon">−</span>
+          <span className="tool-text">Delete</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleClear} title="Clear all" disabled={!addedItems.length}>
+          <span className="tool-icon">×</span>
+          <span className="tool-text">Clear</span>
+        </button>
+
+        <div className="tool-separator" style={{ height: 1, background: "#eee", margin: "8px 0" }} />
+
+        {/* Navigation buttons - disabled when not applicable */}
+        <button className="tool-btn" onClick={handleFirst} title="First" disabled={!hasSelected || atFirst}>
+          <span className="tool-icon">|◀</span>
+          <span className="tool-text">First</span>
+        </button>
+
+        <button className="tool-btn" onClick={handlePrevious} title="Previous" disabled={!hasSelected || atFirst}>
+          <span className="tool-icon">◀</span>
+          <span className="tool-text">Previous</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleNext} title="Next" disabled={!hasSelected || atLast}>
+          <span className="tool-icon">▶</span>
+          <span className="tool-text">Next</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleLast} title="Last" disabled={!hasSelected || atLast}>
+          <span className="tool-icon">▶|</span>
+          <span className="tool-text">Last</span>
+        </button>
+      </div>
+
+      {/* RIGHT: saved table */}
+      <div className="sub_container_display_2" style={{ flex: 1, overflowY: "auto" }}>
+        <div className="display_table">
+          <table className="tableTariff1" style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 2 }}>Name</th>
+                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 2 }}>Code</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(addedItems || []).length === 0 ? (
+                <tr>
+                  <td colSpan={2} style={{ padding: 8 }}>No saved items</td>
+                </tr>
+              ) : (
+                (addedItems || []).map((item, idx) => (
+                  <tr
+                    key={item.id || `${item.code}-${idx}`}
+                    ref={(el) => (rowRefs.current[idx] = el)}
+                    className={selectedRow === idx ? "selected-row" : ""}
+                    onClick={() => setSelectedRow(idx)}
+                    style={{
+                      background: selectedRow === idx ? "#eef" : "",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <td style={{ padding: 1, borderBottom: "1px solid #f0f0f0" }}>{item.name}</td>
+                    <td style={{ padding: 1, borderBottom: "1px solid #f0f0f0" }}>{item.code}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
+
+
+
 const DailyBillingCaptureObjects = () => {
   const [selectedItems, setSelectedItems] = useState([]); // items to POST
   const [addedItems, setAddedItems] = useState([]); // items fetched from backend
@@ -754,11 +1257,9 @@ const DailyBillingCaptureObjects = () => {
   const [selectedRow, setSelectedRow] = useState(null);
   const rowRefs = useRef([]);
 
- 
-
   const [collapsedCategories, setCollapsedCategories] = useState(() => {
-  return new Set((Dailycategories || []).map((c) => c.name));
-});
+    return new Set((Dailycategories || []).map((c) => c.name));
+  });
 
   /* -------------------------
      Load device id on mount
@@ -766,6 +1267,11 @@ const DailyBillingCaptureObjects = () => {
   useEffect(() => {
     setDeviceId(localStorage.getItem("selectedDeviceId"));
   }, []);
+
+  // Button state helpers
+const hasSelected = selectedRow !== null;
+const atFirst = hasSelected && selectedRow === 0;
+const atLast = hasSelected && selectedRow === addedItems.length - 1;
 
   /* -------------------------
      GET – fetch monthly billing
@@ -856,8 +1362,6 @@ const DailyBillingCaptureObjects = () => {
 
   /* -------------------------
      Category-level check/uncheck
-     - check = add all non-saved items to selectedItems
-     - uncheck = remove newly-selected OR delete saved items (with confirm)
   -------------------------- */
   const handleCategoryToggle = async (categoryObj, checked) => {
     const categoryName = categoryObj.name;
@@ -918,7 +1422,6 @@ const DailyBillingCaptureObjects = () => {
 
   /* -------------------------
      View category on right table
-     - finds first saved item index of that category and selects it (scrolls into view)
   -------------------------- */
   const viewCategoryOnRight = (categoryName) => {
     const idx = (addedItems || []).findIndex((it) => it.category === categoryName);
@@ -927,7 +1430,6 @@ const DailyBillingCaptureObjects = () => {
       return;
     }
     setSelectedRow(idx);
-    // scroll handler will do the scroll via effect
   };
 
   /* -------------------------
@@ -995,15 +1497,72 @@ const DailyBillingCaptureObjects = () => {
   };
 
   /* -------------------------
-     Navigation helpers
+     moveItem: reorder local array and update selectedRow
+     (improved: used by First/Prev/Next/Last)
   -------------------------- */
-  const handleFirst = () => addedItems.length && setSelectedRow(0);
-  const handleLast = () =>
-    addedItems.length && setSelectedRow(addedItems.length - 1);
-  const handlePrevious = () => selectedRow > 0 && setSelectedRow((p) => p - 1);
-  const handleNext = () =>
-    selectedRow < addedItems.length - 1 && setSelectedRow((p) => p + 1);
+  const moveItem = (fromIndex, toIndex) => {
+    if (fromIndex === null || fromIndex === undefined) return;
+    if (!Array.isArray(addedItems) || fromIndex < 0 || fromIndex >= addedItems.length) return;
 
+    // compute target and clamp
+    const len = addedItems.length;
+    let insertIndex = Math.max(0, Math.min(toIndex, len - 1));
+
+    // create new array with moved item
+    const next = [...addedItems];
+    const [item] = next.splice(fromIndex, 1);
+    // if moving forward to end, when we've removed the item the length decreased by 1,
+    // so allow inserting at next.length (append)
+    const finalInsert = insertIndex > next.length ? next.length : insertIndex;
+    next.splice(finalInsert, 0, item);
+
+    setAddedItems(next);
+    // set selectedRow to the item's new index
+    setSelectedRow(finalInsert);
+  };
+
+  // Navigation helpers that now reorder rows
+  const handleFirst = () => {
+    if (selectedRow === null) {
+      alert("Select a row");
+      return;
+    }
+    if (selectedRow === 0) return; // already first
+    moveItem(selectedRow, 0);
+  };
+
+  const handlePrevious = () => {
+    if (selectedRow === null) {
+      alert("Select a row");
+      return;
+    }
+    if (selectedRow <= 0) return;
+    moveItem(selectedRow, selectedRow - 1);
+  };
+
+  const handleNext = () => {
+    if (selectedRow === null) {
+      alert("Select a row");
+      return;
+    }
+    const lastIndex = (addedItems || []).length - 1;
+    if (selectedRow >= lastIndex) return;
+    moveItem(selectedRow, selectedRow + 1);
+  };
+
+  const handleLast = () => {
+    if (selectedRow === null) {
+      alert("Select a row");
+      return;
+    }
+    const lastIndex = (addedItems || []).length - 1;
+    if (selectedRow === lastIndex) return;
+    moveItem(selectedRow, lastIndex);
+  };
+
+  /* -------------------------
+     Keep row in view when selection changes
+  -------------------------- */
   useEffect(() => {
     if (selectedRow !== null && rowRefs.current[selectedRow]) {
       rowRefs.current[selectedRow].scrollIntoView({
@@ -1032,7 +1591,6 @@ const DailyBillingCaptureObjects = () => {
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <input
                     type="checkbox"
-                    // tri-state visual: checked if allChecked, otherwise unchecked. (someChecked not visually distinct here — could use indeterminate if desired)
                     checked={allChecked}
                     onChange={(e) => handleCategoryToggle(cat, e.target.checked)}
                   />
@@ -1048,14 +1606,9 @@ const DailyBillingCaptureObjects = () => {
                   >
                     {collapsedCategories.has(cat.name) ? "▸" : "◂"}
                   </button>
-
-                  {/* view on right */}
-                  
                 </div>
-                
               </div>
 
-              {/* items list (hidden when collapsed) */}
               {!collapsedCategories.has(cat.name) && (
                 <div style={{ marginTop: 8 }}>
                   {(cat.items || []).map((item, idx) => {
@@ -1116,63 +1669,82 @@ const DailyBillingCaptureObjects = () => {
         <div className="tool-separator" />
 
         {/* Navigation buttons */}
-        <button className="tool-btn" onClick={handleFirst} title="First">
-          <span className="tool-icon">|◀</span>
-          <span className="tool-text">First</span>
-        </button>
+        {/* Navigation buttons */}
+<button
+  className="tool-btn"
+  onClick={handleFirst}
+  title="First"
+  disabled={!hasSelected || atFirst}
+>
+  <span className="tool-icon">|◀</span>
+  <span className="tool-text">First</span>
+</button>
 
-        <button className="tool-btn" onClick={handlePrevious} title="Previous">
-          <span className="tool-icon">◀</span>
-          <span className="tool-text">Previous</span>
-        </button>
+<button
+  className="tool-btn"
+  onClick={handlePrevious}
+  title="Previous"
+  disabled={!hasSelected || atFirst}
+>
+  <span className="tool-icon">◀</span>
+  <span className="tool-text">Previous</span>
+</button>
 
-        <button className="tool-btn" onClick={handleNext} title="Next">
-          <span className="tool-icon">▶</span>
-          <span className="tool-text">Next</span>
-        </button>
+<button
+  className="tool-btn"
+  onClick={handleNext}
+  title="Next"
+  disabled={!hasSelected || atLast}
+>
+  <span className="tool-icon">▶</span>
+  <span className="tool-text">Next</span>
+</button>
 
-        <button className="tool-btn" onClick={handleLast} title="Last">
-          <span className="tool-icon">▶|</span>
-          <span className="tool-text">Last</span>
-        </button>
+<button
+  className="tool-btn"
+  onClick={handleLast}
+  title="Last"
+  disabled={!hasSelected || atLast}
+>
+  <span className="tool-icon">▶|</span>
+  <span className="tool-text">Last</span>
+</button>
       </div>
-      
+
       {/* RIGHT: saved table */}
       <div className="sub_container_display_2" >
-        <div className="display_table"> 
-        <table >
-          <thead>
-            <tr>
-              <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Name</th>
-              <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Code</th>
-             
-            </tr>
-          </thead>
-          <tbody>
-            {(addedItems || []).length === 0 ? (
+        <div className="display_table">
+          <table className='tableTariff1'>
+            <thead>
               <tr>
-                <td colSpan={3} style={{ padding: 8 }}>No saved items</td>
+                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 1 }}>Name</th>
+                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 1 }}>Code</th>
               </tr>
-            ) : (
-              (addedItems || []).map((item, idx) => (
-                <tr
-                  key={item.id || `${item.code}-${idx}`}
-                  ref={(el) => (rowRefs.current[idx] = el)}
-                  className={selectedRow === idx ? "selected-row" : ""}
-                  onClick={() => setSelectedRow(idx)}
-                  style={{
-                    background: selectedRow === idx ? "#eef" : "transparent",
-                    cursor: "pointer",
-                  }}
-                >
-                  <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{item.name}</td>
-                  <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{item.code}</td>
-                 
+            </thead>
+            <tbody>
+              {(addedItems || []).length === 0 ? (
+                <tr>
+                  <td colSpan={3} style={{ padding: 1 }}>No saved items</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                (addedItems || []).map((item, idx) => (
+                  <tr
+                    key={item.id || `${item.code}-${idx}`}
+                    ref={(el) => (rowRefs.current[idx] = el)}
+                    className={selectedRow === idx ? "selected-row" : ""}
+                    onClick={() => setSelectedRow(idx)}
+                    style={{
+                      background: selectedRow === idx ? "#eef" : "",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <td style={{ padding: 1, borderBottom: "1px solid #f0f0f0" }}>{item.name}</td>
+                    <td style={{ padding: 1, borderBottom: "1px solid #f0f0f0" }}>{item.code}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1180,8 +1752,9 @@ const DailyBillingCaptureObjects = () => {
 };
 
 
+
 const Billing = () => {
-  const [activePage, setActivePage] = useState('');
+  const [activePage, setActivePage] = useState('demand');
   
 
   const handleButtonClick = (page) => {
@@ -1278,7 +1851,7 @@ const Billing = () => {
             ))}
           </tbody>
         </table>
-        <button onClick={handleSave}>Save</button>
+        <button style={{marginLeft:"40%"}} className="scheduler-add-button" onClick={handleSave}>Save</button>
       </div>
       )
       
@@ -1306,11 +1879,56 @@ const Billing = () => {
   return (
     <div>
       
-      <div>
-        <button onClick={() => handleButtonClick('demand')}>Demand Configure</button>
-        <button onClick={() => handleButtonClick('monthly')}>Capture Object of Monthly Billing</button>
-        <button onClick={() => handleButtonClick('daily')}>Capture Object of Daily Billing</button>
-      </div>
+     <div
+  className="view-toggle"
+  role="tablist"
+  aria-label="Billing configuration selection"
+>
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activePage === "demand"}
+    className={`view-btn ${
+      activePage === "demand" ? "active" : ""
+    }`}
+    onClick={() => {
+      setActivePage("demand");
+      handleButtonClick("demand");
+    }}
+  >
+    Demand Configure
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activePage === "monthly"}
+    className={`view-btn ${
+      activePage === "monthly" ? "active" : ""
+    }`}
+    onClick={() => {
+      setActivePage("monthly");
+      handleButtonClick("monthly");
+    }}
+  >
+    Capture Object of Monthly Billing
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activePage === "daily"}
+    className={`view-btn ${
+      activePage === "daily" ? "active" : ""
+    }`}
+    onClick={() => {
+      setActivePage("daily");
+      handleButtonClick("daily");
+    }}
+  >
+    Capture Object of Daily Billing
+  </button>
+</div>
 
 
       

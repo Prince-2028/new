@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState,useEffect,useMemo } from 'react';
 import './index.css';
 import axios from 'axios';
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
@@ -56,110 +56,153 @@ const OtherParameters = () => {
     };
 
     return (
-        <div className="pushsetup-other-parameters">
-            <div className="pushsetup-form-container">
-                <div className="pushsetup-item">
-                    <input
-                        type="checkbox"
-                        name="send_destination"
-                        checked={formData.send_destination}
-                        onChange={handleChange}
-                    />
-                    <label>Send Destination and Method</label>
-                </div>
+    <div className="load-control-container">
+  <div className="pushsetup-form-container">
 
-                <div className="pushsetup-row">
-                    <label>Transport Service:</label>
-                    <input
-                        type="text"
-                        name="transport_service"
-                        placeholder="Transport Service"
-                        value={formData.transport_service}
-                        onChange={handleChange}
-                    />
-                </div>
+    <div className="security-form">
+      <label>
+        <input
+          type="checkbox"
+          name="send_destination"
+          checked={formData.send_destination}
+          onChange={handleChange}
+        />
+        <span>Send Destination and Method</span>
+      </label>
+    </div>
 
-                <div className="pushsetup-row">
-                    <label>Destination (IP:Port):</label>
-                    <input
-                        type="text"
-                        name="destination"
-                        placeholder="IP:Port"
-                        value={formData.destination}
-                        onChange={handleChange}
-                    />
-                </div>
+    <div className="security-form">
+      <label>
+        <span>Transport Service</span>
+        <input
+          type="text"
+          name="transport_service"
+          placeholder="Transport Service"
+          value={formData.transport_service}
+          onChange={handleChange}
+        />
+      </label>
+    </div>
 
-                <div className="pushsetup-row">
-                    <label>Message Type:</label>
-                    <input
-                        type="text"
-                        name="message_type"
-                        placeholder="Message Type"
-                        value={formData.message_type}
-                        onChange={handleChange}
-                    />
-                </div>
+    <div className="security-form">
+      <label>
+        <span>Destination (IP:Port)</span>
+        <input
+          type="text"
+          name="destination"
+          placeholder="IP:Port"
+          value={formData.destination}
+          onChange={handleChange}
+        />
+      </label>
+    </div>
 
-                <div className="pushsetup-row">
-                    <input
-                        type="checkbox"
-                        name="randomisation_start_interval"
-                        checked={formData.randomisation_start_interval}
-                        onChange={handleChange}
-                    />
-                    <label>Randomisation Start Interval (s):</label>
-                    <input
-                        type="number"
-                        name="start_interval_value"
-                        placeholder="0"
-                        value={formData.start_interval_value}
-                        onChange={handleChange}
-                        disabled={!formData.randomisation_start_interval}
-                    />
-                </div>
+    <div className="security-form">
+      <label>
+        <span>Message Type</span>
+        <input
+          type="text"
+          name="message_type"
+          placeholder="Message Type"
+          value={formData.message_type}
+          onChange={handleChange}
+        />
+      </label>
+    </div>
 
-                <div className="pushsetup-row">
-                    <input
-                        type="checkbox"
-                        name="retries_enabled"
-                        checked={formData.retries_enabled}
-                        onChange={handleChange}
-                    />
-                    <label>Number of Retries:</label>
-                    <input
-                        type="number"
-                        name="retries"
-                        placeholder="0"
-                        value={formData.retries}
-                        onChange={handleChange}
-                        disabled={!formData.retries_enabled}
-                    />
-                </div>
+    {/* Randomisation Start Interval */}
+    <div className="security-form">
+      <label>
+        <input
+          type="checkbox"
+          name="randomisation_start_interval"
+          checked={formData.randomisation_start_interval}
+          onChange={handleChange}
+        />
+        <span>Randomisation Start Interval (s)</span>
+      </label>
+    </div>
 
-                <div className="pushsetup-row">
-                    <input
-                        type="checkbox"
-                        name="repetition_delay_enabled"
-                        checked={formData.repetition_delay_enabled}
-                        onChange={handleChange}
-                    />
-                    <label>Repetition Delay (s):</label>
-                    <input
-                        type="number"
-                        name="repetition_delay"
-                        placeholder="0"
-                        value={formData.repetition_delay}
-                        onChange={handleChange}
-                        disabled={!formData.repetition_delay_enabled}
-                    />
-                </div>
+    <div className="security-form">
+      <label>
+        <span>Start Interval Value</span>
+        <input
+          type="number"
+          name="start_interval_value"
+          placeholder="0"
+          value={formData.start_interval_value}
+          onChange={handleChange}
+          disabled={!formData.randomisation_start_interval}
+        />
+      </label>
+    </div>
 
-                <button onClick={handleSubmit} className="pushsetup-submit-button">
-                    Submit
-                </button>
-            </div>
-        </div>
+    {/* Retries */}
+    <div className="security-form">
+      <label>
+        <input
+          type="checkbox"
+          name="retries_enabled"
+          checked={formData.retries_enabled}
+          onChange={handleChange}
+        />
+        <span>Number of Retries</span>
+      </label>
+    </div>
+
+    <div className="security-form">
+      <label>
+        <span>Retries</span>
+        <input
+          type="number"
+          name="retries"
+          placeholder="0"
+          value={formData.retries}
+          onChange={handleChange}
+          disabled={!formData.retries_enabled}
+        />
+      </label>
+    </div>
+
+    {/* Repetition Delay */}
+    <div className="security-form">
+      <label>
+        <input
+          type="checkbox"
+          name="repetition_delay_enabled"
+          checked={formData.repetition_delay_enabled}
+          onChange={handleChange}
+        />
+        <span>Repetition Delay (s)</span>
+      </label>
+    </div>
+
+    <div className="security-form">
+      <label>
+        <span>Repetition Delay Value</span>
+        <input
+          type="number"
+          name="repetition_delay"
+          placeholder="0"
+          value={formData.repetition_delay}
+          onChange={handleChange}
+          disabled={!formData.repetition_delay_enabled}
+        />
+      </label>
+    </div>
+
+    <div className="security-form">
+      <button
+        type="button"
+        onClick={handleSubmit}
+        style={{marginLeft:"42%"}} className='scheduler-add-button'
+      >
+        Submit
+      </button>
+    </div>
+
+  </div>
+</div>
     );
 };
 
@@ -174,6 +217,7 @@ const OtherParameters = () => {
 
 
 function PushSetup() {
+    const [selectedRowId, setSelectedRowId] = useState(null); // To track selected row
     const [activeView, setActiveView] = useState('pushObjectList');
     const [activeSections, setActiveSections] = useState({
         basicInfo: false,
@@ -195,6 +239,108 @@ function PushSetup() {
         timeOfUse: false,
     });
 
+      const [pushSetupItems, setPushSetupItems] = useState([]);
+   
+ // Button state helpers
+
+
+    // add near top of component (after state declarations)
+// we use useMemo so import it if not already: import React, { ..., useMemo } from 'react';
+
+///// derived/utility values /////
+const selectedRow = useMemo(
+  () => pushSetupItems.findIndex((it) => it.id === selectedRowId),
+  [pushSetupItems, selectedRowId]
+);
+
+// safe-length for disabling navigation buttons
+const itemsCount = pushSetupItems.length;
+
+///// small wrapper functions so JSX toolbar names exist (prevent eslint no-undef) /////
+
+// Add (append) -> reuse your existing handleAddItem
+const handleAdd = () => {
+  // call your existing function that posts the selected items (or adds a single item)
+  // if you want different behaviour, update handleAddItem accordingly
+  handleAddItem();
+};
+
+// Insert after selected row -> fallback to handleAddItem (server ordering may differ)
+// If you want a true "insert" you can implement ordering on server; this is a safe default.
+const handleInsertAfter = () => {
+  if (selectedRow === -1) return alert("Select a row to insert after");
+  // simplest: call handleAddItem to create new item then client UI will show it
+  handleAddItem();
+};
+
+// Delete selected -> reuse handleDeleteClick (which deletes item by id)
+const handleDelete = () => {
+  if (!selectedRowId) return alert("Select a row to delete");
+  handleDeleteClick();
+};
+
+// Clear all for this device -> delete each item (uses same delete endpoint your delete handler uses)
+const handleClear = async () => {
+  if (!deviceId) return alert("Select a device");
+  if (!pushSetupItems.length) return alert("No items to clear");
+  const ok = window.confirm("Clear all items for this device?");
+  if (!ok) return;
+
+  try {
+    // delete each item (your backend uses /api/delete-setup-items/{id}/)
+    await Promise.all(
+      pushSetupItems.map((it) => axios.delete(`${BASE_URL}/api/delete-setup-items/${it.id}/`))
+    );
+    await fetchData();
+    setSelectedRowId(null);
+  } catch (err) {
+    console.error("Clear failed:", err);
+    alert("Failed to clear items. See console.");
+  }
+};
+
+
+
+const hasSelected = selectedRow !== -1;
+const atFirst = hasSelected && selectedRow === 0;
+const atLast = hasSelected && selectedRow === pushSetupItems.length - 1;
+
+const moveItem = (fromIndex, toIndex) => {
+  if (fromIndex === -1) return;
+
+  setPushSetupItems((prev) => {
+    const next = [...prev];
+    const [item] = next.splice(fromIndex, 1);
+
+    const insertIndex = Math.max(0, Math.min(toIndex, next.length));
+    next.splice(insertIndex, 0, item);
+
+    setSelectedRowId(item.id);
+    return next;
+  });
+};
+
+// Navigation helpers that use selectedRow index and pushSetupItems
+const handleFirst = () => {
+  if (!hasSelected || atFirst) return;
+  moveItem(selectedRow, 0);
+};
+
+const handlePrevious = () => {
+  if (!hasSelected || atFirst) return;
+  moveItem(selectedRow, selectedRow - 1);
+};
+
+const handleNext = () => {
+  if (!hasSelected || atLast) return;
+  moveItem(selectedRow, selectedRow + 1);
+};
+
+const handleLast = () => {
+  if (!hasSelected || atLast) return;
+  moveItem(selectedRow, pushSetupItems.length - 1);
+};
+
 
 
 const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
@@ -206,7 +352,7 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
 
 
 
-    const [pushSetupItems, setPushSetupItems] = useState([]);
+  
 
    
 
@@ -350,7 +496,7 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
     
         if (item) {
             // Add device_id to the item
-            const deviceId = 1; // Replace with the correct device ID dynamically if necessary
+             // Replace with the correct device ID dynamically if necessary
             item.device_id = deviceId;
     
             // Send the item to the backend
@@ -381,7 +527,7 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
         }
     };
 
-    const [selectedRowId, setSelectedRowId] = useState(null); // To track selected row
+    
 
   const handleRowClick = (id) => {
     setSelectedRowId(id);
@@ -415,17 +561,38 @@ const handleDeleteClick = () => {
     
 
     return (
-        <div className="pushsetup-container">
-            <div className="meter-info-list">
-                <button onClick={() => handleViewChange('pushObjectList')} className={`meter-info-item ${activeView === 'pushObjectList' ? 'active' : ''}`}>Push Object List</button>
-                <button onClick={() => handleViewChange('otherParameters')} className={`meter-info-item ${activeView === 'otherParameters' ? 'active' : ''}`}>Other Parameters</button>
-            </div>
+        <div>
+           <div className="view-toggle" role="tablist" aria-label="Push setup view toggle">
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeView === "pushObjectList"}
+    className={`view-btn ${activeView === "pushObjectList" ? "active" : ""}`}
+    onClick={() => handleViewChange("pushObjectList")}
+  >
+    Push Object List
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeView === "otherParameters"}
+    className={`view-btn ${activeView === "otherParameters" ? "active" : ""}`}
+    onClick={() => handleViewChange("otherParameters")}
+  >
+    Other Parameters
+  </button>
+</div>
+            <div> 
 
             {activeView === 'pushObjectList' && (
                
                
-               <div className='pushObjactContainer'> 
-                <div className="push-object">
+               <div className="display-root"> 
+                
+
+                
+                <div className="sub_container_display">
                     {/* Basic Information Section */}
                     <div className="pushsetup-section">
                         <div className="label_and_icon">
@@ -576,21 +743,113 @@ const handleDeleteClick = () => {
                     </div>
 
 
-                    <div className="pushsetup-button-action">
-        <button className='pushsetup-add-button' onClick={handleAddItem}>Add (+)</button>
-      
-      </div>
+                   
                 
                 
                 </div>
 
+                 
+               <div className="vertical-toolbar">
+
+  {/* ADD (Append at End) */}
+  <button
+    type="button"
+    className="tool-btn"
+    onClick={handleAdd}
+    title="Add to end"
+  >
+    <span className="tool-icon">+</span>
+    <span className="tool-text">Add</span>
+  </button>
+
+  {/* INSERT After Selected */}
+  <button
+    type="button"
+    className="tool-btn"
+    onClick={handleInsertAfter}
+    title="Insert after selected row"
+  >
+    <span className="tool-icon">●</span>
+    <span className="tool-text">Insert</span>
+  </button>
+
+  {/* DELETE Selected */}
+  <button
+    type="button"
+    className="tool-btn"
+    onClick={handleDelete}
+    title="Delete selected row"
+  >
+    <span className="tool-icon">−</span>
+    <span className="tool-text">Delete</span>
+  </button>
+
+  {/* CLEAR ALL */}
+  <button
+    type="button"
+    className="tool-btn"
+    onClick={handleClear}
+    title="Clear all"
+  >
+    <span className="tool-icon">×</span>
+    <span className="tool-text">Clear</span>
+  </button>
+
+  <div className="tool-separator" />
+
+  {/* NAVIGATION */}
+ <button
+  type="button"
+  className="tool-btn"
+  onClick={handleFirst}
+  title="First"
+  disabled={!hasSelected || atFirst}
+>
+  <span className="tool-icon">|◀</span>
+  <span className="tool-text">First</span>
+</button>
+
+<button
+  type="button"
+  className="tool-btn"
+  onClick={handlePrevious}
+  title="Previous"
+  disabled={!hasSelected || atFirst}
+>
+  <span className="tool-icon">◀</span>
+  <span className="tool-text">Previous</span>
+</button>
+
+<button
+  type="button"
+  className="tool-btn"
+  onClick={handleNext}
+  title="Next"
+  disabled={!hasSelected || atLast}
+>
+  <span className="tool-icon">▶</span>
+  <span className="tool-text">Next</span>
+</button>
+
+<button
+  type="button"
+  className="tool-btn"
+  onClick={handleLast}
+  title="Last"
+  disabled={!hasSelected || atLast}
+>
+  <span className="tool-icon">▶|</span>
+  <span className="tool-text">Last</span>
+</button>
+
+</div>
 
                 
      
+               
+                <div className="sub_container_display_2">
 
-                <div className="push-object">
-
-                <table className="table-pushsetup">
+                <table className="tableTariff1">
       <thead>
         <tr>
           <th>Name</th>
@@ -619,18 +878,7 @@ const handleDeleteClick = () => {
       </tbody>
     </table>
 
-    <div className='pushsetup-button-action'> 
-
-               <button 
-               className='pushsetup-delete-button'
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent row click action
-                  handleDeleteClick(); // Handle delete button click
-                }}
-              >
-                Delete
-              </button>
-              </div>
+  
    
               
 
@@ -642,7 +890,7 @@ const handleDeleteClick = () => {
 
             {activeView === 'otherParameters' && <OtherParameters />}
 
-           
+           </div>
         </div>
     );
 }

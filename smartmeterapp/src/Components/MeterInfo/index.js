@@ -587,44 +587,35 @@ const renderTableRows = (sub) =>
     <div className="meter-info-container">
 
    
-      <ul  className="meter-info-list">
-        <li
-          className={`meter-info-item ${selectedSubDashboard === 'Meter Identifier' ? 'selected' : ''}`}
-          onClick={() => handleSubDashboardChange('Meter Identifier')}
-        >
-           <input
-          type="checkbox"
-          checked={selectAllChecked["Meter Identifier"]}
-          onChange={(e) => handleSelectAllChange("Meter Identifier", e.target.checked)}
-        />
-          Meter Identifier
-        </li>
-        <li
-          className={`meter-info-item ${selectedSubDashboard === 'Meter Version' ? 'selected' : ''}`}
-          onClick={() => handleSubDashboardChange('Meter Version')}
-        >
-
-<input
-          type="checkbox"
-          checked={selectAllChecked["Meter Version"]}
-          onChange={(e) => handleSelectAllChange("Meter Version", e.target.checked)}
-        />
-
-          Meter Version
-        </li>
-        <li
-          className={`meter-info-item ${selectedSubDashboard === 'Meter Logical Parameters' ? 'selected' : ''}`}
-          onClick={() => handleSubDashboardChange('Meter Logical Parameters')}
-        >
-          
-<input
-          type="checkbox"
-          checked={selectAllChecked["Meter Logical Parameters"]}
-          onChange={(e) => handleSelectAllChange("Meter Logical Parameters", e.target.checked)}
-        />
-          Meter Logical Parameters
-        </li>
-      </ul>
+     <div
+  className="view-toggle"
+  role="tablist"
+  aria-label="Meter information selection"
+>
+  {["Meter Identifier", "Meter Version", "Meter Logical Parameters"].map((sub) => (
+    <button
+      key={sub}
+      type="button"
+      role="tab"
+      aria-pressed={selectedSubDashboard === sub}
+      className={`view-btn ${
+        selectedSubDashboard === sub ? "active" : ""
+      }`}
+      onClick={() => setSelectedSubDashboard(sub)}
+    >
+      <input
+        type="checkbox"
+        className="option-checkbox"
+        checked={selectAllChecked[sub]}
+        onChange={(e) => {
+          e.stopPropagation(); // 🔥 prevent triggering button click
+          handleSelectAllChange(sub, e.target.checked);
+        }}
+      />
+      <span style={{ marginLeft: "6px" }}>{sub}</span>
+    </button>
+  ))}
+</div>
       {/* You can conditionally render the content of the selected dashboard */}
     
 
@@ -849,16 +840,35 @@ const MeterInfo1 = () => {
 
   return (
     <div className="meter-info-container">
-      <ul className="meter-info-list">
-        {["Meter Identifier","Meter Version","Meter Logical Parameters"].map(sub => (
-          <li key={sub} className={selectedSubDashboard === sub ? 'selected' : ''}
-              onClick={() => setSelectedSubDashboard(sub)}>
-            <input type="checkbox" checked={selectAllChecked[sub]}
-              onChange={e => handleSelectAllChange(sub, e.target.checked)} />
-            {sub}
-          </li>
-        ))}
-      </ul>
+     <div
+  className="view-toggle"
+  role="tablist"
+  aria-label="Meter information selection"
+>
+  {["Meter Identifier", "Meter Version", "Meter Logical Parameters"].map((sub) => (
+    <button
+      key={sub}
+      type="button"
+      role="tab"
+      aria-pressed={selectedSubDashboard === sub}
+      className={`view-btn ${
+        selectedSubDashboard === sub ? "active" : ""
+      }`}
+      onClick={() => setSelectedSubDashboard(sub)}
+    >
+      <input
+        type="checkbox"
+        className="option-checkbox"
+        checked={selectAllChecked[sub]}
+        onChange={(e) => {
+          e.stopPropagation(); // 🔥 prevent triggering button click
+          handleSelectAllChange(sub, e.target.checked);
+        }}
+      />
+      <span style={{ marginLeft: "6px" }}>{sub}</span>
+    </button>
+  ))}
+</div>
 
       <div className="actions">
         {perms.readMeter && <button onClick={handleReadClick}>Read OBIS</button>}

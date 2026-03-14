@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect , useRef } from 'react';
 import './index.css'
 import axios from "axios";
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
@@ -117,7 +117,7 @@ const AutoConnect = () => {
       
       start_time:startTime,
       end_time:endTime,
-      device_id: 1, // Example device_id
+      device_id: deviceId, // Example device_id
       type: selectedType, // Dynamically set type
       mode: settings.mode, // Use current mode from settings
       repetitions: settings.repetitions, // Use current repetitions from settings
@@ -126,12 +126,15 @@ const AutoConnect = () => {
   
     // Log the complete window data object
     console.log("Complete Window Data:", windowData);
+
   
     // Send data to the backend using Axios
     axios.post(`${BASE_URL}/api/create_auto_connect_settings/`, windowData)
       .then(response => {
         console.log('AutoConnectSettings created:', response.data);
+         fetchAutoConnectSettings(deviceId, selectedType);
       })
+     
       .catch(error => {
         console.error('Error creating AutoConnectSettings:', error);
       });
@@ -164,7 +167,7 @@ const AutoConnect = () => {
     const Data = {
       
       destination:destinationInput,
-      device_id: 1, // Example device_id
+      device_id: deviceId, // Example device_id
       type: selectedType, // Dynamically set type
       mode: settings.mode, // Use current mode from settings
       repetitions: settings.repetitions, // Use current repetitions from settings
@@ -198,7 +201,36 @@ const AutoConnect = () => {
       .catch((error) => console.error('Error deleting item:', error));
   };
   
+const tabs = [
+    { key: "tcp", label: "Auto Connect TCP" },
+    { key: "ftp", label: "Auto Connect FTP" },
+    { key: "ntp", label: "Auto Connect NTP" },
+  ];
 
+  const containerRef = useRef(null);
+  const buttonRefs = useRef({});
+  const underlineRef = useRef(null);
+
+  const moveUnderline = (key) => {
+    const btn = buttonRefs.current[key];
+    const container = containerRef.current;
+    const underline = underlineRef.current;
+    if (!btn || !container || !underline) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+
+    underline.style.transform = `translateX(${btnRect.left - containerRect.left}px)`;
+    underline.style.width = `${btnRect.width}px`;
+  };
+
+  useEffect(() => {
+    setTimeout(() => moveUnderline(selectedType), 20);
+
+    const handleResize = () => moveUnderline(selectedType);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [selectedType]);
  
 
   const renderForm = (type) => (
@@ -286,8 +318,8 @@ const AutoConnect = () => {
           </table>
           </div>
           <div className='button-container'> 
-          <button className='network-add-button' onClick={() => setShowWindowModal(true)}>Add Window</button>
-          <button className='network-delete-button' onClick={() => handleDeleteItem(selectWindowId)}>Delete</button>
+          <button className='scheduler-add-button'  onClick={() => setShowWindowModal(true)}>Add Window</button>
+          <button className='scheduler-delete-button' onClick={() => handleDeleteItem(selectWindowId)}>Delete</button>
           </div>
         </div>
         
@@ -321,8 +353,8 @@ const AutoConnect = () => {
           </table>
           </div>
           <div className='button-container'> 
-          <button className='network-add-button' onClick={() => setShowDestinationModal(true)}>Add Destination</button>
-          <button className='network-delete-button' onClick={() => handleDeleteItem(selectDestinationId)}>Delete</button>
+          <button className='scheduler-add-button' onClick={() => setShowDestinationModal(true)}>Add Destination</button>
+          <button className='scheduler-delete-button' onClick={() => handleDeleteItem(selectDestinationId)}>Delete</button>
           </div>
         </div>
 
@@ -338,217 +370,224 @@ const AutoConnect = () => {
 
   return (
     <div>
-      <div>
-        <button   onClick={() => setSelectedType('tcp')}>Auto Connect TCP</button>
-        <button onClick={() => setSelectedType('ftp')}>Auto Connect FTP</button>
-        <button  onClick={() => setSelectedType('ntp')}>Auto Connect NTP</button>
-      </div>
-     
+        <div className="controlsGroup_tabs" ref={containerRef}>
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          ref={(el) => (buttonRefs.current[tab.key] = el)}
+          className={`tou_button ${
+            selectedType === tab.key ? "activeButton" : ""
+          }`}
+          onClick={() => setSelectedType(tab.key)}
+          type="button"
+        >
+          {tab.label}
+        </button>
+      ))}
+
+      <div ref={underlineRef} className="underline" />
+    </div>
       <div>{renderForm(selectedType)}</div>
 
-      {showWindowModal && (
+ {showWindowModal && (
   <div className="modal" onClick={closePopup}>
     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
       <h4>Add Calling Window</h4>
 
-      {/* Start Year Type */}
-      <label>
-        Start Year Type:
-        <select
-          value={windowInput.startYearType}
-          onChange={(e) =>
-            setWindowInput({ ...windowInput, startYearType: e.target.value })
-          }
-        >
-          <option value="Every Year">Every Year</option>
-          <option value="Special Year">Special Year</option>
-        </select>
-      </label>
+      <div className="security-form">
+        <label>
+          <span>Start Year Type</span>
+          <select
+            value={windowInput.startYearType}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, startYearType: e.target.value })
+            }
+          >
+            <option value="Every Year">Every Year</option>
+            <option value="Special Year">Special Year</option>
+          </select>
+        </label>
+      </div>
 
-      {/* Input for Start Year if "Special Year" is selected */}
       {windowInput.startYearType === "Special Year" && (
-        <label>
-          Enter Start Year:
-          <input
-            type="number"
-            value={windowInput.startYear || ""}
-            onChange={(e) =>
-              setWindowInput({ ...windowInput, startYear: e.target.value })
-            }
-            placeholder="Enter year, e.g., 2024"
-          />
-        </label>
+        <div className="security-form">
+          <label>
+            <span>Enter Start Year</span>
+            <input
+              type="number"
+              value={windowInput.startYear || ""}
+              onChange={(e) =>
+                setWindowInput({ ...windowInput, startYear: e.target.value })
+              }
+              placeholder="Enter year"
+            />
+          </label>
+        </div>
       )}
 
-      {/* Start Month */}
-      <label>
-        Start Month:
-        <select
-          value={windowInput.startMonth}
-          onChange={(e) =>
-            setWindowInput({ ...windowInput, startMonth: e.target.value })
-          }
-        >
-          <option value="Every Month">Every Month</option>
-          {[
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-          ].map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="security-form">
+        <label>
+          <span>Start Month</span>
+          <select
+            value={windowInput.startMonth}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, startMonth: e.target.value })
+            }
+          >
+            <option value="Every Month">Every Month</option>
+            {[
+              "January","February","March","April","May","June",
+              "July","August","September","October","November","December"
+            ].map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </label>
+      </div>
 
-      {/* Start Day of Month */}
-      <label>
-        Start Day of Month:
-        <select
-          value={windowInput.startDayOfMonth}
-          onChange={(e) =>
-            setWindowInput({ ...windowInput, startDayOfMonth: e.target.value })
-          }
-        >
-          <option value="Every Day">Every Day</option>
-          {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-            <option key={day} value={day}>
-              {day}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="security-form">
+        <label>
+          <span>Start Day Of Month</span>
+          <select
+            value={windowInput.startDayOfMonth}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, startDayOfMonth: e.target.value })
+            }
+          >
+            <option value="Every Day">Every Day</option>
+            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+              <option key={day} value={day}>{day}</option>
+            ))}
+          </select>
+        </label>
+      </div>
 
-      {/* Start Time */}
-      <h5>Start Time:</h5>
-      <input
-        type="time"
-        value={windowInput.startTime}
-        onChange={(e) =>
-          setWindowInput({ ...windowInput, startTime: e.target.value })
-        }
-      />
+      <div className="security-form">
+        <label>
+          <span>Start Time</span>
+          <input
+            type="time"
+            value={windowInput.startTime}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, startTime: e.target.value })
+            }
+          />
+        </label>
+      </div>
 
-      {/* End Year Type */}
-      <label>
-        End Year Type:
-        <select
-          value={windowInput.endYearType}
-          onChange={(e) =>
-            setWindowInput({ ...windowInput, endYearType: e.target.value })
-          }
-        >
-          <option value="Every Year">Every Year</option>
-          <option value="Special Year">Special Year</option>
-        </select>
-      </label>
+      <div className="security-form">
+        <label>
+          <span>End Year Type</span>
+          <select
+            value={windowInput.endYearType}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, endYearType: e.target.value })
+            }
+          >
+            <option value="Every Year">Every Year</option>
+            <option value="Special Year">Special Year</option>
+          </select>
+        </label>
+      </div>
 
-      {/* Input for End Year if "Special Year" is selected */}
       {windowInput.endYearType === "Special Year" && (
-        <label>
-          Enter End Year:
-          <input
-            type="number"
-            value={windowInput.endYear || ""}
-            onChange={(e) =>
-              setWindowInput({ ...windowInput, endYear: e.target.value })
-            }
-            placeholder="Enter year, e.g., 2024"
-          />
-        </label>
+        <div className="security-form">
+          <label>
+            <span>Enter End Year</span>
+            <input
+              type="number"
+              value={windowInput.endYear || ""}
+              onChange={(e) =>
+                setWindowInput({ ...windowInput, endYear: e.target.value })
+              }
+            />
+          </label>
+        </div>
       )}
 
-      {/* End Month */}
-      <label>
-        End Month:
-        <select
-          value={windowInput.endMonth}
-          onChange={(e) =>
-            setWindowInput({ ...windowInput, endMonth: e.target.value })
-          }
-        >
-          <option value="Every Month">Every Month</option>
-          {[
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-          ].map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="security-form">
+        <label>
+          <span>End Month</span>
+          <select
+            value={windowInput.endMonth}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, endMonth: e.target.value })
+            }
+          >
+            <option value="Every Month">Every Month</option>
+            {[
+              "January","February","March","April","May","June",
+              "July","August","September","October","November","December"
+            ].map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </label>
+      </div>
 
-      {/* End Day of Month */}
-      <label>
-        End Day of Month:
-        <select
-          value={windowInput.endDayOfMonth}
-          onChange={(e) =>
-            setWindowInput({ ...windowInput, endDayOfMonth: e.target.value })
-          }
-        >
-          <option value="Every Day">Every Day</option>
-          {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-            <option key={day} value={day}>
-              {day}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="security-form">
+        <label>
+          <span>End Day Of Month</span>
+          <select
+            value={windowInput.endDayOfMonth}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, endDayOfMonth: e.target.value })
+            }
+          >
+            <option value="Every Day">Every Day</option>
+            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+              <option key={day} value={day}>{day}</option>
+            ))}
+          </select>
+        </label>
+      </div>
 
-      {/* End Time */}
-      <h5>End Time:</h5>
-      <input
-        type="time"
-        value={windowInput.endTime}
-        onChange={(e) =>
-          setWindowInput({ ...windowInput, endTime: e.target.value })
-        }
-      />
+      <div className="security-form">
+        <label>
+          <span>End Time</span>
+          <input
+            type="time"
+            value={windowInput.endTime}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, endTime: e.target.value })
+            }
+          />
+        </label>
+      </div>
 
-      <button onClick={handleAddWindow}>Save</button>
-      <button onClick={closePopup}>Cancel</button>
+      <div className="modal-buttons">
+        <button onClick={handleAddWindow}>Save</button>
+        <button onClick={closePopup}>Cancel</button>
+      </div>
     </div>
   </div>
 )}
 
 
-      {showDestinationModal && (
-        <div className="modal" onClick={closePopup}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h4>Add Destination</h4>
-            <input
-              type="text"
-              value={destinationInput}
-              onChange={(e) => setDestinationInput(e.target.value)}
-              placeholder="Enter Destination"
-            />
-            <button onClick={handleAddDestination}>Save</button>
-            <button onClick={closePopup}>Cancel</button>
-          </div>
-        </div>
-      )}
+    {showDestinationModal && (
+  <div className="modal" onClick={closePopup}>
+    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <h4>Add Destination</h4>
+
+      <div className="security-form">
+        <label>
+          <span>Destination</span>
+          <input
+            type="text"
+            value={destinationInput}
+            onChange={(e) => setDestinationInput(e.target.value)}
+            placeholder="Enter Destination"
+          />
+        </label>
+      </div>
+
+      <div className="modal-buttons">
+        <button onClick={handleAddDestination}>Save</button>
+        <button onClick={closePopup}>Cancel</button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };
@@ -585,12 +624,28 @@ const AutoAnswerSettings = () => {
   const [ringsInWindow, setRingsInWindow] = useState(0);
   const [ringsOutWindow, setRingsOutWindow] = useState(0);
 
+  const [selectedWindowId, setSelectedWindowId] = useState(null);
+const [selectedCallerId, setSelectedCallerId] = useState(null);
+  
   const [callers, setCallers] = useState([]);
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [newCaller, setNewCaller] = useState({
     callerId: "",
     callType: "",
   });
+
+
+  
+
+
+
+
+
+
+
+
+
+
   
   const [callingWindows, setCallingWindows] = useState([]);
 
@@ -658,6 +713,7 @@ const AutoAnswerSettings = () => {
   };
 
 
+ 
 
   const handleSaveCallers = async () => {
     try {
@@ -716,27 +772,55 @@ const AutoAnswerSettings = () => {
   
  
 
-  const handleAddCaller = () => {
-    setCallers([...callers, newCaller]);
-    setShowAddPopup(false);
-    setNewCaller({
-      callerId: "",
-      callType: "",
-    });
-  };
+ const handleDeleteCaller = async () => {
+  if (!selectedCallerId) {
+    alert("Please select a caller");
+    return;
+  }
 
-  const handleDeleteCaller = (index) => {
-    const updatedCallers = callers.filter((_, i) => i !== index);
-    setCallers(updatedCallers);
-  };
+  try {
+   
+    await axios.delete(
+`${BASE_URL}/api/delete-auto-answer-settings/caller/${selectedCallerId}/`
+);
+
+    
+
+    setSelectedCallerId(null);
+    fetchSettings();
+  } catch (error) {
+    console.error("Error deleting caller:", error);
+  }
+};
+
+
+
+  const handleDeleteWindow = async () => {
+  if (!selectedWindowId) {
+    alert("Please select a calling window");
+    return;
+  }
+
+  try {
+    
+     await axios.delete(
+`${BASE_URL}/api/delete-auto-answer-settings/window/${selectedWindowId}/`
+);
+   
+
+    setSelectedWindowId(null);
+    fetchSettings();
+  } catch (error) {
+    console.error("Error deleting window:", error);
+  }
+};
+
+ 
  
 
   const closePopup = () => setShowWindowModal(false);
 
-  const handleDeleteWindow = (index) => {
-    const updatedWindows = callingWindows.filter((_, i) => i !== index);
-    setCallingWindows(updatedWindows);
-  };
+  
 
   return (
     <div className="auto-answer-settings-container">
@@ -837,22 +921,33 @@ const AutoAnswerSettings = () => {
             </tr>
           </thead>
           <tbody>
-            {callingWindows.map((window, index) => (
-              <tr key={index}>
-                <td>{index + 1}</td>
-                <td>{window.start_time}</td> 
-                <td>{window.end_time}</td>
-               
-              </tr>
-            ))}
+             {callingWindows.map((window, index) => (
+    <tr
+      key={window.id}
+      onClick={() => setSelectedWindowId(window.id)}
+      id={selectedWindowId === window.id ? "selected-row" : ""}
+    >
+      <td>{index + 1}</td>
+      <td>{window.start_time}</td>
+      <td>{window.end_time}</td>
+    </tr>
+  ))}
           </tbody>
         </table>
+        
         </div> 
 
-        <div className="window-actions">
-        <button className="btn" onClick={() => setShowWindowModal(true)}>
-          Add Calling Window
+        <div className='button-container'>
+        <button  className='scheduler-add-button'  onClick={() => setShowWindowModal(true)}>
+          Add  Window
         </button>
+
+        <button
+  className="scheduler-delete-button"
+  onClick={handleDeleteWindow}
+>
+  Delete 
+</button>
       </div>
 
       </div>
@@ -886,250 +981,273 @@ const AutoAnswerSettings = () => {
         </table>
        
       </div>
-       <button className="btn add-btn" onClick={() => setShowAddPopup(true)}>
+      <div className='button-container'> 
+       <button style={{marginLeft:"15%"}}  className='scheduler-add-button'  onClick={() => setShowAddPopup(true)}>
           Add Allowed Callers
         </button>
+         <button
+  className="scheduler-delete-button"
+  onClick={handleDeleteCaller}
+>
+  Delete 
+</button>
       </div>
       </div>
+
+
+      
+      </div>
+
+
+
+
+          
 
       
 
 
       {showWindowModal && (
-        <div className="modal" onClick={closePopup}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h4>Add Calling Window</h4>
+  <div className="modal" onClick={closePopup}>
+    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <h4>Add Calling Window</h4>
 
-            <label>
-              Start Year Type:
-              <select
-                value={windowInput.startYearType}
-                onChange={(e) =>
-                  setWindowInput({
-                    ...windowInput,
-                    startYearType: e.target.value,
-                  })
-                }
-              >
-                <option value="Every Year">Every Year</option>
-                <option value="Special Year">Special Year</option>
-              </select>
-            </label>
-
-            {windowInput.startYearType === "Special Year" && (
-              <label>
-                Enter Start Year:
-                <input
-                  type="number"
-                  value={windowInput.startYear || ""}
-                  onChange={(e) =>
-                    setWindowInput({
-                      ...windowInput,
-                      startYear: e.target.value,
-                    })
-                  }
-                  placeholder="Enter year, e.g., 2024"
-                />
-              </label>
-            )}
-
-            <label>
-              Start Month:
-              <select
-                value={windowInput.startMonth}
-                onChange={(e) =>
-                  setWindowInput({ ...windowInput, startMonth: e.target.value })
-                }
-              >
-                <option value="Every Month">Every Month</option>
-                {[
-                  "January",
-                  "February",
-                  "March",
-                  "April",
-                  "May",
-                  "June",
-                  "July",
-                  "August",
-                  "September",
-                  "October",
-                  "November",
-                  "December",
-                ].map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Start Day of Month:
-              <select
-                value={windowInput.startDayOfMonth}
-                onChange={(e) =>
-                  setWindowInput({
-                    ...windowInput,
-                    startDayOfMonth: e.target.value,
-                  })
-                }
-              >
-                <option value="Every Day">Every Day</option>
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                  <option key={day} value={day}>
-                    {day}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <h5>Start Time:</h5>
-            <input
-              type="time"
-              value={windowInput.startTime}
-              onChange={(e) =>
-                setWindowInput({ ...windowInput, startTime: e.target.value })
-              }
-            />
-
-            <label>
-              End Year Type:
-              <select
-                value={windowInput.endYearType}
-                onChange={(e) =>
-                  setWindowInput({ ...windowInput, endYearType: e.target.value })
-                }
-              >
-                <option value="Every Year">Every Year</option>
-                <option value="Special Year">Special Year</option>
-              </select>
-            </label>
-
-            {windowInput.endYearType === "Special Year" && (
-              <label>
-                Enter End Year:
-                <input
-                  type="number"
-                  value={windowInput.endYear || ""}
-                  onChange={(e) =>
-                    setWindowInput({
-                      ...windowInput,
-                      endYear: e.target.value,
-                    })
-                  }
-                  placeholder="Enter year, e.g., 2024"
-                />
-              </label>
-            )}
-
-            <label>
-              End Month:
-              <select
-                value={windowInput.endMonth}
-                onChange={(e) =>
-                  setWindowInput({ ...windowInput, endMonth: e.target.value })
-                }
-              >
-                <option value="Every Month">Every Month</option>
-                {[
-                  "January",
-                  "February",
-                  "March",
-                  "April",
-                  "May",
-                  "June",
-                  "July",
-                  "August",
-                  "September",
-                  "October",
-                  "November",
-                  "December",
-                ].map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              End Day of Month:
-              <select
-                value={windowInput.endDayOfMonth}
-                onChange={(e) =>
-                  setWindowInput({
-                    ...windowInput,
-                    endDayOfMonth: e.target.value,
-                  })
-                }
-              >
-                <option value="Every Day">Every Day</option>
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                  <option key={day} value={day}>
-                    {day}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <h5>End Time:</h5>
-            <input
-              type="time"
-              value={windowInput.endTime}
-              onChange={(e) =>
-                setWindowInput({ ...windowInput, endTime: e.target.value })
-              }
-            />
-
-            <button onClick={handleSaveCallingWindows}>Save</button>
-            <button onClick={closePopup}>Cancel</button>
-          </div>
-        </div>
-      )}
-
-
-{showAddPopup && (
-        <div className="modal" onClick={() => setShowAddPopup(false)}>
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the popup
+      <div className="security-form">
+        <label>
+          <span>Start Year Type</span>
+          <select
+            className="input-box"
+            value={windowInput.startYearType}
+            onChange={(e) =>
+              setWindowInput({
+                ...windowInput,
+                startYearType: e.target.value,
+              })
+            }
           >
-            <h4>Add Caller</h4>
-            <label>
-              Caller ID:
-              <input
-                type="text"
-                value={newCaller.callerId}
-                onChange={(e) =>
-                  setNewCaller({ ...newCaller, callerId: e.target.value })
-                }
-                placeholder="Enter Caller ID"
-              />
-            </label>
-            <label>
-              Call Type:
-              <select
-                value={newCaller.callType}
-                onChange={(e) =>
-                  setNewCaller({ ...newCaller, callType: e.target.value })
-                }
-              >
-                <option value="">Select Call Type</option>
-                <option value="normal_CSD_call">normal_CSD_call</option>
-                <option value="wakeup_request">wakeup_request</option>
-              </select>
-            </label>
-            <button className="btn save-btn" onClick={handleSaveCallers}>
-              Save
-            </button>
-            <button className="btn cancel-btn" onClick={() => setShowAddPopup(false)}>
-              Cancel
-            </button>
-          </div>
+            <option value="Every Year">Every Year</option>
+            <option value="Special Year">Special Year</option>
+          </select>
+        </label>
+      </div>
+
+      {windowInput.startYearType === "Special Year" && (
+        <div className="security-form">
+          <label>
+            <span>Enter Start Year</span>
+            <input
+              type="number"
+              className="input-box"
+              value={windowInput.startYear || ""}
+              onChange={(e) =>
+                setWindowInput({
+                  ...windowInput,
+                  startYear: e.target.value,
+                })
+              }
+            />
+          </label>
         </div>
       )}
+
+      <div className="security-form">
+        <label>
+          <span>Start Month</span>
+          <select
+            className="input-box"
+            value={windowInput.startMonth}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, startMonth: e.target.value })
+            }
+          >
+            <option value="Every Month">Every Month</option>
+            {[
+              "January","February","March","April","May","June",
+              "July","August","September","October","November","December"
+            ].map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Start Day of Month</span>
+          <select
+            className="input-box"
+            value={windowInput.startDayOfMonth}
+            onChange={(e) =>
+              setWindowInput({
+                ...windowInput,
+                startDayOfMonth: e.target.value,
+              })
+            }
+          >
+            <option value="Every Day">Every Day</option>
+            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+              <option key={day} value={day}>{day}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Start Time</span>
+          <input
+            type="time"
+            className="input-box"
+            value={windowInput.startTime}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, startTime: e.target.value })
+            }
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>End Year Type</span>
+          <select
+            className="input-box"
+            value={windowInput.endYearType}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, endYearType: e.target.value })
+            }
+          >
+            <option value="Every Year">Every Year</option>
+            <option value="Special Year">Special Year</option>
+          </select>
+        </label>
+      </div>
+
+      {windowInput.endYearType === "Special Year" && (
+        <div className="security-form">
+          <label>
+            <span>Enter End Year</span>
+            <input
+              type="number"
+              className="input-box"
+              value={windowInput.endYear || ""}
+              onChange={(e) =>
+                setWindowInput({
+                  ...windowInput,
+                  endYear: e.target.value,
+                })
+              }
+            />
+          </label>
+        </div>
+      )}
+
+      <div className="security-form">
+        <label>
+          <span>End Month</span>
+          <select
+            className="input-box"
+            value={windowInput.endMonth}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, endMonth: e.target.value })
+            }
+          >
+            <option value="Every Month">Every Month</option>
+            {[
+              "January","February","March","April","May","June",
+              "July","August","September","October","November","December"
+            ].map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>End Day of Month</span>
+          <select
+            className="input-box"
+            value={windowInput.endDayOfMonth}
+            onChange={(e) =>
+              setWindowInput({
+                ...windowInput,
+                endDayOfMonth: e.target.value,
+              })
+            }
+          >
+            <option value="Every Day">Every Day</option>
+            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+              <option key={day} value={day}>{day}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>End Time</span>
+          <input
+            type="time"
+            className="input-box"
+            value={windowInput.endTime}
+            onChange={(e) =>
+              setWindowInput({ ...windowInput, endTime: e.target.value })
+            }
+          />
+        </label>
+      </div>
+
+      <div className="modal-buttons">
+        <button onClick={handleSaveCallingWindows}>Save</button>
+        <button onClick={closePopup}>Cancel</button>
+      </div>
+    </div>
+  </div>
+)}
     
-      
+
+ {showAddPopup && (
+  <div className="modal" onClick={() => setShowAddPopup(false)}>
+    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <h4>Add1 Caller</h4>
+
+      <div className="security-form">
+        <label>
+          <span>Caller ID</span>
+          <input
+            type="text"
+            className="input-box"
+            value={newCaller.callerId}
+            onChange={(e) =>
+              setNewCaller({ ...newCaller, callerId: e.target.value })
+            }
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Call Type</span>
+          <select
+            className="input-box"
+            value={newCaller.callType}
+            onChange={(e) =>
+              setNewCaller({ ...newCaller, callType: e.target.value })
+            }
+          >
+            <option value="">Select Call Type</option>
+            <option value="normal_CSD_call">normal_CSD_call</option>
+            <option value="wakeup_request">wakeup_request</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="modal-buttons">
+        <button className="save-btn" onClick={handleSaveCallers}>Save</button>
+        <button className="cancel-btn" onClick={() => setShowAddPopup(false)}>Cancel</button>
+      </div>
+    </div>
+  </div>
+)}     
       
     </div>
   );
@@ -1298,92 +1416,111 @@ const IPv4Setup = () => {
   return (
     <div>
     
-      <form className='gprs_grid'>
-           
-        <label className='gprs_grid-label'>
-          Data Link Reference:
-          <input
-            className='gprs-input'
-            type="text"
-            name="dataLinkRef"
-            value={formData.dataLinkRef}
-            onChange={handleChange}
-            placeholder="Enter value"
-          />
-        </label>
-        <label className='gprs_grid-label'>
-          IP Address:
-          <input
-            type="text"
-            name="ipAddress"
-            className='gprs-input'
-            value={formData.ipAddress}
-            onChange={handleChange}
-            placeholder="Enter IP Address"
-          />
-        </label>
-        <label className='gprs_grid-label'>
-          Subnet Mask:
-          <input
-            type="text"
-            className='gprs-input'
-            name="subnetMask"
-            value={formData.subnetMask}
-            onChange={handleChange}
-            placeholder="Enter Subnet Mask"
-          />
-        </label>
-        <label className='gprs_grid-label'>
-          Gateway IP Address:
-          <input
-            type="text"
-             className='gprs-input'
-            name="gatewayIP"
-            value={formData.gatewayIP}
-            onChange={handleChange}
-            placeholder="Enter Gateway IP"
-          />
-        </label>
-        <label className='gprs_grid-label'>
-          DHCP:
-          <select
-           className='gprs-input'
-            name="dhcp"
-            value={formData.dhcp}
-            onChange={handleChange}
-            defaultValue=""
-          >
-            <option value="" disabled>
-              Select DHCP
-            </option>
-            <option value="enable">Enable</option>
-            <option value="disable">Disable</option>
-          </select>
-        </label>
-        <label className='gprs_grid-label'>
-          Primary DNS Address:
-          <input
-           className='gprs-input'
-            type="text"
-            name="primaryDNS"
-            value={formData.primaryDNS}
-            onChange={handleChange}
-            placeholder="Enter Primary DNS"
-          />
-        </label>
-        <label className='gprs_grid-label'>
-          Secondary DNS Address:
-          <input
-           className='gprs-input'
-            type="text"
-            name="secondaryDNS"
-            value={formData.secondaryDNS}
-            onChange={handleChange}
-            placeholder="Enter Secondary DNS"
-          />
-        </label>
-      
-      </form>
+     <form className="gprs_grid">
+
+  <div className="security-form">
+    <label>
+      <span>Data Link Reference</span>
+      <input
+        type="text"
+        name="dataLinkRef"
+        value={formData.dataLinkRef}
+        onChange={handleChange}
+        placeholder="Enter value"
+        className="gprs-input"
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>IP Address</span>
+      <input
+        type="text"
+        name="ipAddress"
+        value={formData.ipAddress}
+        onChange={handleChange}
+        placeholder="Enter IP Address"
+        className="gprs-input"
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Subnet Mask</span>
+      <input
+        type="text"
+        name="subnetMask"
+        value={formData.subnetMask}
+        onChange={handleChange}
+        placeholder="Enter Subnet Mask"
+        className="gprs-input"
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Gateway IP Address</span>
+      <input
+        type="text"
+        name="gatewayIP"
+        value={formData.gatewayIP}
+        onChange={handleChange}
+        placeholder="Enter Gateway IP"
+        className="gprs-input"
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>DHCP</span>
+      <select
+        name="dhcp"
+        value={formData.dhcp}
+        onChange={handleChange}
+        className="gprs-input"
+      >
+        <option value="" disabled>
+          Select DHCP
+        </option>
+        <option value="enable">Enable</option>
+        <option value="disable">Disable</option>
+      </select>
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Primary DNS Address</span>
+      <input
+        type="text"
+        name="primaryDNS"
+        value={formData.primaryDNS}
+        onChange={handleChange}
+        placeholder="Enter Primary DNS"
+        className="gprs-input"
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Secondary DNS Address</span>
+      <input
+        type="text"
+        name="secondaryDNS"
+        value={formData.secondaryDNS}
+        onChange={handleChange}
+        placeholder="Enter Secondary DNS"
+        className="gprs-input"
+      />
+    </label>
+  </div>
+
+</form>
 
     
 
@@ -1394,7 +1531,7 @@ const IPv4Setup = () => {
      
      
       <div className='table-Container'> 
-      <table className='small-table' border="1" style={{ width: "100%", marginBottom: "20px" }}>
+      <table className='tableTariff1' border="1" style={{ width: "100%", marginBottom: "20px" }}>
         <thead>
           <tr>
             <th>No</th>
@@ -1419,7 +1556,7 @@ const IPv4Setup = () => {
       {/* Table for IP Options */}
      
        <div className='table-Container'> 
-      <table className='small-table'  border="1" style={{ width: "100%", marginBottom: "20px" }}>
+      <table className='tableTariff1'  border="1" style={{ width: "100%", marginBottom: "20px" }}>
         <thead>
           <tr>
             <th>No</th>
@@ -1446,16 +1583,26 @@ const IPv4Setup = () => {
 
       </div>
 
-       <div>
+       <div 
+       
+        style={{
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+    flexWrap: "wrap", 
+    marginLeft:'20%'    // will wrap on very small screens
+  }}
+  >
           <button
             type="button"
             onClick={() => setShowMulticastPopup(true)}
-            style={{ marginRight: "10px" }}
+           
+             className='scheduler-add-button'
           >
             Multicast IP Address
           </button>
 
-           <button type="button" onClick={() => setShowIPOptionsPopup(true)}>
+           <button type="button"  className='scheduler-add-button' onClick={() => setShowIPOptionsPopup(true)}>
             IP Options
           </button>
           </div>
@@ -1512,7 +1659,7 @@ const IPv4Setup = () => {
               />
             </label>
             <div style={{ marginTop: "10px" }}>
-              <button onClick={handleSubmitipOptions}>Add</button>
+              <button  onClick={handleSubmitipOptions}>Add</button>
               <button onClick={() => setShowIPOptionsPopup(false)}>Close</button>
             </div>
           </div>
@@ -1737,6 +1884,9 @@ const PPPSetup = () => {
   const [username, setUsername] = useState(""); // Username state
   const [password, setPassword] = useState(""); // PAP password state
   const [phyReference, setPhyReference] = useState(""); // State for PHY Reference
+
+  const [selectedLcpId, setSelectedLcpId] = useState(null);
+const [selectedIpcpId, setSelectedIpcpId] = useState(null);
   
 
 
@@ -1846,6 +1996,31 @@ const PPPSetup = () => {
     "Use Static IP Pool",
   ];
 
+
+  const handleDeletePPP = async (id, type) => {
+
+  if (!id) {
+    alert("Please select a row");
+    return;
+  }
+
+  try {
+
+    await axios.delete(`${BASE_URL}/api/delete-ppp-setup/${id}/`);
+
+    if (type === "LCP") {
+      fetchLcpData();
+      setSelectedLcpId(null);
+    } else {
+      fetchIpcpData();
+      setSelectedIpcpId(null);
+    }
+
+  } catch (error) {
+    console.error("Delete failed:", error);
+  }
+};
+
   return (
     <div style={{ padding: "10px" }}>
     
@@ -1874,7 +2049,7 @@ const PPPSetup = () => {
       
        <div  className='ipcp-Container'>
         <div className='table-Container'> 
-        <table className='small-table' >
+        <table className='tableTariff1' >
           <thead>
             <tr>
               <th>No</th>
@@ -1885,22 +2060,32 @@ const PPPSetup = () => {
             </tr>
           </thead>
           <tbody>
-            {lcpOptions.map((option, index) => (
-              <tr key={index}>
-                <td>{index+1}</td>
-                <td>{option.LCP_TYPE}</td>
-                
-                <td>{option.lcp_value}</td>
-              
-              </tr>
-            ))}
+          
+  {lcpOptions.map((option, index) => (
+    <tr
+      key={option.id}
+      onClick={() => setSelectedLcpId(option.id)}
+      id={selectedLcpId === option.id ? "selected-row" : ""}
+    >
+      <td>{index + 1}</td>
+      <td>{option.LCP_TYPE}</td>
+      <td>{option.lcp_value}</td>
+    </tr>
+  ))}
+
           </tbody>
         </table>
 
        </div>
         <div className='button-container'>
-        <button className='network-add-button'  onClick={() => setPopupType("LCP")}>Add LCP Option</button>
-        <button className='network-delete-button'>Delete LCP</button>
+        <button   className='scheduler-add-button'   onClick={() => setPopupType("LCP")}>Add LCP Option</button>
+       
+       <button
+  className="scheduler-delete-button"
+  onClick={() => handleDeletePPP(selectedLcpId, "LCP")}
+>
+  Delete LCP
+</button>
         </div>
         </div>
         
@@ -1910,7 +2095,7 @@ const PPPSetup = () => {
       <div  className='ipcp-Container'>
        
        <div className='table-Container'>
-        <table  className='small-table' >
+        <table  className='tableTariff1' >
           <thead>
             <tr>
               <th>No</th>
@@ -1919,21 +2104,31 @@ const PPPSetup = () => {
              
             </tr>
           </thead>
-          <tbody>
-            {ipcpOptions.map((option, index) => (
-              <tr key={index}>
-                <td>{index+1}</td>
-                <td>{option.IPCP_TYPE}</td>
-                <td>{option.ipcp_value}</td>
-               
-              </tr>
-            ))}
+        
+           <tbody>
+  {ipcpOptions.map((option, index) => (
+    <tr
+      key={option.id}
+      onClick={() => setSelectedIpcpId(option.id)}
+      id={selectedIpcpId === option.id ? "selected-row" : ""}
+    >
+      <td>{index + 1}</td>
+      <td>{option.IPCP_TYPE}</td>
+      <td>{option.ipcp_value}</td>
+    </tr>
+  ))}
+
           </tbody>
         </table>
          </div>
         <div className='button-container'>
-        <button className='network-add-button'  onClick={() => setPopupType("IPCP")}>Add IPCP Option</button>
-        <button className='network-delete-button'>Delete Ipcp</button>
+        <button className='scheduler-add-button'  onClick={() => setPopupType("IPCP")}>Add IPCP Option</button>
+      <button
+  className="scheduler-delete-button"
+  onClick={() => handleDeletePPP(selectedIpcpId, "IPCP")}
+>
+  Delete IPCP
+</button>
         </div> 
       </div>
 
@@ -2141,94 +2336,132 @@ const GprsSetup = () => {
 
   return (
    
-   
-    <form onSubmit={handleSubmit}>
-       <div className='ppp-container'>
+   <form onSubmit={handleSubmit}>
+
+  {/* ================= GPRS Modem Setup ================= */}
+  <div className="ppp-container">
+
+    <div className="ppp-heading">
+      <div >
+        <label>
+          <input type="checkbox" className="gprs_checkbox" />
+          <span style={{ marginLeft: 8 }}>GPRS Modem Setup</span>
+        </label>
+      </div>
+    </div>
+
+    <div className="gprs_grid">
+
+      <div className="security-form">
+        <label>
+          <span>APN</span>
+          <input
+            type="text"
+            name="apn"
+            placeholder="Enter APN"
+            value={formData.apn}
+            onChange={handleInputChange}
+            className="gprs_input"
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>PIN Code</span>
+          <input
+            type="text"
+            name="pinCode"
+            placeholder="Enter PIN code"
+            value={formData.pinCode}
+            onChange={handleInputChange}
+            className="gprs_input"
+          />
+        </label>
+      </div>
+
+    </div>
+  </div>
+
+  {/* ================= Default Configuration ================= */}
+  <div className="ppp-container">
+
+    <div className="ppp-heading">
+      <div >
+        <label>
+          <input type="checkbox" className="gprs_checkbox" />
+          <span style={{ marginLeft: 8 }}>Default Configuration</span>
+        </label>
+      </div>
+    </div>
+
+    <div className="gprs_grid">
+      {Object.entries(formData.default).map(([key, value]) => (
+        <div className="security-form" key={`default-${key}`}>
+          <label>
+            <span>
+              {key.charAt(0).toUpperCase() + key.slice(1)}
+            </span>
+            <input
+              type="number"
+              value={value}
+              readOnly
+              className="gprs_readonly-input"
+            />
+          </label>
+        </div>
+      ))}
+    </div>
+
+  </div>
+
+  {/* ================= Requested Configuration ================= */}
+  <div className="ppp-container">
+
+    <div className="ppp-heading">
+      <div>
+        <label>
+          <input type="checkbox" className="gprs_checkbox" />
+          <span style={{ marginLeft: 8 }}>Requested Configuration</span>
+        </label>
+      </div>
+    </div>
+
+    <div className="gprs_grid">
+      {Object.keys(formData.requested).map((key) => (
+        <div className="security-form" key={`requested-${key}`}>
+          <label>
+            <span>
+              {key.charAt(0).toUpperCase() + key.slice(1)}
+            </span>
+            <input
+              type="number"
+              name={key}
+              placeholder="Enter Value"
+              value={formData.requested[key]}
+              onChange={handleRequestedChange}
+              className="gprs_input"
+            />
+          </label>
+        </div>
+      ))}
+    </div>
+
+  </div>
+
+  {/* ================= Submit Button ================= */}
+  <div  style={{ textAlign: "center", marginLeft:"40%" }}>
+    <button
+      type="submit"
+      className="scheduler-add-button"
      
-      <div className='ppp-heading'> 
-        <label  className="gprs_checkbox-label">
-          <input type="checkbox" className="gprs_checkbox" />
-          GPRS Modern Setup
-        </label>
-        </div>
+    >
+      Submit
+    </button>
+  </div>
 
-      <div className="gprs_grid">
-       
-       
-          <label className="gprs_label">
-            APN:
-            <input
-              type="text"
-              className="gprs_input"
-              name="apn"
-              placeholder="Enter APN"
-              value={formData.apn}
-              onChange={handleInputChange}
-            />
-          </label>
-          <label className="gprs_label">
-            PIN Code:
-            <input
-              type="text"
-              className="gprs_input"
-              name="pinCode"
-              placeholder="Enter PIN code"
-              value={formData.pinCode}
-              onChange={handleInputChange}
-            />
-          </label>
-       
-      </div>
-      </div>
-
-   
-      <div className="ppp-container">
-           <div className='ppp-heading'> 
-         <label  className="gprs_checkbox-label">
-          <input type="checkbox" className="gprs_checkbox" />
-        Default Configuration
-        </label>
-        </div>
-
-                <div className="gprs_grid">
-          {Object.entries(formData.default).map(([key, value]) => (
-            <label className="gprs_grid-label" key={`default-${key}`}>
-              {key.charAt(0).toUpperCase() + key.slice(1)}:{" "}
-              <input className="gprs_readonly-input" type="number" value={value} readOnly />
-            </label>
-          ))}
-        </div>
-        </div>
-      <div className="ppp-container">
-        
-        <div className='ppp-heading'> 
-           <label  className="gprs_checkbox-label">
-          <input type="checkbox" className="gprs_checkbox" />
-         Requested Configuration
-        </label>
-      
-        </div>
-        <div className="gprs_grid">
-          {Object.keys(formData.requested).map((key) => (
-            <label className="gprs_grid-label" key={`requested-${key}`}>
-              {key.charAt(0).toUpperCase() + key.slice(1)}:
-              <input
-                className="gprs_input"
-                type="number"
-                name={key}
-                placeholder="Enter Value"
-                value={formData.requested[key]}
-                onChange={handleRequestedChange}
-              />
-            </label>
-          ))}
-        </div>
-      </div>
-      <button className="gprs_submit-button" type="submit">
-        Submit
-      </button>
-    </form>
-  );
+</form>
+  )
 };
 
 
@@ -2271,16 +2504,95 @@ const NetworkControl = () => {
 
   return (
     <div className="network-control-container">
-     
-      <div> 
-        <button  onClick={() => setActiveSection('AutoConnect')}>Auto Connect</button>
-        <button onClick={() => setActiveSection('AutoAnswer')}>Auto Answer</button>
-        <button  onClick={() => setActiveSection('IPv4Setup')}>IPv4 Setup</button>
-        <button  onClick={() => setActiveSection('TcpUdpSetup')}>TCP-UDP Setup</button>
-        <button  onClick={() => setActiveSection('GprsModemSetup')}>GPRS Modem Setup</button>
-        <button  onClick={() => setActiveSection('PppSetup')}>PPP Setup</button>
-        <button  onClick={() => setActiveSection('ModuleInformation')}>Module Information</button>
-      </div>
+     <div
+  className="view-toggle"
+  role="tablist"
+  aria-label="Network setup sections"
+>
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeSection === "AutoConnect"}
+    className={`view-btn ${
+      activeSection === "AutoConnect" ? "active" : ""
+    }`}
+    onClick={() => setActiveSection("AutoConnect")}
+  >
+    Auto Connect
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeSection === "AutoAnswer"}
+    className={`view-btn ${
+      activeSection === "AutoAnswer" ? "active" : ""
+    }`}
+    onClick={() => setActiveSection("AutoAnswer")}
+  >
+    Auto Answer
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeSection === "IPv4Setup"}
+    className={`view-btn ${
+      activeSection === "IPv4Setup" ? "active" : ""
+    }`}
+    onClick={() => setActiveSection("IPv4Setup")}
+  >
+    IPv4 Setup
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeSection === "TcpUdpSetup"}
+    className={`view-btn ${
+      activeSection === "TcpUdpSetup" ? "active" : ""
+    }`}
+    onClick={() => setActiveSection("TcpUdpSetup")}
+  >
+    TCP-UDP Setup
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeSection === "GprsModemSetup"}
+    className={`view-btn ${
+      activeSection === "GprsModemSetup" ? "active" : ""
+    }`}
+    onClick={() => setActiveSection("GprsModemSetup")}
+  >
+    GPRS Modem Setup
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeSection === "PppSetup"}
+    className={`view-btn ${
+      activeSection === "PppSetup" ? "active" : ""
+    }`}
+    onClick={() => setActiveSection("PppSetup")}
+  >
+    PPP Setup
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeSection === "ModuleInformation"}
+    className={`view-btn ${
+      activeSection === "ModuleInformation" ? "active" : ""
+    }`}
+    onClick={() => setActiveSection("ModuleInformation")}
+  >
+    Module Information
+  </button>
+</div>
       <div className="load-control-container">{renderSection()}</div>
     </div>
   );

@@ -15,7 +15,7 @@
 
     /* height:60vh; Table styling #f5f5f5 */
     .tableTariff {
-      width: 96%;
+      width: 90%;
       border-collapse: collapse;
       margin-top: 20px;
       box-shadow: 0 0 4px #717070,
@@ -166,8 +166,8 @@
 .tou_button {
   background-color: #424242;
   color: white;
-  padding: 10px 20px;
-  margin: 10px 5px;
+  padding: 1% 6%;
+  margin: 5px 2px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -498,6 +498,8 @@
   
 }
 
+
+
 .underline.moving {
   animation: fireAnimation 0.5s ease-in-out forwards;
 }
@@ -528,24 +530,7 @@
   z-index: 1000;
 }
 
-.tou_modal-content
-{
 
-  background-color:  rgb(255, 102, 0);
-  border-radius:0px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  min-width: 80%;
-  min-height:50%;
-  margin-top:5%;
- width:30%;
- display:flex;
- flex-direction:row;
-
- align-items:center ;
- 
-
- 
-}
 
 .profile_Container1
 {
@@ -702,3 +687,125 @@
     height:10px;
     font-size:14px;
   }
+
+
+
+
+
+
+
+
+
+
+  /* Modal background */
+.tou_modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Modal box */
+.tou_modal-content {
+  background: white;
+  width: 60%;
+  padding: 20px;
+  border-radius: 6px;
+  display: flex;
+  gap: 30px;
+}
+
+/* Left form section */
+.profile_Container1 {
+  width: 40%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile_Container1 h3 {
+  margin-bottom: 10px;
+}
+
+/* Label style similar to security-form */
+.profile_Container1 label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+/* Input style */
+.tou_input {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  height: 28px;
+}
+
+/* Button group */
+.tou_button_group {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+/* Buttons */
+.tou_button {
+  padding: 6px 12px;
+  border: none;
+  background: #2f6edb;
+  color: white;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.tou_button:hover {
+  background: #1e4fa3;
+}
+
+.tou_button:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+/* Table container */
+.profile_Container2 {
+  width: 60%;
+}
+
+/* Table style */
+.profile_Container2 table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.profile_Container2 th,
+.profile_Container2 td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.profile_Container2 th {
+  background: #f4f4f4;
+}
+
+/* Row hover */
+.profile_Container2 tr:hover {
+  background: #f0f6ff;
+  cursor: pointer;
+}
+
+/* Selected row */
+.selected-row {
+  background: #cfe2ff;
+}

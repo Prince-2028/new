@@ -2478,11 +2478,14 @@ class TariffThresholdActionAPIView(APIView):
             # Validate if device_id is provided
             device_id = data.get('device_id')
 
+            
+
             if not device_id:
                 return Response({"error": "Device ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
             # Get the device instance
             device = Device.objects.get(id=device_id)
+
 
             # Create Thresholds
             thresholds = data.get('thresholds', [])
@@ -2650,7 +2653,7 @@ class CreateTOUCalendarAPIView(APIView):
                 if not day_id:
                     return Response({"error": "Day ID is required for entity type 'Day'."}, status=status.HTTP_400_BAD_REQUEST)
                 
-                if TOUCalendarManager.objects.filter(day_id=day_id).exists():
+                if TOUCalendarManager.objects.filter(device_id=device_id, day_id=day_id).exists():
                     return Response({"error": f"Day ID {day_id} is already in the database."}, status=status.HTTP_400_BAD_REQUEST)
 
             # Create the TOUCalendarManager instance
@@ -3629,24 +3632,48 @@ class AutoAnswerSettingsCreateView(APIView):
     
 
 
-    def delete(self, request, *args, **kwargs):
-        # Retrieve the auto_answer_settings.id from the URL parameters
-        auto_answer_settings_id = kwargs.get('auto_answer_settings_id')
+    def delete(self, request, id, type):
 
         try:
-            # Retrieve the AutoAnswerSettings instance based on the provided ID
-            auto_answer_settings = AutoAnswerSettings.objects.get(id=auto_answer_settings_id)
 
-            # Delete the AutoAnswerSettings instance and its related entries will be deleted automatically
-            auto_answer_settings.delete()
+            if type == "window":
 
-            # Return success response
-            return Response({"message": "AutoAnswerSettings and related entries deleted successfully."}, status=204)
+                window = AutoAnswerSettingsCallingWindow.objects.get(id=id)
+                window.delete()
 
-        except AutoAnswerSettings.DoesNotExist:
-            # If AutoAnswerSettings with the given ID does not exist
-            return JsonResponse({"error": "AutoAnswerSettings not found."}, status=404)
-    
+                return Response(
+                    {"message": "Calling window deleted successfully"},
+                    status=status.HTTP_200_OK
+                )
+
+            elif type == "caller":
+
+                caller = AutoAnswerSettingsAllowedCaller.objects.get(id=id)
+                caller.delete()
+
+                return Response(
+                    {"message": "Allowed caller deleted successfully"},
+                    status=status.HTTP_200_OK
+                )
+
+            else:
+                return Response(
+                    {"error": "Invalid delete type"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        except AutoAnswerSettingsCallingWindow.DoesNotExist:
+            return Response(
+                {"error": "Calling window not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        except AutoAnswerSettingsAllowedCaller.DoesNotExist:
+            return Response(
+                {"error": "Caller not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
 
     
 
@@ -3654,6 +3681,141 @@ class AutoAnswerSettingsCreateView(APIView):
     
 from .models import IPv4Setup, MulticastIPAddress, IPOption, Device
 from django.shortcuts import get_object_or_404
+
+class IPv4SetupCreateView1(APIView):
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+
+        # Ensure that either multicast_addresses or ip_options is provided, but not both
+        multicast_addresses = data.get('multicast_addresses', None)
+        ip_options = data.get('ip_options', None)
+
+        if multicast_addresses and ip_options:
+            raise ValidationError("You can only provide either multicast_addresses or ip_options, not both.")
+
+        # Get data from the request
+        device_id = data.get('device')
+        data_link_ref = data.get('data_link_ref')
+        ip_address = data.get('ip_address')
+        subnet_mask = data.get('subnet_mask')
+        gateway_ip = data.get('gateway_ip')
+        dhcp = data.get('dhcp')
+        primary_dns = data.get('primary_dns')
+        secondary_dns = data.get('secondary_dns')
+
+        # Get the device instance using the device ID
+        device = get_object_or_404(Device, id=device_id)
+
+        # Create IPv4Setup instance
+        ipv4_setup = IPv4Setup.objects.create(
+            device=device,
+            data_link_ref=data_link_ref,
+            ip_address=ip_address,
+            subnet_mask=subnet_mask,
+            gateway_ip=gateway_ip,
+            dhcp=dhcp,
+            primary_dns=primary_dns,
+            secondary_dns=secondary_dns
+        )
+
+        # Handle Multicast IP addresses if provided (either single or multiple)
+        if multicast_addresses:
+            if isinstance(multicast_addresses, list):
+                for multicast_ip in multicast_addresses:
+                    MulticastIPAddress.objects.create(
+                        ipv4_setup=ipv4_setup,
+                        ip_address=multicast_ip
+                    )
+            else:
+                MulticastIPAddress.objects.create(
+                    ipv4_setup=ipv4_setup,
+                    ip_address=multicast_addresses
+                )
+
+        # Handle IP options if provided (either single or multiple)
+        if ip_options:
+            if isinstance(ip_options, list):
+                for option in ip_options:
+                    IPOption.objects.create(
+                        ipv4_setup=ipv4_setup,
+                        option_type=option.get('option_type'),
+                        data=option.get('data')
+                    )
+            else:
+                IPOption.objects.create(
+                    ipv4_setup=ipv4_setup,
+                    option_type=ip_options.get('option_type'),
+                    data=ip_options.get('data')
+                )
+
+        return Response({"message": "IPv4 Setup created successfully."}, status=201)
+
+
+ 
+
+    def get(self, request, *args, **kwargs):
+        device_id = kwargs.get('device_id')  # Assuming device_id is passed as a URL parameter
+
+        # Get the device instance using the device ID
+        device = get_object_or_404(Device, id=device_id)
+
+        # Get the IPv4 setups associated with this device
+        ipv4_setups = IPv4Setup.objects.filter(device=device)
+
+        if not ipv4_setups:
+            return Response({"detail": "No IPv4 Setup found for this device."}, status=404)
+
+        response_data = {
+            "ipv4_setups": [],
+            "multicast_addresses": [],
+            "ip_options": []
+        }
+
+        # Iterate through all IPv4 setups for the device
+        for ipv4_setup in ipv4_setups:
+            # Fetch the related Multicast IP addresses
+            multicast_addresses = MulticastIPAddress.objects.filter(ipv4_setup=ipv4_setup)
+
+            # Fetch the related IP options
+            ip_options = IPOption.objects.filter(ipv4_setup=ipv4_setup)
+
+            # Prepare the data for each IPv4 setup
+            ipv4_setup_data = {
+                "setup_id": ipv4_setup.id,  # Setup ID
+                "table_self_id": ipv4_setup.id,  # Assuming table_self_id is the same as setup_id
+                "device_id": device.id,
+                "data_link_ref": ipv4_setup.data_link_ref,
+                "ip_address": ipv4_setup.ip_address,
+                "subnet_mask": ipv4_setup.subnet_mask,
+                "gateway_ip": ipv4_setup.gateway_ip,
+                "dhcp": ipv4_setup.dhcp,
+                "primary_dns": ipv4_setup.primary_dns,
+                "secondary_dns": ipv4_setup.secondary_dns,
+            }
+
+            # Add current IPv4 setup data to the response
+            response_data["ipv4_setups"].append(ipv4_setup_data)
+
+            # Add the related multicast addresses to the response
+            for address in multicast_addresses:
+                response_data["multicast_addresses"].append({
+                    "id": address.id,  # Multicast IP address ID
+                    "ip_address": address.ip_address,
+                    "ipv4_setup_id": address.ipv4_setup.id  # ForeignKey to IPv4Setup
+                })
+            
+            # Add the related IP options to the response
+            for option in ip_options:
+                response_data["ip_options"].append({
+                    "id": option.id,  # IP option ID
+                    "option_type": option.option_type,
+                    "data": option.data,
+                    "ipv4_setup_id": option.ipv4_setup.id  # ForeignKey to IPv4Setup
+                })
+
+        # Return the aggregated data as a response
+        return Response(response_data)
 
 class IPv4SetupCreateView(APIView):
 
@@ -4377,7 +4539,33 @@ class PPPSetupView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+    def delete(self, request, id):
+        ppp = get_object_or_404(PPPSetup, id=id)
+        ppp.delete()
+        return Response({"message": "PPPSetup deleted successfully."}, status=status.HTTP_200_OK)
 
+class FriendlyPeriodItemDeleteAPI(APIView):
+
+    def delete(self, request, item_id):
+        try:
+            deleted_count, _ = FriendlyPeriod.objects.filter(id=item_id).delete()
+
+            if deleted_count == 0:
+                return Response(
+                    {"message": "Friendly period not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            return Response(
+                {"message": "Deleted successfully."},
+                status=status.HTTP_204_NO_CONTENT
+            )
+
+        except Exception:
+            return Response(
+                {"error": "An unexpected error occurred."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 from .models import EnergyRegister, Device
@@ -9375,7 +9563,33 @@ class FriendlyPeriodAPI(APIView):
         except Exception as e:
             return JsonResponse({"error": "An unexpected error occurred."}, status=500)
 
+    def delete(self, request, device_id):
+        try:
+            device = get_object_or_404(Device, id=device_id)
 
+            periods = FriendlyPeriod.objects.filter(device=device)
+
+            deleted_count, _ = periods.delete()
+
+            if deleted_count == 0:
+                return JsonResponse(
+                    {"message": "No friendly periods found for this device."},
+                    status=404
+                )
+
+            return JsonResponse(
+                {
+                    "message": "All friendly periods deleted successfully.",
+                    "deleted_count": deleted_count
+                },
+                status=200
+            )
+
+        except Exception as e:
+            return JsonResponse(
+                {"error": "An unexpected error occurred."},
+                status=500
+            )
 
 from .models import FriendlyWeekday
 
@@ -9824,7 +10038,6 @@ class BulkUnitChargeCreateAPIView(APIView):
         return Response(unit_charge_list, status=status.HTTP_200_OK)
 
 
-
 class ScrollDisplayView(APIView):
 
     def post(self, request):
@@ -9919,7 +10132,75 @@ class ScrollDisplayView(APIView):
             return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
+class ManualDisplayView1(APIView):
+    def delete(self, request, device_id, item_id):
 
+        try:
+            # ensure device exists (optional but safer)
+            device = get_object_or_404(Device, id=device_id)
+
+            # get the manual display item and ensure it belongs to the device
+            manual_display = get_object_or_404(ManualDisplay, id=item_id, device=device)
+
+            manual_display.delete()
+            # 204 No Content is appropriate for a successful delete
+            return Response({"message": "Deleted"}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            print(f"Unexpected error in clear manual-display: {e}")
+            return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+class ScrollDisplayItemView(APIView):
+    """
+    DELETE /api/scroll-display/<device_id>/<item_id>/
+    Delete a single scroll display item for a device.
+    """
+    
+
+    def delete(self, request, device_id, item_id):
+        try:
+            device = get_object_or_404(Device, id=device_id)
+            item = get_object_or_404(ScrollDisplay, id=item_id, device=device)
+
+            item.delete()
+            # 204 No Content is appropriate for delete success
+            return Response({"message": "Deleted"}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            # Log error server-side if you have logging
+            print(f"Error deleting scroll item: {e}")
+            return Response(
+                {"error": "An unexpected error occurred while deleting the item."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ScrollDisplayClearView(APIView):
+    """
+    DELETE /api/scroll-display/<device_id>/clear/
+    Delete (clear) all scroll display items for the device.
+    """
+   
+
+ 
+    def delete(self, request, device_id):
+        try:
+            device = get_object_or_404(Device, id=device_id)
+
+            qs = ScrollDisplay.objects.filter(device=device)
+            deleted_count, _ = qs.delete()
+
+            # Return count (200 OK) even if zero; change to 404 if you prefer
+            return Response(
+                {"message": "Cleared scroll display items.", "deleted": deleted_count},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            print(f"Error clearing scroll items: {e}")
+            return Response(
+                {"error": "An unexpected error occurred while clearing items."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class ManualDisplayView(APIView):
@@ -10017,6 +10298,31 @@ class ManualDisplayView(APIView):
             print(f"Unexpected error: {e}")
             return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
+
+        except Exception as e:
+            print(f"Unexpected error in delete single manual-display: {e}")
+            return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    def delete(self, request, device_id):
+        try:
+            # ensure device exists
+            device = get_object_or_404(Device, id=device_id)
+
+            qs = ManualDisplay.objects.filter(device=device)
+            deleted_count, _ = qs.delete()
+
+            if deleted_count == 0:
+                return Response({"message": "No manual display items found for this device."},
+                                status=status.HTTP_404_NOT_FOUND)
+
+            # return count for convenience
+            return Response({"message": "Cleared manual display items.", "deleted": deleted_count},
+                            status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(f"Unexpected error in clear manual-display: {e}")
+            return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 

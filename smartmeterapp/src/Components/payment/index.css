@@ -6,6 +6,149 @@
     border-radius: 5px;
     background-color: #f9f9f9;
   }
+
+
+
+  
+.ppp-container-payment {
+  position: relative;
+  border: 2px solid #444;
+  border-radius:1%;
+  margin-top:3%;
+  margin-bottom:3%;
+  padding:1%;
+
+  
+}
+
+
+
+/* container */
+.controlsGroup_tabs {
+  position: relative;
+  display: flex;
+  gap: 1px;
+ 
+ 
+  background: transparent;
+  /* use wrap on very small screens */
+  flex-wrap: wrap;
+}
+
+/* Button styles (same base as your tou_button) */
+.tou_button {
+  background-color: #424242;
+  color: rgb(255, 102, 0);
+  padding: 4px 8px;           /* similar to 1% 6% but consistent 424242 */
+  margin: 0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 160ms ease, transform 120ms ease;
+  box-shadow: 0 2px 6px rgba(2,6,23,0.06);
+}
+
+.tou_button:hover {
+  background-color: #565656;
+  transform: translateY(-1px);
+}
+
+/* active (selected) button style */
+.tou_button.activeButton {
+  background: linear-gradient(90deg, #0ea5a6 0%, #06b6d4 100%); /* aqua/teal accent */
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(6,182,212,0.12);
+}
+
+/* optional different styling if you need a danger-type tab later */
+.tou_button_passive {
+  background-color: #f44336;
+}
+
+.tou_button_passive:hover {
+  background-color: #e53935;
+}
+
+/* underline bar (animated) */
+.underline {
+  position: absolute;
+  bottom: 0px; /* slightly above container bottom so not flush */
+  height: 4px;
+  left: 0;
+  width: 0;
+  background: linear-gradient(90deg, rgba(255,94,0,1), rgba(255,140,0,0.9));
+  border-radius: 999px;
+  transform: translateX(0);
+  transition: transform 220ms cubic-bezier(.2,.9,.2,1), width 220ms cubic-bezier(.2,.9,.2,1);
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(255,140,0,0.06);
+  z-index: 2;
+}
+
+/* glow animation class (same idea as your fireAnimation) */
+.underline.moving {
+  animation: fireAnimation 0.5s ease-in-out forwards;
+}
+
+@keyframes fireAnimation {
+  0% {
+    box-shadow:
+      0 0 20px rgba(255, 94, 0, 0.7),
+      0 0 20px rgba(255, 94, 0, 0.5),
+      0 0 20px rgba(255, 94, 0, 0.3);
+  }
+  100% {
+    box-shadow:
+      0 0 1px rgba(255, 94, 0, 0.7),
+      0 0 1px rgba(255, 94, 0, 0.5),
+      0 0 1px rgba(255, 94, 0, 0.3);
+  }
+}
+
+/* small screens: make buttons smaller and let them wrap */
+@media (max-width: 640px) {
+  .tou_button {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  .controlsGroup_tabs {
+    padding: 6px;
+    gap: 6px;
+  }
+}
+
+
+
+
+ .table-container-payment 
+ {
+   border:2px solid black;
+ 
+   height:30vh;
+   
+   padding:5%;
+   margin-top:5%;
+ }  
+
+
+.ppp-heading-payment
+{
+  position: absolute;
+  top: -40%;        /* moves it onto the border */
+  left: 5%;        /* adjust as needed */
+  background: #fff;  /* IMPORTANT: hides the border behind text */
+  padding: 0 8px;
+  font-weight: 600;
+  border-radius:10%;
+ 
+}
+
+  .content-container 
+  {
+    padding:1%;
+  }
   
   .label {
     display: block;
@@ -76,4 +219,5 @@
   .submit-button:hover {
     background-color: #218838;
   }
+  
   

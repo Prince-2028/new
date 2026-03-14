@@ -98,13 +98,14 @@ margin:1%;
 .ppp-heading 
 {
   position: absolute;
-  top: -16%;        /* moves it onto the border */
+  top: -25%;        /* moves it onto the border */
   left: 16px;        /* adjust as needed */
   background: #fff;  /* IMPORTANT: hides the border behind text */
   padding: 0 8px;
   font-weight: 600;
   border-radius:10%;
   margin-top:1%;
+  
 }
 
 
@@ -132,10 +133,12 @@ margin:1%;
 
 .ppp-container 
 {
-  width:100%;
+  width:96%;
   display:flex;
  border:1px solid black;
   flex-direction:column;
+  
+ 
 
 }
 
@@ -191,12 +194,20 @@ margin:1%;
 
    border:2px solid black;
    padding:0%;
-   min-height:28vh;
+   min-height:30vh;
+   max-height:30vh;
    overflow-y:auto;
    margin:0%;
  
 
 }
+
+#selected-row {
+  background-color: #ff842c;
+  cursor: pointer;
+}
+
+
  
 .window-table-container 
 {

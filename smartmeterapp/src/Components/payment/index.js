@@ -1,10 +1,10 @@
-import React, { useState,useEffect  } from "react";
+import React, { useState,useEffect,useRef } from "react";
 import axios from "axios";
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
 import './index.css'
 
 const AccountDetails = () => {
-  const [activeTab, setActiveTab] = useState(null);
+  const [activeTab, setActiveTab] = useState('status');
 
 
   const [StatusformData, setStatusformData] = useState({
@@ -362,14 +362,15 @@ const fetchGatewayConfigs = async (deviceId) => {
     switch (activeTab) {
       case 'status':
         return (
+           
+           
             <div>
-            <h2>Status</h2>
-            <div className="form-container">
               {/* Account Mode and Status */}
-      <div className="form-field">        
- <p>Account Mode and Status</p>
+      <div className="security-form">        
 
-  <label htmlFor="paymentMode">Payment Mode</label>
+
+  <label>
+    <span> Payment Mode </span>
   <select
     id="paymentMode"
     name="paymentMode"
@@ -382,15 +383,19 @@ const fetchGatewayConfigs = async (deviceId) => {
     <option value="credit">Credit Mode</option>
     <option value="prepayment">Prepayment Mode</option>
   </select>
+  </label>
  
 
 </div>
 
+
+  
       
       
               {/* Account Status */}
-                          <div className="form-field">
-              <label htmlFor="accountStatus">Account Status:</label>
+                          <div className="security-form">
+              <label>
+                <span> Account Status: </span>
               <select
                 id="accountStatus"
                 name="accountStatus"
@@ -404,12 +409,14 @@ const fetchGatewayConfigs = async (deviceId) => {
                 <option value="active">Account Active</option>
                 <option value="closed">Account Closed</option>
               </select>
+              </label>
             </div>
 
       
               {/* Current Credit in Use */}
-              <div className="form-field">
-                <label>Current Credit in Use:</label>
+              <div className="security-form">
+                <label>
+                  <span> Current Credit in Use: </span>
                 <input
                   type="number"
                   name="currentCreditInUse"
@@ -417,12 +424,16 @@ const fetchGatewayConfigs = async (deviceId) => {
                   onChange={handleChange}
                   placeholder="Enter current credit in use"
                 />
+                </label>
               </div>
+
+               
       
               {/* Current Credit Status */}
-              <div className="form-field">
-  <p>Current Credit Status:</p>
-  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div className="ppp-container" style={{marginTop:"2%",padding:'2%'}}>
+                <p className="ppp-heading ">  Current Credit Status</p>
+  
+  <div className="options-grid">
     {[
       "In Credit",
       "Low Credit",
@@ -432,9 +443,10 @@ const fetchGatewayConfigs = async (deviceId) => {
       "Next Selectable Credit in Use",
       "Out of Credit",
     ].map((status) => (
-      <label key={status}>
+      <label  className="option-label"    key={status}>
         <input
           type="checkbox"
+          className="option-checkbox"
           name="currentCreditStatus"
           value={status}
           checked={StatusformData.currentCreditStatus.includes(status)}
@@ -448,7 +460,9 @@ const fetchGatewayConfigs = async (deviceId) => {
             }));
           }}
         />
-        {status}
+        <span className="option-text">    {status} </span>
+      
+       
       </label>
     ))}
   </div>
@@ -456,168 +470,217 @@ const fetchGatewayConfigs = async (deviceId) => {
 
       
               {/* Method */}
-              <div className="form-field">
-                <label>Method:</label>
+              <div className="security-form">
+                <label>
+                  <span> Method:  </span>
                 <select name="method" value={StatusformData.method} onChange={handleChange}>
                   <option value="Active account">Active Account</option>
                   <option value="Inactive account">Inactive Account</option>
                 </select>
+                </label>
               </div>
       
               {/* Submit Button */}
-              <button onClick={handleSubmit} className="submit-button">
+              <button style={{marginLeft:"40%"}} className='scheduler-add-button' onClick={handleSubmit}>
                 Submit
               </button>
             </div>
-            </div>
+           
          
         );
       case 'value':
         return (
             <form onSubmit={valueHandleSubmit}>
-            <div>
-              <label>Available Credit:</label>
-              <input
-                type="number"
-                name="availableCredit"
-                value={valueFormData.availableCredit}
-                onChange={valueHandleInputChange}
-              />
-            </div>
-            <div>
-              <label>Amount to Clear:</label>
-              <input
-                type="number"
-                name="amountToClear"
-                value={valueFormData.amountToClear}
-                onChange={valueHandleInputChange}
-              />
-            </div>
-            <div>
-              <label>Clearance Threshold:</label>
-              <input
-                type="number"
-                name="clearanceThreshold"
-                value={valueFormData.clearanceThreshold}
-                onChange={valueHandleInputChange}
-              />
-            </div>
-            <div>
-              <label>Aggregated Debt:</label>
-              <input
-                type="number"
-                name="aggregatedDebt"
-                value={valueFormData.aggregatedDebt}
-                onChange={valueHandleInputChange}
-              />
-            </div>
-            <div>
-              <label>Account Activation Time:</label>
-              <input
-                type="datetime-local"
-                name="accountActivationTime"
-                value={valueFormData.accountActivationTime}
-                onChange={valueHandleInputChange}
-              />
-            </div>
-            <div>
-              <label>Account Closure Time:</label>
-              <input
-                type="datetime-local"
-                name="accountClosureTime"
-                value={valueFormData.accountClosureTime}
-                onChange={valueHandleInputChange}
-              />
-            </div>
-            <div>
-              <label>Currency Name:</label>
-              <input
-                type="text"
-                name="name"
-                value={valueFormData.currency.name}
-                onChange={valueHandleCurrencyChange}
-              />
-            </div>
-            <div>
-              <label>Currency Scale:</label>
-              <input
-                type="number"
-                name="scale"
-                value={valueFormData.currency.scale}
-                onChange={valueHandleCurrencyChange}
-              />
-            </div>
-            <div>
-              <label>Currency Unit:</label>
-              <input
-                type="text"
-                name="unit"
-                value={valueFormData.currency.unit}
-                onChange={valueHandleCurrencyChange}
-              />
-            </div>
-            <div>
-              <label>Low Credit Threshold:</label>
-              <input
-                type="number"
-                name="lowCreditThreshold"
-                value={valueFormData.lowCreditThreshold}
-                onChange={valueHandleInputChange}
-              />
-            </div>
-            <div>
-              <label>Next Credit Available Threshold:</label>
-              <input
-                type="number"
-                name="nextCreditAvailableThreshold"
-                value={valueFormData.nextCreditAvailableThreshold}
-                onChange={valueHandleInputChange}
-              />
-            </div>
-            <div>
-              <label>Max Provision:</label>
-              <input
-                type="number"
-                name="maxProvision"
-                value={valueFormData.maxProvision}
-                onChange={valueHandleInputChange}
-              />
-            </div>
-            <div>
-              <label>Max Provision Period:</label>
-              <input
-                type="number"
-                name="maxProvisionPeriod"
-                value={valueFormData.maxProvisionPeriod}
-                onChange={valueHandleInputChange}
-              />
-            </div>
-            <button type="submit">Submit</button>
-          </form>
+
+  <div className="security-form">
+    <label>
+      <span>Available Credit:</span>
+      <input
+        type="number"
+        name="availableCredit"
+        value={valueFormData.availableCredit}
+        onChange={valueHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Amount to Clear:</span>
+      <input
+        type="number"
+        name="amountToClear"
+        value={valueFormData.amountToClear}
+        onChange={valueHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Clearance Threshold:</span>
+      <input
+        type="number"
+        name="clearanceThreshold"
+        value={valueFormData.clearanceThreshold}
+        onChange={valueHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Aggregated Debt:</span>
+      <input
+        type="number"
+        name="aggregatedDebt"
+        value={valueFormData.aggregatedDebt}
+        onChange={valueHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Account Activation Time:</span>
+      <input
+        type="datetime-local"
+        name="accountActivationTime"
+        value={valueFormData.accountActivationTime}
+        onChange={valueHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Account Closure Time:</span>
+      <input
+        type="datetime-local"
+        name="accountClosureTime"
+        value={valueFormData.accountClosureTime}
+        onChange={valueHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Currency Name:</span>
+      <input
+        type="text"
+        name="name"
+        value={valueFormData.currency.name}
+        onChange={valueHandleCurrencyChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Currency Scale:</span>
+      <input
+        type="number"
+        name="scale"
+        value={valueFormData.currency.scale}
+        onChange={valueHandleCurrencyChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Currency Unit:</span>
+      <input
+        type="text"
+        name="unit"
+        value={valueFormData.currency.unit}
+        onChange={valueHandleCurrencyChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Low Credit Threshold:</span>
+      <input
+        type="number"
+        name="lowCreditThreshold"
+        value={valueFormData.lowCreditThreshold}
+        onChange={valueHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Next Credit Available Threshold:</span>
+      <input
+        type="number"
+        name="nextCreditAvailableThreshold"
+        value={valueFormData.nextCreditAvailableThreshold}
+        onChange={valueHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Max Provision:</span>
+      <input
+        type="number"
+        name="maxProvision"
+        value={valueFormData.maxProvision}
+        onChange={valueHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Max Provision Period:</span>
+      <input
+        type="number"
+        name="maxProvisionPeriod"
+        value={valueFormData.maxProvisionPeriod}
+        onChange={valueHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <button  style={{marginLeft:"40%"}} className='scheduler-add-button' type="submit">Submit</button>
+
+</form>
         );
       
         case 'creditRefList':
         return (
-            <div>
-            <button onClick={toggleAddForm}>
-              {isAdding ? "Cancel" : "Add Credit Reference"}
-            </button>
+           
+           
+           <div style={{margin:"2%"}}>
+           
       
-            {isAdding && (
-              <div>
+            
+              <div className="security-form">
+                <label> 
+                   <span onClick={handleAddReference}>
+                    <button style={{marginLeft:"10%"}} className='scheduler-add-button'>Add Reference </button></span>
                 <input
                   type="text"
                   value={newReference}
                   onChange={CreditReferenceListHandleInput}
                   placeholder="Enter credit reference"
                 />
-                <button onClick={handleAddReference}>Add Reference</button>
+                </label>
+               
               </div>
-            )}
+             
+              
+            
       
-            <div>
-              <h3>Credit Reference List</h3>
-              <table>
+            <div className='table-container-autoanswer' style={{marginTop:'4%'}}>
+             
+              <table className='tableTariff1'>
                 <thead>
                   <tr>
                     <th>Index</th>
@@ -635,42 +698,36 @@ const fetchGatewayConfigs = async (deviceId) => {
               </table>
             </div>
       
-            {creditReferences.length > 0 && (
-              <button onClick={CreditReferenceListHandleSubmit}>Save Credit References</button>
-            )}
+           
           </div>
         );
         
       case 'creditChargeConfig':
         return (
             <div>
-            <button onClick={creditChargeToggleAddForm}>
-              {creditReferenceIsAdding ? "Cancel" : "Add Credit Charge Configuration"}
-            </button>
-      
-            {creditReferenceIsAdding && (
-              <div>
-                <input
-                  type="text"
-                  name="creditReference"
-                  value={newCreditReference}
-                  onChange={CreditChargeHandleInput}
-                  placeholder="Enter credit reference"
-                />
-                <input
-                  type="text"
-                  name="chargeReference"
-                  value={newChargeReference}
-                  onChange={CreditChargeHandleInput}
-                  placeholder="Enter charge reference"
-                />
-                <button onClick={handleAddConfig}>Add Configuration</button>
+            
+
+
+
+              <div className="security-form">
+                <label> 
+                   <span onClick={handleAddConfig}>
+                    <button style={{marginLeft:"10%"}} className='scheduler-add-button'>Add Configuration </button></span>
+               <input
+  type="text"
+  value={newCreditReference}
+  onChange={(e) => setNewCreditReference(e.target.value)}
+  placeholder="Enter credit reference"
+/>
+                </label>
+               
               </div>
-            )}
+             
+              
       
-            <div>
-              <h3>Credit Charge Configuration List</h3>
-              <table>
+            <div className='table-container-autoanswer' style={{marginTop:'4%'}}>
+             
+              <table className='tableTariff1'>
                 <thead>
                   <tr>
                     <th>Index</th>
@@ -700,12 +757,12 @@ const fetchGatewayConfigs = async (deviceId) => {
       case 'tokenGatewayConfig':
         return (
             <div>
-            <button onClick={toggleAddTokenConfigForm}>
-              {isAddingNewConfig ? "Cancel" : "Add Token Gateway Configuration"}
-            </button>
+            
       
-            {isAddingNewConfig && (
-              <div>
+           
+              <div className="security-form">
+                <label> 
+                  <span>   Credit reference </span>
                 <input
                   type="text"
                   name="creditReference"
@@ -713,6 +770,11 @@ const fetchGatewayConfigs = async (deviceId) => {
                   onChange={handleConfigInputChange}
                   placeholder="Enter credit reference"
                 />
+                </label> 
+                </div> 
+                <div className="security-form"> 
+                  <label> 
+                    <span>  Token proportion </span>
                 <input
                   type="text"
                   name="tokenProportion"
@@ -720,13 +782,18 @@ const fetchGatewayConfigs = async (deviceId) => {
                   onChange={handleConfigInputChange}
                   placeholder="Enter token proportion"
                 />
-                <button onClick={addNewTokenConfig}>Add Configuration</button>
+                </label>
+               
               </div>
-            )}
+
+               <button style={{marginLeft:"40%"}} className='scheduler-add-button' onClick={addNewTokenConfig}>Add Configuration</button>
+           
       
-            <div>
-              <h3>Token Gateway Configuration List</h3>
-              <table>
+
+      
+            <div className='table-container-autoanswer' style={{marginTop:'4%'}}>
+            
+              <table className="tableTariff1">
                 <thead>
                   <tr>
                     <th>Index</th>
@@ -754,15 +821,79 @@ const fetchGatewayConfigs = async (deviceId) => {
     }
   };
 
+   const tabs = [
+    { key: "status", label: "Status" },
+    { key: "value", label: "Value" },
+    { key: "creditRefList", label: "Credit Reference List" },
+    { key: "creditChargeConfig", label: "Credit Charge Configuration" },
+    { key: "tokenGatewayConfig", label: "Token Gateway Configuration" },
+  ];
+
+  const containerRef = useRef(null);
+  const buttonRefs = useRef({});
+  const underlineRef = useRef(null);
+  const movingTimeout = useRef(null);
+
+  // Position the underline under the active button
+  const moveUnderlineTo = (key) => {
+    const btn = buttonRefs.current[key];
+    const container = containerRef.current;
+    const u = underlineRef.current;
+    if (!btn || !container || !u) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const left = btnRect.left - containerRect.left;
+    const width = btnRect.width;
+
+    // Apply styles
+    u.style.transform = `translateX(${left}px)`;
+    u.style.width = `${Math.max(36, width)}px`; // min width for visibility
+
+    // add moving class for glow animation then remove
+    u.classList.add("moving");
+    clearTimeout(movingTimeout.current);
+    movingTimeout.current = setTimeout(() => u.classList.remove("moving"), 520);
+  };
+
+  useEffect(() => {
+    moveUnderlineTo(activeTab);
+
+    const onResize = () => moveUnderlineTo(activeTab);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      clearTimeout(movingTimeout.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  // initially move after mount
+  useEffect(() => {
+    setTimeout(() => moveUnderlineTo(activeTab), 30);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <div className="Display_Container">
-      <div className="">
-        <button onClick={() => setActiveTab('status')}>Status</button>
-        <button onClick={() => setActiveTab('value')}>Value</button>
-        <button onClick={() => setActiveTab('creditRefList')}>Credit Reference List</button>
-        <button onClick={() => setActiveTab('creditChargeConfig')}>Credit Charge Configuration</button>
-        <button onClick={() => setActiveTab('tokenGatewayConfig')}>Token Gateway Configuration</button>
-      </div>
+    <div >
+      
+       <div className="controlsGroup_tabs" ref={containerRef} role="tablist" aria-label="Credit tabs">
+      {tabs.map((t) => (
+        <button
+          key={t.key}
+          ref={(el) => (buttonRefs.current[t.key] = el)}
+          className={`tou_button ${activeTab === t.key ? "activeButton" : ""}`}
+          onClick={() => setActiveTab(t.key)}
+          type="button"
+          role="tab"
+          aria-pressed={activeTab === t.key}
+        >
+          {t.label}
+        </button>
+      ))}
+
+      <div ref={underlineRef} className="underline" aria-hidden="true" />
+    </div>
       
       <div className="content-container">
         {renderContent()}
@@ -780,6 +911,8 @@ const fetchGatewayConfigs = async (deviceId) => {
 const Credit = () => {
 
   const [activePage, setActivePage] = useState("tokenCredit");
+
+  
 
   const [isTokenValueActive, setIsTokenValueActive] = useState(true); // State to manage which section is active
   const [TokenValuesData, setTokenValuesData] = useState({
@@ -1065,7 +1198,48 @@ useEffect(() => {
 
 
 
+const pages = [
+    { key: "tokenCredit", label: "Token Credit" },
+    { key: "emergencyCredit", label: "Emergency Credit" },
+    { key: "monthlyRentCredit", label: "Monthly Rent Credit" },
+  ];
 
+  const containerRef = useRef(null);
+  const buttonRefs = useRef({});
+  const underlineRef = useRef(null);
+  const movingTimeout = useRef(null);
+
+  const moveUnderlineTo = (key) => {
+    const btn = buttonRefs.current[key];
+    const container = containerRef.current;
+    const u = underlineRef.current;
+    if (!btn || !container || !u) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const left = btnRect.left - containerRect.left;
+    const width = btnRect.width;
+
+    u.style.transform = `translateX(${left}px)`;
+    u.style.width = `${Math.max(36, width)}px`;
+
+    u.classList.add("moving");
+    clearTimeout(movingTimeout.current);
+    movingTimeout.current = setTimeout(() => u.classList.remove("moving"), 520);
+  };
+
+  useEffect(() => {
+    // initial position + move on activePage change
+    setTimeout(() => moveUnderlineTo(activePage), 20);
+
+    const onResize = () => moveUnderlineTo(activePage);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      clearTimeout(movingTimeout.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePage]);
   // Function to toggle between different credit types
   const handlePageChange = (page) => {
     setActivePage(page);
@@ -1076,82 +1250,172 @@ useEffect(() => {
     switch (activePage) {
       case "tokenCredit":
         return (
-          <div>
-          <h3>Token Credit</h3>
-          <div>
-            <button onClick={() => tokenToggleSection('value')}>Value</button>
-            <button onClick={() => tokenToggleSection('method')}>Method</button>
-          </div>
-          
-          {/* Render Value Section */}
-          {isTokenValueActive ? (
-            <div>
-            <h2>Token Credit Configuration</h2>
-            <form onSubmit={tokenValueHandleSubmit}>
-              
-              <label>Current Credit Amount:</label>
-              <input type="number" name="currentCreditAmount" value={TokenValuesData.currentCreditAmount} onChange={handleChangeTokenCredit} />
-      
-              <label>Credit Type:</label>
-              <select name="creditType" value={TokenValuesData.creditType} onChange={handleChangeTokenCredit}>
-                <option value="prepaid">Prepaid</option>
-                <option value="postpaid">Postpaid</option>
-              </select>
-      
-              <label>Priority:</label>
-              <input type="number" name="priority" value={TokenValuesData.priority} onChange={handleChangeTokenCredit} />
-      
-              <label>Limit:</label>
-              <input type="number" name="limit" value={TokenValuesData.limit} onChange={handleChangeTokenCredit} />
-      
-              <label>Credit Configuration:</label>
-              <textarea name="creditConfiguration" value={TokenValuesData.creditConfiguration} onChange={handleChangeTokenCredit}></textarea>
-      
-              <label>Preset Credit Amount:</label>
-              <input type="number" name="presetCreditAmount" value={TokenValuesData.presetCreditAmount} onChange={handleChangeTokenCredit} />
-      
-              <label>Credit Available Threshold:</label>
-              <input type="number" name="creditAvailableThreshold" value={TokenValuesData.creditAvailableThreshold} onChange={handleChangeTokenCredit} />
-      
-              <label>Period:</label>
-              <input type="text" name="period" value={TokenValuesData.period} onChange={handleChangeTokenCredit} />
-      
-              <button type="submit">Save Value</button>
-            </form>
-          </div>
-          ) : (
-            <div>
-      <h2>Token Credit Management</h2>
+         
 
-      {/* Update Amount Form */}
+            <div>
+ 
+
+  <div>
+    <button type="button" onClick={() => tokenToggleSection('value')}>
+      Value
+    </button>
+    <button type="button" onClick={() => tokenToggleSection('method')}>
+      Method
+    </button>
+  </div>
+
+  {isTokenValueActive ? (
+    <div>
+      
+
+      <form onSubmit={tokenValueHandleSubmit}>
+
+        <div className="security-form">
+          <label>
+            <span>Current Credit Amount:</span>
+            <input
+              type="number"
+              name="currentCreditAmount"
+              value={TokenValuesData.currentCreditAmount}
+              onChange={handleChangeTokenCredit}
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label>
+            <span>Credit Type:</span>
+            <select
+              name="creditType"
+              value={TokenValuesData.creditType}
+              onChange={handleChangeTokenCredit}
+            >
+              <option value="prepaid">Prepaid</option>
+              <option value="postpaid">Postpaid</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label>
+            <span>Priority:</span>
+            <input
+              type="number"
+              name="priority"
+              value={TokenValuesData.priority}
+              onChange={handleChangeTokenCredit}
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label>
+            <span>Limit:</span>
+            <input
+              type="number"
+              name="limit"
+              value={TokenValuesData.limit}
+              onChange={handleChangeTokenCredit}
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label>
+            <span>Credit Configuration:</span>
+            <textarea
+              name="creditConfiguration"
+              value={TokenValuesData.creditConfiguration}
+              onChange={handleChangeTokenCredit}
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label>
+            <span>Preset Credit Amount:</span>
+            <input
+              type="number"
+              name="presetCreditAmount"
+              value={TokenValuesData.presetCreditAmount}
+              onChange={handleChangeTokenCredit}
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label>
+            <span>Credit Available Threshold:</span>
+            <input
+              type="number"
+              name="creditAvailableThreshold"
+              value={TokenValuesData.creditAvailableThreshold}
+              onChange={handleChangeTokenCredit}
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label>
+            <span>Period:</span>
+            <input
+              type="text"
+              name="period"
+              value={TokenValuesData.period}
+              onChange={handleChangeTokenCredit}
+            />
+          </label>
+        </div>
+
+        <button style={{marginLeft:"42%"}} className='scheduler-add-button' type="submit">Save </button>
+      </form>
+    </div>
+  ) : (
+    <div>
+     
+
+      {/* Update Amount */}
       <form onSubmit={(e) => handleTokenCreditAction(e, "update-amount", amount)}>
-        <label>Update Amount:</label>
-        <input
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="Enter amount"
-          required
-        />
-        <button type="submit">Update Amount</button>
+
+        <div className="security-form">
+          <label>
+            <span>Update Amount:</span>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Enter amount"
+              required
+            />
+          </label>
+        </div>
+
+        <button style={{marginLeft:"42%"}} className='scheduler-add-button' type="submit">Update Amount</button>
       </form>
 
-      {/* Set Amount Form */}
+      {/* Set Amount */}
       <form onSubmit={(e) => handleTokenCreditAction(e, "set-amount", presetAmount)}>
-        <label>Set Amount:</label>
-        <input
-          type="number"
-          value={presetAmount}
-          onChange={(e) => setPresetAmount(e.target.value)}
-          placeholder="Enter preset amount"
-          required
-        />
-        <button type="submit">Set Amount</button>
+
+        <div className="security-form">
+          <label>
+            <span>Set Amount:</span>
+            <input
+              type="number"
+              value={presetAmount}
+              onChange={(e) => setPresetAmount(e.target.value)}
+              placeholder="Enter preset amount"
+              required
+            />
+          </label>
+        </div>
+
+        <button style={{marginLeft:"42%"}} className='scheduler-add-button' type="submit">Set Amount</button>
       </form>
 
-      {/* Invoke Credit Checkbox */}
-      <div>
+      {/* Invoke Credit */}
+      <div className="security-form">
         <label>
+          <span>Invoke Credit:</span>
           <input
             type="checkbox"
             checked={invokeCredit}
@@ -1160,217 +1424,298 @@ useEffect(() => {
               handleTokenCreditAction(e, "invoke-credit");
             }}
           />
-          Invoke Credit
         </label>
       </div>
+
     </div>
-          )}
-        </div>
+  )}
+</div>
+      
+      
+    
+   
+        
+
+        
         );
         
-      case "emergencyCredit":
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+        case "emergencyCredit":
          
           return (
-            <div>
-              <h3>Emergency Credit</h3>
-              <div>
-                <button onClick={() => emergencyToggleSection("value")}>Value</button>
-                <button onClick={() => emergencyToggleSection("method")}>Method</button>
-              </div>
-        
-              {/* Render Value Section */}
-              {emergencyCreditSetValue ? (
-                <div>
-                  <label>
-                    Current credit amount:
-                    <input
-                      type="text"
-                      name="currentCreditAmount"
-                      value={emergencyValueData.currentCreditAmount}
-                      onChange={handleEmergencyValueChange}
-                    />
-                  </label>
-                  <br />
-                  <label>
-                    Credit type:
-                    <input
-                      type="text"
-                      name="creditType"
-                      value={emergencyValueData.creditType}
-                      onChange={handleEmergencyValueChange}
-                    />
-                  </label>
-                  <br />
-                  <label>
-                    Priority:
-                    <input
-                      type="text"
-                      name="priority"
-                      value={emergencyValueData.priority}
-                      onChange={handleEmergencyValueChange}
-                    />
-                  </label>
-                  <br />
-                  <label>
-                    Warning threshold 1:
-                    <input
-                      type="text"
-                      name="warningThreshold1"
-                      value={emergencyValueData.warningThreshold1}
-                      onChange={handleEmergencyValueChange}
-                    />
-                  </label>
-                  <br />
-                  <label>
-                    Limit:
-                    <input
-                      type="text"
-                      name="limit"
-                      value={emergencyValueData.limit}
-                      onChange={handleEmergencyValueChange}
-                    />
-                  </label>
-                  <br />
-                  <label>
-                    Credit Configuration:
-                    <input
-                      type="text"
-                      name="creditConfiguration"
-                      value={emergencyValueData.creditConfiguration}
-                      onChange={handleEmergencyValueChange}
-                    />
-                  </label>
-                  <br />
-                  <label>
-                    Credit Status:
-                    <input
-                      type="text"
-                      name="creditStatus"
-                      value={emergencyValueData.creditStatus}
-                      onChange={handleEmergencyValueChange}
-                    />
-                  </label>
-                  <br />
-                  <label>
-                    Preset credit amount:
-                    <input
-                      type="text"
-                      name="presetCreditAmount"
-                      value={emergencyValueData.presetCreditAmount}
-                      onChange={handleEmergencyValueChange}
-                    />
-                  </label>
-                  <br />
-                  <label>
-                    Credit available threshold:
-                    <input
-                      type="text"
-                      name="creditAvailableThreshold"
-                      value={emergencyValueData.creditAvailableThreshold}
-                      onChange={handleEmergencyValueChange}
-                    />
-                  </label>
-                  <br />
-                  <label>
-                    Period:
-                    <input
-                      type="text"
-                      name="period"
-                      value={emergencyValueData.period}
-                      onChange={handleEmergencyValueChange}
-                    />
-                  </label>
-                  <br />
-                  <button onClick={handleEmergencyValueSubmit}>Submit Value</button>
-                </div>
-              ) : (
-                // Render Method Section
-                <div>
-                {/* Update Amount Form */}
-                <form onSubmit={(e) => handleEmergencyMethodSubmit(e, "update-amount")}>
-                  <label>Update Amount:</label>
-                  <input
-                    type="number"
-                    name="updateAmount"
-                    value={emergencyMethodData.updateAmount}
-                    onChange={handleEmergencyMethodChange}
-                    placeholder="Enter amount"
-                    required
-                  />
-                  <button type="submit">Update Amount</button>
-                </form>
-          
-                {/* Set Amount Form */}
-                <form onSubmit={(e) => handleEmergencyMethodSubmit(e, "set-amount")}>
-                  <label>Set Amount:</label>
-                  <input
-                    type="number"
-                    name="setAmount"
-                    value={emergencyMethodData.setAmount}
-                    onChange={handleEmergencyMethodChange}
-                    placeholder="Enter preset amount"
-                    required
-                  />
-                  <button type="submit">Set Amount</button>
-                </form>
-          
-                {/* Invoke Credit Checkbox */}
-                <div>
-                  <label>
-                    <input
-                      type="checkbox"
-                      name="invokeCredit"
-                      checked={emergencyMethodData.invokeCredit}
-                      onChange={handleEmergencyMethodChange}
-                    />
-                    Invoke Credit
-                  </label>
-                  <button onClick={(e) => handleEmergencyMethodSubmit(e, "invoke-credit")}>
-                    Submit Invoke Credit
-                  </button>
-                </div>
-              </div>
-          
-          )}
-            </div>
+          <div>
+  
+
+  <div>
+    <button  type="button" onClick={() => emergencyToggleSection("value")}>
+      Value
+    </button>
+    <button type="button" onClick={() => emergencyToggleSection("method")}>
+      Method
+    </button>
+  </div>
+
+  {emergencyCreditSetValue ? (
+    <div>
+      {/* Value Section */}
+      <div className="security-form">
+        <label>
+          <span>Current credit amount:</span>
+          <input
+            type="text"
+            name="currentCreditAmount"
+            value={emergencyValueData.currentCreditAmount}
+            onChange={handleEmergencyValueChange}
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Credit type:</span>
+          <input
+            type="text"
+            name="creditType"
+            value={emergencyValueData.creditType}
+            onChange={handleEmergencyValueChange}
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Priority:</span>
+          <input
+            type="text"
+            name="priority"
+            value={emergencyValueData.priority}
+            onChange={handleEmergencyValueChange}
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Warning threshold 1:</span>
+          <input
+            type="text"
+            name="warningThreshold1"
+            value={emergencyValueData.warningThreshold1}
+            onChange={handleEmergencyValueChange}
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Limit:</span>
+          <input
+            type="text"
+            name="limit"
+            value={emergencyValueData.limit}
+            onChange={handleEmergencyValueChange}
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Credit Configuration:</span>
+          <input
+            type="text"
+            name="creditConfiguration"
+            value={emergencyValueData.creditConfiguration}
+            onChange={handleEmergencyValueChange}
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Credit Status:</span>
+          <input
+            type="text"
+            name="creditStatus"
+            value={emergencyValueData.creditStatus}
+            onChange={handleEmergencyValueChange}
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Preset credit amount:</span>
+          <input
+            type="text"
+            name="presetCreditAmount"
+            value={emergencyValueData.presetCreditAmount}
+            onChange={handleEmergencyValueChange}
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Credit available threshold:</span>
+          <input
+            type="text"
+            name="creditAvailableThreshold"
+            value={emergencyValueData.creditAvailableThreshold}
+            onChange={handleEmergencyValueChange}
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Period:</span>
+          <input
+            type="text"
+            name="period"
+            value={emergencyValueData.period}
+            onChange={handleEmergencyValueChange}
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <button type="button" onClick={handleEmergencyValueSubmit}>
+          Submit Value
+        </button>
+      </div>
+    </div>
+  ) : (
+    <div>
+      
+
+      {/* Update Amount Form */}
+      <form onSubmit={(e) => handleEmergencyMethodSubmit(e, "update-amount")}>
+        <div className="security-form">
+          <label>
+            <span>Update Amount:</span>
+            <input
+              type="number"
+              name="updateAmount"
+              value={emergencyMethodData.updateAmount}
+              onChange={handleEmergencyMethodChange}
+              placeholder="Enter amount"
+              required
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <button  style={{marginLeft:"40%"}} className='scheduler-add-button'type="submit">Update Amount</button>
+        </div>
+      </form>
+
+      {/* Set Amount Form */}
+      <form onSubmit={(e) => handleEmergencyMethodSubmit(e, "set-amount")}>
+        <div className="security-form">
+          <label>
+            <span>Set Amount:</span>
+            <input
+              type="number"
+              name="setAmount"
+              value={emergencyMethodData.setAmount}
+              onChange={handleEmergencyMethodChange}
+              placeholder="Enter preset amount"
+              required
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <button style={{marginLeft:"40%"}} className='scheduler-add-button' type="submit">Set Amount</button>
+        </div>
+      </form>
+
+      {/* Invoke Credit */}
+      <div className="security-form">
+        <label>
+          <span>Invoke Credit:</span>
+          <input
+            type="checkbox"
+            name="invokeCredit"
+            checked={emergencyMethodData.invokeCredit}
+            onChange={handleEmergencyMethodChange}
+          />
+        </label>
+
+        <div style={{ marginTop: 8 }}>
+          <button
+          style={{marginLeft:"40%"}} className='scheduler-add-button'
+            type="button"
+            onClick={(e) => handleEmergencyMethodSubmit(e, "invoke-credit")}
+          >
+            Submit Invoke Credit
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
           );
         
       case "monthlyRentCredit":
         return (
+
           <div>
-      <h3>Monthly Rent Credit</h3>
-      <label>
-        Value:
-        <input
-          type="text"
-          name="value"
-          value={monthlyRentData.value}
-          onChange={monthlyRentHandleInputChange}
-        />
-      </label>
-      <br />
-      <label>
-        Preset credit amount:
-        <input
-          type="text"
-          name="presetCreditAmount"
-          value={monthlyRentData.presetCreditAmount}
-          onChange={monthlyRentHandleInputChange}
-        />
-      </label>
-      <br />
-      <label>
-        Period:
-        <input
-          type="text"
-          name="period"
-          value={monthlyRentData.period}
-          onChange={monthlyRentHandleInputChange}
-        />
-      </label>
-      <br />
-      <button onClick={monthlyRentHandleSubmit}>Submit</button>
-    </div>
+ 
+
+  <div className="security-form">
+    <label>
+      <span>Value:</span>
+      <input
+        type="text"
+        name="value"
+        value={monthlyRentData.value}
+        onChange={monthlyRentHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Preset credit amount:</span>
+      <input
+        type="text"
+        name="presetCreditAmount"
+        value={monthlyRentData.presetCreditAmount}
+        onChange={monthlyRentHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Period:</span>
+      <input
+        type="text"
+        name="period"
+        value={monthlyRentData.period}
+        onChange={monthlyRentHandleInputChange}
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <button style={{marginLeft:"40%"}} className='scheduler-add-button' type="button" onClick={monthlyRentHandleSubmit}>
+      Submit
+    </button>
+  </div>
+</div>
+      
         );
       default:
         return <div>Select a Credit Type</div>;
@@ -1380,17 +1725,30 @@ useEffect(() => {
   return (
     <div>
       {/* Buttons to switch between credit configurations */}
-      <div>
-        <button onClick={() => handlePageChange("tokenCredit")}>
-          Token Credit
+      
+        <div style={{marginLeft:'2%'}}
+      className="controlsGroup_tabs"
+      ref={containerRef}
+      role="tablist"
+      aria-label="Page tabs"
+    >
+      {pages.map((p) => (
+        <button
+          key={p.key}
+          ref={(el) => (buttonRefs.current[p.key] = el)}
+          className={`tou_button ${activePage === p.key ? "activeButton" : ""}`}
+          onClick={() => handlePageChange(p.key)}
+          type="button"
+          role="tab"
+          aria-pressed={activePage === p.key}
+        >
+          {p.label}
         </button>
-        <button onClick={() => handlePageChange("emergencyCredit")}>
-          Emergency Credit
-        </button>
-        <button onClick={() => handlePageChange("monthlyRentCredit")}>
-          Monthly Rent Credit
-        </button>
-      </div>
+      ))}
+
+      <div ref={underlineRef} className="underline" aria-hidden="true" />
+    </div>
+     
 
       {/* Render form based on activePage */}
       {renderForm()}
@@ -1407,7 +1765,7 @@ useEffect(() => {
 
 
 const Charge = () => {
-  const [currentPage, setCurrentPage] = useState(null);
+  const [currentPage, setCurrentPage] = useState('value');
 
   
 
@@ -1592,285 +1950,490 @@ device:deviceId , // Ensure device ID is present
 };
 
 
+ const tabs = [
+    { key: "value", label: "Value" },
+    { key: "unitChargeActive", label: "Unit Charge Active" },
+    { key: "unitChargePassive", label: "Unit Charge Passive" },
+  ];
+
+  const containerRef = useRef(null);
+  const buttonRefs = useRef({});
+  const underlineRef = useRef(null);
+
+  const moveUnderline = (key) => {
+    const btn = buttonRefs.current[key];
+    const container = containerRef.current;
+    const underline = underlineRef.current;
+    if (!btn || !container || !underline) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+
+    underline.style.transform = `translateX(${btnRect.left - containerRect.left}px)`;
+    underline.style.width = `${btnRect.width}px`;
+  };
+
+  useEffect(() => {
+    setTimeout(() => moveUnderline(currentPage), 20);
+
+    const handleResize = () => moveUnderline(currentPage);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [currentPage]);
+
 
   const renderContent = () => {
     switch (currentPage) {
       case 'value':
         return (
-          <form onSubmit={valueHandleSubmit}>
-          <label>
-            Total Amount Paid:
-            <input
-              type="number"
-              name="total_amount_paid"
-              value={valueFormData.total_amount_paid}
-              onChange={(e) => valueHandleChange("total_amount_paid", e.target.value)}
-            />
-          </label>
-          <label>
-            Charge Type:
-            <input
-              type="text"
-              name="charge_type"
-              value={valueFormData.charge_type}
-              onChange={(e) => valueHandleChange("charge_type", e.target.value)}
-            />
-          </label>
-          <label>
-            Priority:
-            <input
-              type="text"
-              name="priority"
-              value={valueFormData.priority}
-              onChange={(e) => valueHandleChange("priority", e.target.value)}
-            />
-          </label>
-    
-          <label>Charge Configuration:</label>
-          <div>
-            <label>
-              <input
-                type="checkbox"
-                value="continuous"
-                checked={valueFormData.charge_configuration.includes("continuous")}
-                onChange={handleCheckboxChange}
-              />
-              Continuous
-            </label>
-    
-            <label>
-              <input
-                type="checkbox"
-                value="percentageBased"
-                checked={valueFormData.charge_configuration.includes("percentageBased")}
-                onChange={handleCheckboxChange}
-              />
-              Percentage Based
-            </label>
-          </div>
-    
-          <label>
-            Last Collection Time:
-            <input
-              type="datetime-local"
-              name="last_collection_time"
-              value={valueFormData.last_collection_time}
-              onChange={(e) => valueHandleChange("last_collection_time", e.target.value)}
-            />
-          </label>
-          <label>
-            Last Collection Amount:
-            <input
-              type="number"
-              name="last_collection_amount"
-              value={valueFormData.last_collection_amount}
-              onChange={(e) => valueHandleChange("last_collection_amount", e.target.value)}
-            />
-          </label>
-          <label>
-            Total Amount Remaining:
-            <input
-              type="number"
-              name="total_amount_remaining"
-              value={valueFormData.total_amount_remaining}
-              onChange={(e) => valueHandleChange("total_amount_remaining", e.target.value)}
-            />
-          </label>
-          <label>
-            Proportion:
-            <input
-              type="text"
-              name="proportion"
-              value={valueFormData.proportion}
-              onChange={(e) => valueHandleChange("proportion", e.target.value)}
-            />
-          </label>
-          <button type="submit">Submit</button>
-        </form>
+         <form onSubmit={valueHandleSubmit}>
+
+  <div className="security-form">
+    <label>
+      <span>Total Amount Paid:</span>
+      <input
+        type="number"
+        name="total_amount_paid"
+        value={valueFormData.total_amount_paid}
+        onChange={(e) =>
+          valueHandleChange("total_amount_paid", e.target.value)
+        }
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Charge Type:</span>
+      <input
+        type="text"
+        name="charge_type"
+        value={valueFormData.charge_type}
+        onChange={(e) =>
+          valueHandleChange("charge_type", e.target.value)
+        }
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Priority:</span>
+      <input
+        type="text"
+        name="priority"
+        value={valueFormData.priority}
+        onChange={(e) =>
+          valueHandleChange("priority", e.target.value)
+        }
+      />
+    </label>
+  </div>
+
+  {/* Charge Configuration */}
+  <div className="security-form">
+    <label>
+      <span>Charge Configuration:</span>
+    </label>
+
+    <div style={{ display: "flex", gap: "20px", marginTop: "6px" }}>
+      <label>
+        <input
+          type="checkbox"
+          value="continuous"
+          checked={valueFormData.charge_configuration.includes("continuous")}
+          onChange={handleCheckboxChange}
+        />
+        Continuous
+      </label>
+
+      <label>
+        <input
+          type="checkbox"
+          value="percentageBased"
+          checked={valueFormData.charge_configuration.includes("percentageBased")}
+          onChange={handleCheckboxChange}
+        />
+        Percentage Based
+      </label>
+    </div>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Last Collection Time:</span>
+      <input
+        type="datetime-local"
+        name="last_collection_time"
+        value={valueFormData.last_collection_time}
+        onChange={(e) =>
+          valueHandleChange("last_collection_time", e.target.value)
+        }
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Last Collection Amount:</span>
+      <input
+        type="number"
+        name="last_collection_amount"
+        value={valueFormData.last_collection_amount}
+        onChange={(e) =>
+          valueHandleChange("last_collection_amount", e.target.value)
+        }
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Total Amount Remaining:</span>
+      <input
+        type="number"
+        name="total_amount_remaining"
+        value={valueFormData.total_amount_remaining}
+        onChange={(e) =>
+          valueHandleChange("total_amount_remaining", e.target.value)
+        }
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Proportion:</span>
+      <input
+        type="text"
+        name="proportion"
+        value={valueFormData.proportion}
+        onChange={(e) =>
+          valueHandleChange("proportion", e.target.value)
+        }
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <button  style={{marginLeft:"42%"}} className='scheduler-add-button' type="submit">Submit</button>
+  </div>
+
+</form>
         );
       case 'unitChargeActive':
         return (
-          <div>
-            <h2>Unit Charge Active Page Content</h2>
+     
+  <div>
+   
+    <form onSubmit={(e) => handleSubmit(e, "active")}>
+    
 
+      <div className="ppp-container-payment" >
 
-           
-            <div className="container mx-auto p-6 bg-white shadow-lg rounded-lg">
-            <form  onSubmit={(e) => handleSubmit(e, "active")}>
-                <h2 className="text-xl font-semibold mb-4">Per Unit Scaling</h2>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium">Commodity Scale</label>
-                        <input
-                            type="number"
-                            name="commodityScale"
-                            value={formData.commodityScale}
-                            onChange={handleChange}
-                            className="border p-2 rounded w-full"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium">Price Scale</label>
-                        <input
-                            type="number"
-                            name="priceScale"
-                            value={formData.priceScale}
-                            onChange={handleChange}
-                            className="border p-2 rounded w-full"
-                        />
-                    </div>
-                </div>
-                
-                <h1 className="text-xl font-semibold mt-6">Commodity Reference</h1>
-                <div className="grid grid-cols-3 gap-4 mt-2">
-                    <div>
-                        <label className="block text-sm font-medium">Class ID</label>
-                        <input type="text" name="classId" value={formData.classId} onChange={handleChange} className="border p-2 rounded w-full" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium">Logical Name</label>
-                        <input type="text" name="logicalName" value={formData.logicalName} onChange={handleChange} className="border p-2 rounded w-full" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium">Attribute ID</label>
-                        <input type="text" name="attributeId" value={formData.attributeId} onChange={handleChange} className="border p-2 rounded w-full" />
-                    </div>
-                </div>
-                
-                <h2 className="text-xl font-semibold mt-6">Charge Table</h2>
-                <table className="w-full border mt-2">
-                    <thead>
-                        <tr className="bg-gray-200">
-                            <th className="border p-2"></th>
-                            <th className="border p-2">Tariff 1</th>
-                            <th className="border p-2">Tariff 2</th>
-                            <th className="border p-2">Tariff 3</th>
-                            <th className="border p-2">Tariff 4</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td className="border p-2 font-semibold">Unit Charge</td>
-                            {Object.keys(formData.tariffs).map((tariff, index) => (
-                                <td key={index} className="border p-2">
-                                  
-                                    <input placeholder={tariff} type="text" name={tariff} value={formData.tariffs[tariff]} onChange={handleChange} className="w-full p-1" />
-                                </td>
-                            ))}
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <h2 className="text-xl font-semibold mt-6">Unit Charge Activation Time</h2>
-                <div>
-                    <label className="block text-sm font-medium">Activation Time</label>
-                    <input type="datetime-local" name="unitChargeActivationTime" value={formData.unitChargeActivationTime} onChange={handleChange} className="border p-2 rounded w-full mt-2" />
-                </div>
-                
-                <button type="submit" className="mt-4 bg-blue-500 text-white p-2 rounded" disabled={loading}>
-                    {loading ? "Submitting..." : "Submit"}
-                </button>
-            </form>
-            {message && <p className="mt-4 text-center text-lg">{message}</p>}
+         
+          <p className="ppp-heading-payment">Per Unit Scaling</p>
+        
+          <div className="security-form">
+            <label>
+              <span>Commodity Scale</span>
+              <input
+                type="number"
+                name="commodityScale"
+                value={formData.commodityScale}
+                onChange={handleChange}
+                className="border p-2 rounded w-full"
+              />
+            </label>
+          </div>
+       
+
+       
+          <div className="security-form">
+            <label>
+              <span>Price Scale</span>
+              <input
+                type="number"
+                name="priceScale"
+                value={formData.priceScale}
+                onChange={handleChange}
+                className="border p-2 rounded w-full"
+              />
+            </label>
+          </div>
+       
+      </div>
+
+     
+      <div className="ppp-container-payment">
+         <p className="ppp-heading-payment">Commodity Reference</p>
+        <div>
+          <div className="security-form">
+            <label>
+              <span>Class ID</span>
+              <input
+                type="text"
+                name="classId"
+                value={formData.classId}
+                onChange={handleChange}
+                className="border p-2 rounded w-full"
+              />
+            </label>
+          </div>
         </div>
 
-
-
-    
-   
+        <div>
+          <div className="security-form">
+            <label>
+              <span>Logical Name</span>
+              <input
+                type="text"
+                name="logicalName"
+                value={formData.logicalName}
+                onChange={handleChange}
+                className="border p-2 rounded w-full"
+              />
+            </label>
           </div>
+        </div>
+
+        <div>
+          <div className="security-form">
+            <label>
+              <span>Attribute ID</span>
+              <input
+                type="text"
+                name="attributeId"
+                value={formData.attributeId}
+                onChange={handleChange}
+                className="border p-2 rounded w-full"
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+
+     
+      <div style={{ maxWidth: '100%', overflowX: 'auto' }}> 
+      
+      <table className="tableTariff1" >
+        <thead>
+          <tr className="bg-gray-200">
+            <th className="border p-2"></th>
+            <th className="border p-2">Tariff 1</th>
+            <th className="border p-2">Tariff 2</th>
+            <th className="border p-2">Tariff 3</th>
+            <th className="border p-2">Tariff 4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td className="border p-2 font-semibold">Unit Charge</td>
+            {Object.keys(formData.tariffs).map((tariff, index) => (
+              <td key={index} className="border p-2">
+                <div className="security-form">
+                  <label>
+                    <span className="sr-only">{tariff}</span>
+                    <input
+                      placeholder={tariff}
+                      type="text"
+                      name={tariff}
+                      value={formData.tariffs[tariff]}
+                      onChange={handleChange}
+                      className="w-full p-1"
+                    />
+                  </label>
+                </div>
+              </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
+      </div>
+
+     
+      <div className="security-form">
+        <label>
+          <span>Activation Time</span>
+          <input
+            type="datetime-local"
+            name="unitChargeActivationTime"
+            value={formData.unitChargeActivationTime}
+            onChange={handleChange}
+            className="border p-2 rounded w-full mt-2"
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <button
+          type="submit"
+          style={{marginLeft:"42%"}} className='scheduler-add-button'
+          disabled={loading}
+        >
+          {loading ? "Submitting..." : "Submit"}
+        </button>
+      </div>
+    </form>
+
+    {message && <p className="mt-4 text-center text-lg">{message}</p>}
+  </div>
+
         );
       case 'unitChargePassive':
         return (
-          <div>
-          <h2>Unit Charge Passive Page Content</h2>
+        <div>
 
+  <form onSubmit={(e) => handleSubmit(e, "passive")}>
 
-         
-          <div className="container mx-auto p-6 bg-white shadow-lg rounded-lg">
-          <form onSubmit={(e) => handleSubmit(e, "passive")}>
-              <h2 className="text-xl font-semibold mb-4">Per Unit Scaling</h2>
-              <div className="grid grid-cols-2 gap-4">
-                  <div>
-                      <label className="block text-sm font-medium">Commodity Scale</label>
-                      <input
-                          type="number"
-                          name="commodityScale"
-                          value={formData.commodityScale}
-                          onChange={handleChange}
-                          className="border p-2 rounded w-full"
-                      />
-                  </div>
-                  <div>
-                      <label className="block text-sm font-medium">Price Scale</label>
-                      <input
-                          type="number"
-                          name="priceScale"
-                          value={formData.priceScale}
-                          onChange={handleChange}
-                          className="border p-2 rounded w-full"
-                      />
-                  </div>
-              </div>
-              
-              <h1 className="text-xl font-semibold mt-6">Commodity Reference</h1>
-              <div className="grid grid-cols-3 gap-4 mt-2">
-                  <div>
-                      <label className="block text-sm font-medium">Class ID</label>
-                      <input type="text" name="classId" value={formData.classId} onChange={handleChange} className="border p-2 rounded w-full" />
-                  </div>
-                  <div>
-                      <label className="block text-sm font-medium">Logical Name</label>
-                      <input type="text" name="logicalName" value={formData.logicalName} onChange={handleChange} className="border p-2 rounded w-full" />
-                  </div>
-                  <div>
-                      <label className="block text-sm font-medium">Attribute ID</label>
-                      <input type="text" name="attributeId" value={formData.attributeId} onChange={handleChange} className="border p-2 rounded w-full" />
-                  </div>
-              </div>
-              
-              <h2 className="text-xl font-semibold mt-6">Charge Table</h2>
-              <table className="w-full border mt-2">
-                  <thead>
-                      <tr className="bg-gray-200">
-                          <th className="border p-2"></th>
-                          <th className="border p-2">Tariff 1</th>
-                          <th className="border p-2">Tariff 2</th>
-                          <th className="border p-2">Tariff 3</th>
-                          <th className="border p-2">Tariff 4</th>
-                      </tr>
-                  </thead>
-                  <tbody>
-                      <tr>
-                          <td className="border p-2 font-semibold">Unit Charge</td>
-                          {Object.keys(formData.tariffs).map((tariff, index) => (
-                              <td key={index} className="border p-2">
-                                
-                                  <input placeholder={tariff} type="text" name={tariff} value={formData.tariffs[tariff]} onChange={handleChange} className="w-full p-1" />
-                              </td>
-                          ))}
-                      </tr>
-                  </tbody>
-              </table>
-              
-              <h2 className="text-xl font-semibold mt-6">Unit Charge Activation Time</h2>
-              <div>
-                  <label className="block text-sm font-medium">Activation Time</label>
-                  <input type="datetime-local" name="unitChargeActivationTime" value={formData.unitChargeActivationTime} onChange={handleChange} className="border p-2 rounded w-full mt-2" />
-              </div>
-              
-              <button type="submit" className="mt-4 bg-blue-500 text-white p-2 rounded" disabled={loading}>
-                  {loading ? "Submitting..." : "Submit"}
-              </button>
-          </form>
-          {message && <p className="mt-4 text-center text-lg">{message}</p>}
+    {/* Per Unit Scaling */}
+    <div className="ppp-container-payment">
+
+      <p className="ppp-heading-payment">
+        Per Unit Scaling
+      </p>
+
+      <div className="security-form">
+        <label>
+          <span>Commodity Scale</span>
+          <input
+            type="number"
+            name="commodityScale"
+            value={formData.commodityScale}
+            onChange={handleChange}
+          />
+        </label>
       </div>
 
+      <div className="security-form">
+        <label>
+          <span>Price Scale</span>
+          <input
+            type="number"
+            name="priceScale"
+            value={formData.priceScale}
+            onChange={handleChange}
+          />
+        </label>
+      </div>
+
+    </div>
 
 
-  
- 
-        </div>
+    {/* Commodity Reference */}
+    <div className="ppp-container-payment">
+
+      <p className="ppp-heading-payment">
+        Commodity Reference
+      </p>
+
+      <div className="security-form">
+        <label>
+          <span>Class ID</span>
+          <input
+            type="text"
+            name="classId"
+            value={formData.classId}
+            onChange={handleChange}
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Logical Name</span>
+          <input
+            type="text"
+            name="logicalName"
+            value={formData.logicalName}
+            onChange={handleChange}
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Attribute ID</span>
+          <input
+            type="text"
+            name="attributeId"
+            value={formData.attributeId}
+            onChange={handleChange}
+          />
+        </label>
+      </div>
+
+    </div>
+
+
+    {/* Charge Table */}
+    <div style={{ maxWidth: "100%", overflowX: "auto" }}>
+
+      <table className="tableTariff1">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Tariff 1</th>
+            <th>Tariff 2</th>
+            <th>Tariff 3</th>
+            <th>Tariff 4</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td>Unit Charge</td>
+
+            {Object.keys(formData.tariffs).map((tariff, index) => (
+              <td key={index}>
+                <div className="security-form">
+                  <label>
+                    <span className="sr-only">{tariff}</span>
+                    <input
+                      type="text"
+                      name={tariff}
+                      value={formData.tariffs[tariff]}
+                      onChange={handleChange}
+                      placeholder={tariff}
+                    />
+                  </label>
+                </div>
+              </td>
+            ))}
+
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+
+    {/* Activation Time */}
+    <div className="security-form">
+      <label>
+        <span>Activation Time</span>
+        <input
+          type="datetime-local"
+          name="unitChargeActivationTime"
+          value={formData.unitChargeActivationTime}
+          onChange={handleChange}
+        />
+      </label>
+    </div>
+
+
+    {/* Submit */}
+    <div className="security-form">
+      <button style={{marginLeft:"42%"}} className='scheduler-add-button' type="submit" disabled={loading}>
+        {loading ? "Submitting..." : "Submit"}
+      </button>
+    </div>
+
+  </form>
+
+  {message && <p className="message-text">{message}</p>}
+
+</div>
         );
       default:
         return <p>Please select an option above.</p>;
@@ -1879,10 +2442,25 @@ device:deviceId , // Ensure device ID is present
 
   return (
     <div>
-      <h1>Charge Functions</h1>
-      <button onClick={() => handleButtonClick('value')}>Value</button>
-      <button onClick={() => handleButtonClick('unitChargeActive')}>Unit Charge Active</button>
-      <button onClick={() => handleButtonClick('unitChargePassive')}>Unit Charge Passive</button>
+     
+     <div className="controlsGroup_tabs" ref={containerRef}>
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          ref={(el) => (buttonRefs.current[tab.key] = el)}
+          className={`tou_button ${
+            currentPage === tab.key ? "activeButton" : ""
+          }`}
+          onClick={() => setCurrentPage(tab.key)}
+          type="button"
+        >
+          {tab.label}
+        </button>
+      ))}
+
+      <div ref={underlineRef} className="underline" />
+    </div>
+  
       <div>{renderContent()}</div>
     </div>
   );
@@ -1962,59 +2540,167 @@ const TokenGateway = () => {
   
 
   return (
-    <form onSubmit={handleSubmit} className="token-form">
-      <label className="label">Token:</label>
-      <input type="text" name="token" value={formData.token} onChange={handleChange} className="input" />
-      
-      <label className="label">Token Time:</label>
-      <input type="text" name="tokenTime" value={formData.tokenTime} onChange={handleChange} className="input" />
-      
-      <label className="label">Token Description:</label>
-      <div className="description-container">
-        <div className="description-header">
-          <span className="description-index">Index</span>
-          <span className="description-text">Description</span>
+    <form onSubmit={handleSubmit}>
+
+  <div className="security-form">
+    <label>
+      <span>Token:</span>
+      <input
+        type="text"
+        name="token"
+        value={formData.token}
+        onChange={handleChange}
+        className="input"
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Token Time:</span>
+      <input
+        type="text"
+        name="tokenTime"
+        value={formData.tokenTime}
+        onChange={handleChange}
+        className="input"
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Token Description:</span>
+    </label>
+
+    <div className="description-container">
+  <table className="tableTariff1">
+    <thead>
+      <tr>
+        <th style={{ width: "50px" }}>Index</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {formData.tokenDescription.map((desc, index) => (
+        <tr key={index}>
+          <td>{index}</td>
+          <td>{desc.description}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+  </div>
+
+  {showPopup && (
+    <div className="popup">
+      <div className="popup-content">
+        <h3>Add Token Description</h3>
+
+        <div className="security-form">
+          <label>
+            <span>Index:</span>
+            <input
+              type="text"
+              style={{ width: "60%" }}
+              value={newDescription.index}
+              onChange={handleDescriptionChange}
+              className="input"
+            />
+          </label>
         </div>
-        {formData.tokenDescription.map((desc, index) => (
-          <div key={index} className="description-row">
-            <span>{desc.index}</span>
-            <span>{desc.description}</span>
-          </div>
-        ))}
-        <button type="button" onClick={() => setShowPopup(true)} className="add-button">Add Description</button>
+
+        <div className="security-form">
+          <label>
+            <span>Description:</span>
+            <input
+              type="text"
+              name="description"
+              style={{ width: "60%" }}
+              value={newDescription.description}
+              onChange={handleDescriptionChange}
+              className="input"
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <button type="button" onClick={addDescription} className="confirm-button">
+            Add
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowPopup(false)}
+            className="cancel-button"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
-      
-      {showPopup && (
-        <div className="popup">
-          <div className="popup-content">
-            <h3>Add Token Description</h3>
-            <label>Index:</label>
-            <input type="text" style={{width:'60%'}} value={newDescription.index} onChange={handleDescriptionChange} className="input" />
-           <br/> <label>Description:</label>
-            <input style={{width:'60%'}}  type="text" name="description" value={newDescription.description} onChange={handleDescriptionChange} className="input" />
-            <br/> <button type="button" onClick={addDescription} className="confirm-button">Add</button>
-            <button type="button" onClick={() => setShowPopup(false)} className="cancel-button">Cancel</button>
-          </div>
-        </div>
-      )}
-      
-      <label className="label">Token Delivery Method:</label>
-      <input type="text" name="tokenDeliveryMethod" value={formData.tokenDeliveryMethod} onChange={handleChange} className="input" />
-      
-      
-      <h3> Token Status </h3>
-      
-      <label className="label">Status Code:</label>
-      <input type="text" name="statusCode" value={formData.statusCode} onChange={handleChange} className="input" />
-      
-      <label className="label">Data Value:</label>
-      <input type="text" name="datavalue" value={formData.datavalue} onChange={handleChange} className="input" />
-      
-      <label className="label">Enter Method:</label>
-      <input type="text" name="enterMethod" value={formData.enterMethod} onChange={handleChange} className="input" />
-      
-      <button type="submit" className="submit-button">Submit</button>
-    </form>
+    </div>
+  )}
+
+  <div className="security-form">
+    <label>
+      <span>Token Delivery Method:</span>
+      <input
+        type="text"
+        name="tokenDeliveryMethod"
+        value={formData.tokenDeliveryMethod}
+        onChange={handleChange}
+        className="input"
+      />
+    </label>
+  </div>
+
+  <h5> Token Status </h5>
+
+  <div className="security-form">
+    <label>
+      <span>Status Code:</span>
+      <input
+        type="text"
+        name="statusCode"
+        value={formData.statusCode}
+        onChange={handleChange}
+        className="input"
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Data Value:</span>
+      <input
+        type="text"
+        name="datavalue"
+        value={formData.datavalue}
+        onChange={handleChange}
+        className="input"
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <label>
+      <span>Enter Method:</span>
+      <input
+        type="text"
+        name="enterMethod"
+        value={formData.enterMethod}
+        onChange={handleChange}
+        className="input"
+      />
+    </label>
+  </div>
+
+  <div className="security-form">
+    <button style={{marginLeft:"42%"}} className='scheduler-add-button' type="submit" >Submit</button>
+  </div>
+</form>
   );
 };
 
@@ -2084,9 +2770,9 @@ const PaymentInfoTable=()=> {
 
   return (
     <div className="p-4">
-      <h2 className="text-lg font-bold mb-4">Payment Information</h2>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-gray-300">
+      
+    
+        <table className="tableTariff1">
           <thead>
             <tr className="bg-gray-200">
               <th className="border p-2">Checked</th>
@@ -2118,14 +2804,14 @@ const PaymentInfoTable=()=> {
             ))}
           </tbody>
         </table>
-      </div>
+      
     </div>
   );
 }
 
 
 
-const FriendlyPeriods = () => {
+const FriendlyPeriods1 = () => {
   const [periods, setPeriods] = useState([]);
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -2232,6 +2918,429 @@ const FriendlyPeriods = () => {
 
 
 
+const FriendlyPeriods = () => {
+  const [periods, setPeriods] = useState([]); // saved periods fetched from server
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [deviceId, setDeviceId] = useState(() =>
+    localStorage.getItem("selectedDeviceId")
+  );
+
+  const [selectedRow, setSelectedRow] = useState(null);
+  const rowRefs = useRef([]);
+  const [loading, setLoading] = useState(false);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editingField, setEditingField] = useState(null); // "start" or "end"
+  const [editValue, setEditValue] = useState("");
+
+  const hasSelected = selectedRow !== null;
+const atFirst = hasSelected && selectedRow === 0;
+const atLast = hasSelected && selectedRow === periods.length - 1;
+
+  // refresh when deviceId changes in localStorage (if some other code updates it)
+  useEffect(() => {
+    const handler = () => {
+      const id = localStorage.getItem("selectedDeviceId");
+      setDeviceId(id);
+    };
+    handler();
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, []);
+
+  // fetch periods
+  const fetchPeriods = async () => {
+    if (!deviceId) {
+      setPeriods([]);
+      setSelectedRow(null);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/friendly-periods/${deviceId}/`);
+      setPeriods(res.data || []);
+      setSelectedRow(null);
+    } catch (err) {
+      console.error("Error fetching periods:", err);
+      setPeriods([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPeriods();
+    // eslint-disable-next-line
+  }, [deviceId]);
+
+  // ADD (append)
+  const handleAdd = async () => {
+    if (!deviceId) return alert("Select a device");
+    if (!startTime || !endTime) return alert("Enter both start and end time");
+
+    const payload = {
+      device_id: deviceId,
+      start_time: startTime,
+      end_time: endTime,
+    };
+    setLoading(true);
+    try {
+      const res = await axios.post(`${BASE_URL}/api/friendly-periods/`, payload);
+      // append created record (backend should return created object)
+      setPeriods((p) => [...p, res.data]);
+      setStartTime("");
+      setEndTime("");
+      setSelectedRow((prev) => (periods.length ? periods.length : 0));
+    } catch (err) {
+      console.error("Add failed:", err);
+      alert("Failed to add period. See console.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // INSERT after selected row (client-side; backend ordering depends on server)
+  const handleInsertAfter = async () => {
+    if (!deviceId) return alert("Select a device");
+    if (!startTime || !endTime) return alert("Enter both start and end time");
+    if (selectedRow === null) return alert("Select a row to insert after");
+
+    const payload = {
+      device_id: deviceId,
+      start_time: startTime,
+      end_time: endTime,
+    };
+
+    setLoading(true);
+    try {
+      const res = await axios.post(`${BASE_URL}/api/friendly-periods/`, payload);
+      // Insert created record client-side after selectedRow
+      setPeriods((prev) => {
+        const next = [...prev];
+        next.splice(selectedRow + 1, 0, res.data);
+        return next;
+      });
+      setStartTime("");
+      setEndTime("");
+      setSelectedRow((prev) => prev + 1);
+    } catch (err) {
+      console.error("Insert failed:", err);
+      alert("Insert failed. See console.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // DELETE selected row
+  const handleDelete = async () => {
+    if (selectedRow === null) return alert("Select a row to delete");
+    const item = periods[selectedRow];
+    if (!item?.id) {
+      // if no server ID, just remove client-side
+      setPeriods((prev) => prev.filter((_, i) => i !== selectedRow));
+      setSelectedRow(null);
+      return;
+    }
+
+    const ok = window.confirm("Delete selected period?");
+    if (!ok) return;
+
+    setLoading(true);
+    try {
+      await axios.delete(`${BASE_URL}/api/friendly-periods/item/${item.id}/`);
+      await fetchPeriods();
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Delete failed. See console.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // CLEAR all for this device
+  const handleClear = async () => {
+    if (!deviceId) return alert("Select a device");
+    const ok = window.confirm("Clear all friendly periods for this device?");
+    if (!ok) return;
+
+    setLoading(true);
+    try {
+      await axios.delete(`${BASE_URL}/api/friendly-periods/clean/${deviceId}/`);
+      setPeriods([]);
+      setSelectedRow(null);
+    } catch (err) {
+      console.error("Clear failed:", err);
+      alert("Clear failed. See console.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+
+
+  // Move row position
+const moveItem = (fromIndex, toIndex) => {
+  if (fromIndex === null || fromIndex === undefined) return;
+
+  setPeriods((prev) => {
+    const next = [...prev];
+    const [item] = next.splice(fromIndex, 1);
+
+    const insertIndex = Math.max(0, Math.min(toIndex, next.length));
+    next.splice(insertIndex, 0, item);
+
+    setSelectedRow(insertIndex);
+    return next;
+  });
+};
+
+  const handleFirst = () => {
+  if (selectedRow === null) return;
+  if (selectedRow === 0) return;
+  moveItem(selectedRow, 0);
+};
+
+const handlePrevious = () => {
+  if (selectedRow === null) return;
+  if (selectedRow <= 0) return;
+  moveItem(selectedRow, selectedRow - 1);
+};
+
+const handleNext = () => {
+  if (selectedRow === null) return;
+  if (selectedRow >= periods.length - 1) return;
+  moveItem(selectedRow, selectedRow + 1);
+};
+
+const handleLast = () => {
+  if (selectedRow === null) return;
+  if (selectedRow === periods.length - 1) return;
+  moveItem(selectedRow, periods.length - 1);
+};
+  // scroll selected into view
+  useEffect(() => {
+    if (selectedRow !== null && rowRefs.current[selectedRow]) {
+      rowRefs.current[selectedRow].scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [selectedRow]);
+
+  // Inline edit handling
+  const startInlineEdit = (index, field) => {
+    setEditingIndex(index);
+    setEditingField(field);
+    const item = periods[index];
+    setEditValue(field === "start" ? item.start_time : item.end_time);
+  };
+
+  const saveInlineEdit = async (index) => {
+    const item = periods[index];
+    if (!item || editValue === undefined) {
+      cancelInlineEdit();
+      return;
+    }
+
+    // if server id exists, PATCH the record
+    if (item.id) {
+      try {
+        await axios.patch(`${BASE_URL}/api/friendly-periods/item/${item.id}/`, {
+          start_time: editingField === "start" ? editValue : item.start_time,
+          end_time: editingField === "end" ? editValue : item.end_time,
+        });
+        // refresh
+        await fetchPeriods();
+      } catch (err) {
+        console.error("Update failed:", err);
+        alert("Update failed. See console.");
+      } finally {
+        cancelInlineEdit();
+      }
+    } else {
+      // just update client-side
+      setPeriods((prev) => {
+        const next = [...prev];
+        next[index] = {
+          ...next[index],
+          start_time: editingField === "start" ? editValue : next[index].start_time,
+          end_time: editingField === "end" ? editValue : next[index].end_time,
+        };
+        return next;
+      });
+      cancelInlineEdit();
+    }
+  };
+
+  const cancelInlineEdit = () => {
+    setEditingIndex(null);
+    setEditingField(null);
+    setEditValue("");
+  };
+
+  // helper: client-side insert at index (useful if backend doesn't preserve ordering)
+  const clientInsertAt = (index, newItem) => {
+    setPeriods((prev) => {
+      const next = [...prev];
+      next.splice(index + 1, 0, newItem);
+      return next;
+    });
+  };
+
+  return (
+    <div className="display-root">
+      <div className="sub_container_display">
+        <div  className="security-form">
+          <label>
+            <span>Start Time</span>
+            <input
+              type="time"
+              
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="friendly-input"
+            />
+          </label>
+           </div>
+
+           <div  className="security-form"> 
+          <label>
+            <span>End Time</span>
+            <input
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              className="friendly-input"
+            />
+          </label>
+          </div>
+          </div>
+         
+
+
+
+           <div className="vertical-toolbar">
+        <button className="tool-btn" onClick={handleAdd} title="Add selected to end">
+          <span className="tool-icon">+</span>
+          <span className="tool-text">Add1</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleAdd} title="Insert after selected row">
+          <span className="tool-icon red-dot"></span>
+          <span className="tool-text">Insert</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleDelete} title="Delete selected row">
+          <span className="tool-icon">−</span>
+          <span className="tool-text">Delete</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleClear} title="Clear all">
+          <span className="tool-icon">×</span>
+          <span className="tool-text">Clear</span>
+        </button>
+
+        <div className="tool-separator" />
+
+       <button
+  className="tool-btn"
+  onClick={handleFirst}
+  title="First"
+  disabled={!hasSelected || atFirst}
+>
+  <span className="tool-icon">|◀</span>
+  <span className="tool-text">First</span>
+</button>
+
+<button
+  className="tool-btn"
+  onClick={handlePrevious}
+  title="Previous"
+  disabled={!hasSelected || atFirst}
+>
+  <span className="tool-icon">◀</span>
+  <span className="tool-text">Previous</span>
+</button>
+
+<button
+  className="tool-btn"
+  onClick={handleNext}
+  title="Next"
+  disabled={!hasSelected || atLast}
+>
+  <span className="tool-icon">▶</span>
+  <span className="tool-text">Next</span>
+</button>
+
+<button
+  className="tool-btn"
+  onClick={handleLast}
+  title="Last"
+  disabled={!hasSelected || atLast}
+>
+  <span className="tool-icon">▶|</span>
+  <span className="tool-text">Last</span>
+</button>
+      </div>
+
+         
+      
+      
+
+      <div className="sub_container_display_2">
+        <div className="display_table">
+         <table className="tableTariff1">
+  <thead>
+    <tr className="thead-row">
+      <th className="th-cell">No</th>
+      <th className="th-cell">Start Time</th>
+      <th className="th-cell">End Time</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {periods.length === 0 ? (
+      <tr>
+        <td colSpan={3} className="empty-cell">
+          No periods saved
+        </td>
+      </tr>
+    ) : (
+      periods.map((period, idx) => (
+        <tr
+          key={period.id || idx}
+          ref={(el) => (rowRefs.current[idx] = el)}
+          style={{
+    cursor: "pointer",
+    background: selectedRow === idx ? "#eef6ff" : "",
+    color: selectedRow === idx ? "#0b53a0" : "#111",
+    fontWeight: selectedRow === idx ? 600 : 400,
+    transition: "background 120ms ease, color 120ms ease",
+    borderBottom: "1px solid #f3f4f6",
+  }}
+          onClick={() => setSelectedRow(idx)}
+         
+        >
+          <td className="td-cell">{idx + 1}</td>
+          <td className="td-cell">{period.start_time}</td>
+          <td className="td-cell">{period.end_time}</td>
+        </tr>
+      ))
+    )}
+  </tbody>
+</table>
+        </div>
+      </div>
+
+
+    </div>
+  );
+};
+
+
+
 const FriendlyWeekday = () => {
   const [weekdays, setWeekdays] = useState({
     monday: false,
@@ -2281,64 +3390,82 @@ const FriendlyWeekday = () => {
   };
 
   return (
-    <div>
-      <label>
-        <input
-          type="checkbox"
-          checked={weekdays.monday}
-          onChange={() => handleCheckboxChange("monday")}
-        />
-        Monday
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={weekdays.tuesday}
-          onChange={() => handleCheckboxChange("tuesday")}
-        />
-        Tuesday
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={weekdays.wednesday}
-          onChange={() => handleCheckboxChange("wednesday")}
-        />
-        Wednesday
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={weekdays.thursday}
-          onChange={() => handleCheckboxChange("thursday")}
-        />
-        Thursday
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={weekdays.friday}
-          onChange={() => handleCheckboxChange("friday")}
-        />
-        Friday
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={weekdays.saturday}
-          onChange={() => handleCheckboxChange("saturday")}
-        />
-        Saturday
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={weekdays.sunday}
-          onChange={() => handleCheckboxChange("sunday")}
-        />
-        Sunday
-      </label>
-    </div>
+
+    <div className="table-container-payment"> 
+  <div className="options-grid">
+
+  <label className="option-label">
+    <input
+      className="option-checkbox"
+      type="checkbox"
+      checked={weekdays.monday}
+      onChange={() => handleCheckboxChange("monday")}
+    />
+    Monday
+  </label>
+
+  <label className="option-label">
+    <input
+      className="option-checkbox"
+      type="checkbox"
+      checked={weekdays.tuesday}
+      onChange={() => handleCheckboxChange("tuesday")}
+    />
+    Tuesday
+  </label>
+
+  <label className="option-label">
+    <input
+      className="option-checkbox"
+      type="checkbox"
+      checked={weekdays.wednesday}
+      onChange={() => handleCheckboxChange("wednesday")}
+    />
+    Wednesday
+  </label>
+
+  <label className="option-label">
+    <input
+      className="option-checkbox"
+      type="checkbox"
+      checked={weekdays.thursday}
+      onChange={() => handleCheckboxChange("thursday")}
+    />
+    Thursday
+  </label>
+
+  <label className="option-label">
+    <input
+      className="option-checkbox"
+      type="checkbox"
+      checked={weekdays.friday}
+      onChange={() => handleCheckboxChange("friday")}
+    />
+    Friday
+  </label>
+
+  <label className="option-label">
+    <input
+      className="option-checkbox"
+      type="checkbox"
+      checked={weekdays.saturday}
+      onChange={() => handleCheckboxChange("saturday")}
+    />
+    Saturday
+  </label>
+
+  <label className="option-label">
+    <input
+      className="option-checkbox"
+      type="checkbox"
+      checked={weekdays.sunday}
+      onChange={() => handleCheckboxChange("sunday")}
+    />
+    Sunday
+  </label>
+
+</div>
+</div>
   );
 };
 
@@ -2350,217 +3477,408 @@ const FriendlyWeekday = () => {
 
 
 
+
+
+
+
+
 const FriendlyHolidays = () => {
   const [holidays, setHolidays] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(""); // backend format or placeholder (e.g. "2026-03-08 00:00:00" or "ffff-ff-01 00:00:00")
+  const [selectedRow, setSelectedRow] = useState(null);
+  const rowRefs = useRef([]);
+
+  const [deviceId, setDeviceId] = useState(() =>
+    localStorage.getItem("selectedDeviceId")
+  );
+
+  // Modal states (from your first component)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [yearType, setYearType] = useState("Every Year");
   const [specialYear, setSpecialYear] = useState("");
   const [month, setMonth] = useState("Every Month");
   const [day, setDay] = useState("Every Day");
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedId, setSelectedId] = useState(null); // Track selected row ID
 
-  
-  const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
+  const hasSelected = selectedRow !== null;
+  const atFirst = hasSelected && selectedRow === 0;
+  const atLast = hasSelected && selectedRow === holidays.length - 1;
+
   useEffect(() => {
-    const storedId = localStorage.getItem('selectedDeviceId');
+    const storedId = localStorage.getItem("selectedDeviceId");
     setDeviceId(storedId);
   }, []);
-  
 
-  // Format Date based on selection
+  // Format Date based on selection (returns backend-friendly string)
   const formatDate = () => {
-    let formattedYear = yearType === "Every Year" ? "ffff" : specialYear;
+    // Year
+    let formattedYear = yearType === "Every Year" ? "ffff" : String(specialYear || "").padStart(4, "0");
+    // Month -> "ff" or "01".."12"
     let formattedMonth =
       month === "Every Month"
         ? "ff"
         : String(new Date(`${month} 1`).getMonth() + 1).padStart(2, "0");
+    // Day -> "01" or actual day padded
     let formattedDay = day === "Every Day" ? "01" : String(day).padStart(2, "0");
     return `${formattedYear}-${formattedMonth}-${formattedDay} 00:00:00`;
   };
 
-  // GET holidays from backend for the given device
-  const getHolidays = () => {
-    fetch(`${BASE_URL}/api/friendlyholiday/${deviceId}/`)
-      .then((response) => response.json())
-      .then((data) => {
-        setHolidays(data);
-      })
-      .catch((err) => console.error("Error fetching holidays:", err));
+  // Helper: if backend datetime (e.g. "2026-03-08 00:00:00") present, derive a short display
+  const displayValue = (backendDate) => {
+    if (!backendDate) return "";
+    // show only date part for the input (YYYY-MM-DD...) to keep it neat
+    return backendDate.split(" ")[0];
   };
 
-  // Call getHolidays when component mounts
+  // Fetch holidays
+  const fetchHolidays = async () => {
+    if (!deviceId) return;
+    try {
+      const res = await axios.get(`${BASE_URL}/api/friendlyholiday/${deviceId}/`);
+      setHolidays(res.data || []);
+      setSelectedRow(null);
+    } catch (err) {
+      console.error("Error fetching holidays:", err);
+    }
+  };
+
   useEffect(() => {
-    getHolidays();
-  }, []);
+    fetchHolidays();
+  }, [deviceId]);
 
- 
+  // Add Holiday (uses selectedDate which is already formatted by modal)
+  const handleAdd = async () => {
+    if (!selectedDate) return alert("Select holiday date (click the input).");
+    try {
+      const res = await axios.post(`${BASE_URL}/api/friendlyholiday/`, {
+        device_id: deviceId,
+        date: selectedDate,
+      });
 
-// ✅ Add Holiday: Validate date then POST to backend and refresh the list.
-const handleAddHoliday = () => {
-  // Validate selectedDate: it must not be empty and should include both date and time parts.
-  if (!selectedDate || selectedDate.split(" ").length !== 2) {
-    alert("Please select a valid holiday date with year, month, day, and time.");
-    return;
-  }
+      setHolidays((prev) => {
+        const next = [...prev, res.data];
+        setSelectedRow(next.length - 1);
+        return next;
+      });
+      fetchHolidays();
 
-  axios
-    .post(`${BASE_URL}/api/friendlyholiday/`, {
-      device_id: deviceId,
-      date: selectedDate,
-    })
-    .then((response) => {
-      console.log("Holiday added:", response.data);
-      // Refresh the holiday list after successful post
-      getHolidays();
-      setIsModalOpen(false);
       setSelectedDate("");
-    })
-    .catch((err) => console.error("Error adding holiday:", err));
-};
+    } catch (err) {
+      console.error("Add failed:", err);
+    }
+  };
 
+  // Insert Holiday after selectedRow
+  const handleInsert = async () => {
+    if (!selectedDate) return alert("Select holiday date (click the input).");
+    if (selectedRow === null) return alert("Select a row");
 
+    try {
+      const res = await axios.post(`${BASE_URL}/api/friendlyholiday/`, {
+        device_id: deviceId,
+        date: selectedDate,
+      });
 
-// ✅ Clear all holidays for the device.
-const handleClearHolidays = () => {
-  axios
-    .delete(`${BASE_URL}/api/friendlyholiday/clear/${deviceId}/`)
-    .then((response) => {
-      console.log("All holidays cleared:", response.data);
-      getHolidays();
-    })
-    .catch((err) => console.error("Error clearing holidays:", err));
-};
+      setHolidays((prev) => {
+        const next = [...prev];
+        next.splice(selectedRow + 1, 0, res.data);
+        return next;
+      });
 
+      setSelectedRow((r) => r + 1);
+      setSelectedDate("");
+    } catch (err) {
+      console.error("Insert failed:", err);
+    }
+  };
 
-const handleDeleteHoliday = () => {
-  if (selectedId !== null) {
-    axios
-      .delete(`${BASE_URL}/api/friendlyholiday/delete/${selectedId}/`)
-      .then((response) => {
-        console.log("Holiday deleted:", response.data);
-        // Refresh the holiday list after deletion
-        getHolidays();
-        setSelectedId(null);
-      })
-      .catch((err) => console.error("Error deleting holiday:", err));
-  }
-};
+  // Delete
+  const handleDelete = async () => {
+    if (selectedRow === null) return alert("Select a row");
+    const item = holidays[selectedRow];
+    try {
+      await axios.delete(`${BASE_URL}/api/friendlyholiday/delete/${item.id}/`);
+      setHolidays((prev) => prev.filter((_, i) => i !== selectedRow));
+      setSelectedRow(null);
+      setSelectedDate("");
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  };
+
+  // Clear
+  const handleClear = async () => {
+    const ok = window.confirm("Clear all holidays?");
+    if (!ok) return;
+    try {
+      await axios.delete(`${BASE_URL}/api/friendlyholiday/clear/${deviceId}/`);
+      setHolidays([]);
+      setSelectedRow(null);
+      setSelectedDate("");
+    } catch (err) {
+      console.error("Clear failed:", err);
+    }
+  };
+
+  // Reorder helper
+  const moveItem = (fromIndex, toIndex) => {
+    setHolidays((prev) => {
+      const next = [...prev];
+      const [item] = next.splice(fromIndex, 1);
+      const insertIndex = Math.max(0, Math.min(toIndex, next.length));
+      next.splice(insertIndex, 0, item);
+      setSelectedRow(insertIndex);
+      return next;
+    });
+  };
+
+  const handleFirst = () => {
+    if (!hasSelected || atFirst) return;
+    moveItem(selectedRow, 0);
+  };
+
+  const handlePrevious = () => {
+    if (!hasSelected || atFirst) return;
+    moveItem(selectedRow, selectedRow - 1);
+  };
+
+  const handleNext = () => {
+    if (!hasSelected || atLast) return;
+    moveItem(selectedRow, selectedRow + 1);
+  };
+
+  const handleLast = () => {
+    if (!hasSelected || atLast) return;
+    moveItem(selectedRow, holidays.length - 1);
+  };
+
+  // Auto scroll to selected row
+  useEffect(() => {
+    if (selectedRow !== null && rowRefs.current[selectedRow]) {
+      rowRefs.current[selectedRow].scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [selectedRow]);
+
+  // When user clicks a row, populate selectedDate for display (backend string)
+  const handleRowClick = (index) => {
+    setSelectedRow(index);
+    const dt = holidays[index]?.date || "";
+    setSelectedDate(dt); // this will be backend format (e.g. "2026-03-08 00:00:00")
+  };
 
   return (
-    <div className="holiday-container">
-      {/* Add Holiday Input */}
-      <label htmlFor="holidayInput">Select Holiday Date:</label>
-      <input
-        id="holidayInput"
-        type="text"
-        readOnly
-        placeholder="Click to select date"
-        value={selectedDate}
-        onClick={() => setIsModalOpen(true)}
-      />
+    <div className="display-root">
+      {/* LEFT FORM */}
+      <div className="sub_container_display">
+        <div className="security-form">
+          <label>
+            <span>Select Holiday Date</span>
+            {/* Read-only input that opens the modal on click */}
+            <input
+              type="text"
+              readOnly
+              placeholder="Click to select date"
+              value={displayValue(selectedDate)}
+              onClick={() => {
+                // reset modal pickers to defaults (optionally parse current to prefill)
+                setYearType("Every Year");
+                setSpecialYear("");
+                setMonth("Every Month");
+                setDay("Every Day");
+                setIsModalOpen(true);
+              }}
+            />
+          </label>
+        </div>
+      </div>
 
-      {/* Popup Modal */}
+      {/* POPUP MODAL */}
       {isModalOpen && (
-        <div className="popup">
-          <div className="popup-content">
-            <h2>Select Holiday Date</h2>
-            <label>Year Type:</label>
-            <select value={yearType} onChange={(e) => setYearType(e.target.value)}>
-              <option value="Every Year">Every Year</option>
-              <option value="Special Year">Special Year</option>
-            </select>
-            {yearType === "Special Year" && (
-              <input
-                type="number"
-                placeholder="Enter Year"
-                value={specialYear}
-                onChange={(e) => setSpecialYear(e.target.value)}
-              />
-            )}
+  <div className="popup">
+    <div style={{padding:"2%"}} className="popup-content">
+      <h4>Select Holiday Date</h4>
 
-            <label>Month:</label>
-            <select value={month} onChange={(e) => setMonth(e.target.value)}>
-              <option value="Every Month">Every Month</option>
-              {[
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-              ].map((m, idx) => (
-                <option key={idx} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
+      <div className="security-form">
+        <label>
+          <span>Year Type:</span>
+          <select
+            name="year_type"
+            value={yearType}
+            onChange={(e) => setYearType(e.target.value)}
+          >
+            <option value="Every Year">Every Year</option>
+            <option value="Special Year">Special Year</option>
+          </select>
+        </label>
+      </div>
 
-            <label>Day:</label>
-            <select value={day} onChange={(e) => setDay(e.target.value)}>
-              <option value="Every Day">Every Day</option>
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-
-            <div className="modal-buttons">
-              <button
-                onClick={() => {
-                  setSelectedDate(formatDate());
-                  setIsModalOpen(false);
-                }}
-              >
-                OK
-              </button>
-              <button onClick={() => setIsModalOpen(false)}>Cancel</button>
-            </div>
-          </div>
+      {yearType === "Special Year" && (
+        <div className="security-form">
+          <label>
+            <span>Enter Year:</span>
+            <input
+              type="number"
+              name="special_year"
+              placeholder="YYYY"
+              value={specialYear}
+              onChange={(e) => setSpecialYear(e.target.value)}
+            />
+          </label>
         </div>
       )}
 
-      <button onClick={handleAddHoliday}>Add Holiday</button>
+      <div className="security-form">
+        <label>
+          <span>Month:</span>
+          <select
+            name="month"
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+          >
+            <option value="Every Month">Every Month</option>
+            {[
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December",
+            ].map((m, idx) => (
+              <option key={idx} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
-      {/* Delete Button */}
-      <button onClick={handleDeleteHoliday} disabled={selectedId === null}>
-        Delete Selected
-      </button>
+      <div className="security-form">
+        <label>
+          <span>Day:</span>
+          <select
+            name="day"
+            value={day}
+            onChange={(e) => setDay(e.target.value)}
+          >
+            <option value="Every Day">Every Day</option>
+            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
-      <button onClick={handleClearHolidays}>Clear All Holidays</button>
+      <div className="modal-buttons">
+        <button
+          type="button"
+          onClick={() => {
+            const formatted = formatDate();
+            setSelectedDate(formatted);
+            setIsModalOpen(false);
+          }}
+        >
+          OK
+        </button>
 
-      {/* Holiday Table */}
-      <table>
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {holidays.map((holiday, index) => (
-            <tr
-              key={holiday.id}
-              onClick={() => setSelectedId(holiday.id)}
-              style={{
-                backgroundColor: selectedId === holiday.id ? "#ddd" : "white",
-                cursor: "pointer",
-              }}
-            >
-              <td>{index + 1}</td>
-              <td>{holiday.date}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <button type="button" onClick={() => setIsModalOpen(false)}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+      {/* TOOLBAR */}
+      <div className="vertical-toolbar">
+        <button className="tool-btn" onClick={handleAdd}>
+          <span className="tool-icon">+</span>
+          <span className="tool-text">Add</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleInsert}>
+          <span className="tool-icon red-dot"></span>
+          <span className="tool-text">Insert</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleDelete}>
+          <span className="tool-icon">−</span>
+          <span className="tool-text">Delete</span>
+        </button>
+
+        <button className="tool-btn" onClick={handleClear}>
+          <span className="tool-icon">×</span>
+          <span className="tool-text">Clear</span>
+        </button>
+
+        <div className="tool-separator" />
+
+        <button className="tool-btn" disabled={!hasSelected || atFirst} onClick={handleFirst}>
+          <span className="tool-icon">|◀</span>
+          <span className="tool-text">First</span>
+        </button>
+
+        <button className="tool-btn" disabled={!hasSelected || atFirst} onClick={handlePrevious}>
+          <span className="tool-icon">◀</span>
+          <span className="tool-text">Previous</span>
+        </button>
+
+        <button className="tool-btn" disabled={!hasSelected || atLast} onClick={handleNext}>
+          <span className="tool-icon">▶</span>
+          <span className="tool-text">Next</span>
+        </button>
+
+        <button className="tool-btn" disabled={!hasSelected || atLast} onClick={handleLast}>
+          <span className="tool-icon">▶|</span>
+          <span className="tool-text">Last</span>
+        </button>
+      </div>
+
+      {/* TABLE */}
+      <div className="sub_container_display_2">
+        <div className="display_table">
+          <table className="tableTariff1">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {holidays.length === 0 ? (
+                <tr>
+                  <td colSpan={2}>No holidays</td>
+                </tr>
+              ) : (
+                holidays.map((holiday, index) => (
+                  <tr
+                    key={holiday.id}
+                    ref={(el) => (rowRefs.current[index] = el)}
+                    onClick={() => handleRowClick(index)}
+                    style={{
+                      background: selectedRow === index ? "#eef6ff" : "",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <td>{index + 1}</td>
+                    <td>{holiday.date}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };
@@ -2581,15 +3899,58 @@ const handleDeleteHoliday = () => {
 const Friendly = () => {
   const [activePage, setActivePage] = useState("periods");
 
+  
+   const tabs = [
+    { key: "periods", label: "Friendly Periods" },
+    { key: "weekday", label: "Friendly Weekday" },
+    { key: "holidays", label: "Friendly Holidays" },
+  ];
+
+  const containerRef = useRef(null);
+  const buttonRefs = useRef({});
+  const underlineRef = useRef(null);
+
+  const moveUnderline = (key) => {
+    const btn = buttonRefs.current[key];
+    const container = containerRef.current;
+    const underline = underlineRef.current;
+    if (!btn || !container || !underline) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+
+    underline.style.transform = `translateX(${btnRect.left - containerRect.left}px)`;
+    underline.style.width = `${btnRect.width}px`;
+  };
+
+  useEffect(() => {
+    setTimeout(() => moveUnderline(activePage), 20);
+
+    const handleResize = () => moveUnderline(activePage);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [activePage]);
+  
   return (
     <div className="">
       {/* Buttons to Switch Pages */}
-      <div className="">
-        <button onClick={() => setActivePage("periods")} >Friendly Periods </button>
-        <button onClick={() => setActivePage("weekday")} >Friendly Weekday </button>
-        <button onClick={() => setActivePage("holidays")}> Friendly Holidays </button>
-      </div>
+      <div className="controlsGroup_tabs" ref={containerRef}>
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          ref={(el) => (buttonRefs.current[tab.key] = el)}
+          className={`tou_button ${
+            activePage === tab.key ? "activeButton" : ""
+          }`}
+          onClick={() => setActivePage(tab.key)}
+          type="button"
+        >
+          {tab.label}
+        </button>
+      ))}
 
+      <div ref={underlineRef} className="underline" />
+    </div>
       {/* Rendering Components Based on Selected Page */}
       {activePage === "periods" && <FriendlyPeriods />}
       {activePage === "weekday" && <FriendlyWeekday />}
@@ -2650,9 +4011,8 @@ const AlarmOfCredit = () => {
   }, []);
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-4 border rounded-lg shadow-lg bg-white">
-      <h2 className="text-lg font-semibold mb-4">Alarm of Credit</h2>
-      <table className="w-full border-collapse border border-gray-300">
+   <div>
+      <table className="tableTariff1">
         <thead>
           <tr className="bg-gray-200">
             <th className="border p-2">No</th>
@@ -2674,7 +4034,8 @@ const AlarmOfCredit = () => {
           ))}
         </tbody>
       </table>
-    </div>
+       </div>
+  
   );
 };
 
@@ -2873,47 +4234,72 @@ const StepPrice = () => {
 
   return (
     <div>
-      <p>Resident Monthly Rent Step</p>
-      <button onClick={addRow}>Add Row</button>
-      <button onClick={deleteRow} disabled={selectedRow === null}>
+   
+      
+      <div className="table-container"> 
+    <table className="tableTariff1">
+  <thead>
+    <tr className="bg-gray-200">
+      <th className="border p-2">Step</th>
+      <th className="border p-2">Price</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {rows.map((row, index) => (
+      <tr
+        key={row.id}
+        className="text-center border"
+        onClick={() => handleRowClick(index)}
+        style={{
+          backgroundColor:
+            selectedRow === index ? "#ff5e00" : "",
+          cursor: "pointer",
+        }}
+      >
+        <td className="border p-2">{row.step}</td>
+
+        <td
+          className="border p-2"
+          onDoubleClick={() => handleDoubleClick(index)}
+        >
+          {editingIndex === index ? (
+            <input
+              type="number"
+              value={editValue}
+              onChange={handleInputChange}
+              onBlur={() => saveEdit(index)}
+              onKeyDown={(e) =>
+                e.key === "Enter" && saveEdit(index)
+              }
+              autoFocus
+              style={{ width: "100%" }}
+            />
+          ) : (
+            row.price
+          )}
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+      </div >
+      <div  style={{
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginLeft:'20%', 
+    // will wrap on very small screens
+  }}> 
+       <button className='scheduler-add-button' onClick={addRow}>Add Row</button>
+      <button  className='scheduler-delete-button' onClick={deleteRow} disabled={selectedRow === null}>
         Delete Selected Row
       </button>
-      <table border="1">
-        <thead>
-          <tr>
-            <th>Step</th>
-            <th>Price</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, index) => (
-            <tr
-              key={row.id}
-              onClick={() => handleRowClick(index)}
-              style={{
-                backgroundColor: selectedRow === index ? "lightgray" : "white",
-                cursor: "pointer",
-              }}
-            >
-              <td>{row.step}</td>
-              <td onDoubleClick={() => handleDoubleClick(index)}>
-                {editingIndex === index ? (
-                  <input
-                    type="number"
-                    value={editValue}
-                    onChange={handleInputChange}
-                    onBlur={() => saveEdit(index)}
-                    onKeyDown={(e) => e.key === "Enter" && saveEdit(index)}
-                    autoFocus
-                  />
-                ) : (
-                  row.price
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      </div>
+   
+   
+   
     </div>
   );
 };
@@ -2923,7 +4309,7 @@ const StepPrice = () => {
 
 
 const Payment = () => {
-    const [activeComponent, setActiveComponent] = useState(null);
+    const [activeComponent, setActiveComponent] = useState('AccountDetails');
   
     const renderComponent = () => {
       switch (activeComponent) {
@@ -2949,18 +4335,108 @@ const Payment = () => {
     };
   
     return (
-      <div className="payment-container">
-        <div>
-          <button onClick={() => setActiveComponent('AccountDetails')}>Account Details</button>
-          <button onClick={() => setActiveComponent('Credit')}>Credit</button>
-          <button onClick={() => setActiveComponent('Charge')} >Charge </button>
-          <button onClick={()=> setActiveComponent("TokenGateway")}> Token Gateway</button>
-      
-          <button onClick={()=>setActiveComponent('PaymentInfoTable') }>Payment Information </button> 
-          <button onClick={()=>setActiveComponent('Friendly')}>Friendly </button>
-          <button onClick={()=> setActiveComponent('AlarmOfCredit')}> AlarmOfCredit</button>
-          <button onClick={()=> setActiveComponent('StepPrice')}> StepPrice</button>
-        </div>
+      <div>
+      <div
+  className="view-toggle"
+  role="tablist"
+  aria-label="Component selection"
+>
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeComponent === "AccountDetails"}
+    className={`view-btn ${
+      activeComponent === "AccountDetails" ? "active" : ""
+    }`}
+    onClick={() => setActiveComponent("AccountDetails")}
+  >
+    Account Details
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeComponent === "Credit"}
+    className={`view-btn ${
+      activeComponent === "Credit" ? "active" : ""
+    }`}
+    onClick={() => setActiveComponent("Credit")}
+  >
+    Credit
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeComponent === "Charge"}
+    className={`view-btn ${
+      activeComponent === "Charge" ? "active" : ""
+    }`}
+    onClick={() => setActiveComponent("Charge")}
+  >
+    Charge
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeComponent === "TokenGateway"}
+    className={`view-btn ${
+      activeComponent === "TokenGateway" ? "active" : ""
+    }`}
+    onClick={() => setActiveComponent("TokenGateway")}
+  >
+    Token Gateway
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeComponent === "PaymentInfoTable"}
+    className={`view-btn ${
+      activeComponent === "PaymentInfoTable" ? "active" : ""
+    }`}
+    onClick={() => setActiveComponent("PaymentInfoTable")}
+  >
+    Payment Information
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeComponent === "Friendly"}
+    className={`view-btn ${
+      activeComponent === "Friendly" ? "active" : ""
+    }`}
+    onClick={() => setActiveComponent("Friendly")}
+  >
+    Friendly
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeComponent === "AlarmOfCredit"}
+    className={`view-btn ${
+      activeComponent === "AlarmOfCredit" ? "active" : ""
+    }`}
+    onClick={() => setActiveComponent("AlarmOfCredit")}
+  >
+    Alarm Of Credit
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeComponent === "StepPrice"}
+    className={`view-btn ${
+      activeComponent === "StepPrice" ? "active" : ""
+    }`}
+    onClick={() => setActiveComponent("StepPrice")}
+  >
+    Step Price
+  </button>
+</div>
         <div className="load-control-container">{renderComponent()}</div>
       </div>
     );

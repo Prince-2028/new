@@ -503,6 +503,8 @@ class RegisterLimiter(models.Model):
     
     MONITOR_TYPE_CHOICES = [
         ('supervision_monitor_1', 'Supervision Monitor 1'),
+         ('supervision_monitor_2', 'Supervision Monitor 2'),
+          ('supervision_monitor_3', 'Supervision Monitor 3'),
         ('alarm_monitor_1', 'Alarm Monitor 1'),
         ('alarm_monitor_2', 'Alarm Monitor 2'),
     ]
@@ -1820,7 +1822,7 @@ class ScrollDisplay(models.Model):
     value = models.CharField(max_length=255, blank=True, null=True)  # Added value field
 
     class Meta:
-        unique_together = ('name', 'code')  # Ensure no duplicate items per category
+        unique_together = ('name', 'code','device')  # Ensure no duplicate items per category
 
     def __str__(self):
         return f"{self.name} ({self.code}) - {self.value}"
@@ -1839,7 +1841,7 @@ class ManualDisplay(models.Model):
     value = models.CharField(max_length=255, blank=True, null=True)  # Added value field
 
     class Meta:
-        unique_together = ('name', 'code')  # Ensure no duplicate items per category
+        unique_together = ('name', 'code','device')  # Ensure no duplicate items per category
 
     def __str__(self):
         return f"{self.name} ({self.code}) - {self.value}"

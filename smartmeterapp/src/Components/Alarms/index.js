@@ -4,7 +4,7 @@ import axios from 'axios';  // Import axios to send requests
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
 
 const RegisterData = () => {
-    const [selectedRegister, setSelectedRegister] = useState(null);
+    const [selectedRegister, setSelectedRegister] = useState('ErrorRegister1');
     const [checkboxStates, setCheckboxStates] = useState({});
 
     // Define checkbox lists for Alarm Registers and Error Registers
@@ -451,7 +451,7 @@ const handleSendAlarmDescriptor2 = () => {
           case 'ErrorRegister1':
                 return (
                     <div>
-                        <button onClick={handleSendErrorRegister1}>Send Error Register 1</button>
+                       
                       
                         <table className='tableTariff1'>
                             <thead>
@@ -488,13 +488,12 @@ const handleSendAlarmDescriptor2 = () => {
     </div>
   ))}
                          </div>
-                     
+                      <button style={{marginLeft:"30%"}} className='scheduler-add-button' onClick={handleSendErrorRegister1}>Send Error Register 1</button>
                     </div>
                 );
             case 'ErrorRegister2':
                 return (
-                    <div>
-                        <button onClick={handleSendErrorRegister2}>Send Error Register 2</button>
+                    <div>  
                    
                         <table className='tableTariff1'>
                             <thead>
@@ -532,13 +531,15 @@ const handleSendAlarmDescriptor2 = () => {
     </div>
   ))}
                          </div>
+
+                          <button style={{marginLeft:"30%"}} className='scheduler-add-button' onClick={handleSendErrorRegister2}>Send Error Register 2</button>
                         
                     </div>
                 );
             case 'AlarmRegister1':
                 return (
                     <div>
-                        <button onClick={handleSendAlarmRegister1}>Send Alarm Register 1</button>
+                      
                      
                      
                       
@@ -579,13 +580,14 @@ const handleSendAlarmDescriptor2 = () => {
     </div>
   ))}
                          </div>
+                           <button style={{marginLeft:"30%"}} className='scheduler-add-button' onClick={handleSendAlarmRegister1}>Send Alarm Register 1</button>
                       
                     </div>
                 );
             case 'AlarmRegister2':
                 return (
                     <div className="register-content">
-                        <button onClick={handleSendAlarmRegister2}>Send Alarm Register 2</button>
+                       
                       
                         <table className='tableTariff1'>
                             <thead>
@@ -624,7 +626,7 @@ const handleSendAlarmDescriptor2 = () => {
     </div>
   ))}
                          </div>
-                      
+                       <button style={{marginLeft:"30%"}} className='scheduler-add-button'  onClick={handleSendAlarmRegister2}>Send Alarm Register 2</button>
                     
                     </div>
                 );
@@ -633,8 +635,7 @@ const handleSendAlarmDescriptor2 = () => {
             case 'AlarmFilter1':
                 return (
                     <div>
-                        <button onClick={handleSendAlarmFilter1}>Send Alarm Filter 1</button>
-                      
+                       
                         <table className="tableTariff1">
                             <thead>
                                 <tr>
@@ -672,14 +673,15 @@ const handleSendAlarmDescriptor2 = () => {
   ))}
                          </div>
 
-
+                      <button  style={{marginLeft:"30%"}} className='scheduler-add-button' onClick={handleSendAlarmFilter1}>Send Alarm Filter 1</button>
+                      
                       
                     </div>
                 );
             case 'AlarmFilter2':
                 return (
                     <div>
-                        <button onClick={handleSendAlarmFilter2}>Send Alarm Filter 2</button>
+                       
                     
                         <table className='tableTariff1'>
                             <thead>
@@ -717,13 +719,14 @@ const handleSendAlarmDescriptor2 = () => {
     </div>
   ))}
                          </div>
+                          <button  style={{marginLeft:"30%"}} className='scheduler-add-button' onClick={handleSendAlarmFilter2}>Send Alarm Filter 2</button>
 
                     </div>
                 )
            case 'AlarmDescriptor1':
                   return (
                       <div>
-                          <button onClick={handleSendAlarmDescriptor1}>Send Alarm Descriptor 1</button>
+                         
                           
                           <table className="tableTariff1">
                               <thead>
@@ -760,13 +763,15 @@ const handleSendAlarmDescriptor2 = () => {
     </div>
   ))}
                          </div>
+
+                          <button style={{marginLeft:"30%"}} className='scheduler-add-button' onClick={handleSendAlarmDescriptor1}>Send Alarm Descriptor 1</button>
                         
                       </div>
                   );
             case 'AlarmDescriptor2':
                   return (
                       <div>
-                          <button onClick={handleSendAlarmDescriptor2}>Send Alarm Descriptor 2</button>
+                          
                           
                           <table className="tableTariff1">
                               <thead>
@@ -804,7 +809,7 @@ const handleSendAlarmDescriptor2 = () => {
     </div>
   ))}
                          </div>
-                          
+                          <button style={{marginLeft:"30%"}} className='scheduler-add-button' onClick={handleSendAlarmDescriptor2}>Send Alarm Descriptor 2</button>
                       </div>
                   );
            
@@ -815,16 +820,134 @@ const handleSendAlarmDescriptor2 = () => {
 
     return (
         <div>
-            <div>
-                <button onClick={() => handleRegisterClick('ErrorRegister1')}>Error Register 1</button>
-                <button onClick={() => handleRegisterClick('ErrorRegister2')}>Error Register 2</button>
-                <button onClick={() => handleRegisterClick('AlarmRegister1')}>Alarm Register 1</button>
-                <button onClick={() => handleRegisterClick('AlarmRegister2')}>Alarm Register 2</button>
-                <button onClick={() => handleRegisterClick('AlarmFilter1')}>Alarm Filter 1</button>
-                <button onClick={() => handleRegisterClick('AlarmFilter2')}>Alarm Filter 2</button>
-                <button onClick={() => handleRegisterClick('AlarmDescriptor1')}>Alarm Descriptor 1</button>
-                <button onClick={() => handleRegisterClick('AlarmDescriptor2')}>Alarm Descriptor 2</button>
-            </div>
+           
+
+            <div
+  className="view-toggle"
+  role="tablist"
+  aria-label="Register selection"
+  style={{margin:'0.3%'}}
+>
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={selectedRegister === "ErrorRegister1"}
+    className={`view-btn ${
+      selectedRegister === "ErrorRegister1" ? "active" : ""
+    }`}
+    onClick={() => {
+      setSelectedRegister("ErrorRegister1");
+      handleRegisterClick("ErrorRegister1");
+    }}
+  >
+    Error Register 1
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={selectedRegister === "ErrorRegister2"}
+    className={`view-btn ${
+      selectedRegister === "ErrorRegister2" ? "active" : ""
+    }`}
+    onClick={() => {
+      setSelectedRegister("ErrorRegister2");
+      handleRegisterClick("ErrorRegister2");
+    }}
+  >
+    Error Register 2
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={selectedRegister === "AlarmRegister1"}
+    className={`view-btn ${
+      selectedRegister === "AlarmRegister1" ? "active" : ""
+    }`}
+    onClick={() => {
+      setSelectedRegister("AlarmRegister1");
+      handleRegisterClick("AlarmRegister1");
+    }}
+  >
+    Alarm Register 1
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={selectedRegister === "AlarmRegister2"}
+    className={`view-btn ${
+      selectedRegister === "AlarmRegister2" ? "active" : ""
+    }`}
+    onClick={() => {
+      setSelectedRegister("AlarmRegister2");
+      handleRegisterClick("AlarmRegister2");
+    }}
+  >
+    Alarm Register 2
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={selectedRegister === "AlarmFilter1"}
+    className={`view-btn ${
+      selectedRegister === "AlarmFilter1" ? "active" : ""
+    }`}
+    onClick={() => {
+      setSelectedRegister("AlarmFilter1");
+      handleRegisterClick("AlarmFilter1");
+    }}
+  >
+    Alarm Filter 1
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={selectedRegister === "AlarmFilter2"}
+    className={`view-btn ${
+      selectedRegister === "AlarmFilter2" ? "active" : ""
+    }`}
+    onClick={() => {
+      setSelectedRegister("AlarmFilter2");
+      handleRegisterClick("AlarmFilter2");
+    }}
+  >
+    Alarm Filter 2
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={selectedRegister === "AlarmDescriptor1"}
+    className={`view-btn ${
+      selectedRegister === "AlarmDescriptor1" ? "active" : ""
+    }`}
+    onClick={() => {
+      setSelectedRegister("AlarmDescriptor1");
+      handleRegisterClick("AlarmDescriptor1");
+    }}
+  >
+    Alarm Descriptor 1
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={selectedRegister === "AlarmDescriptor2"}
+    className={`view-btn ${
+      selectedRegister === "AlarmDescriptor2" ? "active" : ""
+    }`}
+    onClick={() => {
+      setSelectedRegister("AlarmDescriptor2");
+      handleRegisterClick("AlarmDescriptor2");
+    }}
+  >
+    Alarm Descriptor 2
+  </button>
+</div>
             <div className="alarms-container">
                 {renderRegisterContent()}
             </div>

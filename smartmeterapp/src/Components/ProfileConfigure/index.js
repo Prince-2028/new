@@ -131,7 +131,11 @@ const EnergyRegisterCategories = [
 ];
 // Updated component: uses EnergyRegisterCategories and new endpoints
 
-const Loadprofile1CaptureObjects = () => {
+
+
+
+
+const Loadprofile1CaptureObjects= () => {
   const [selectedItems, setSelectedItems] = useState([]); // items to POST
   const [addedItems, setAddedItems] = useState([]); // items fetched from backend
   const [deviceId, setDeviceId] = useState(() =>
@@ -158,7 +162,7 @@ const Loadprofile1CaptureObjects = () => {
   const fetchEnergyRegisterData = async () => {
     if (!deviceId) {
       setAddedItems([]);
-      return;                    
+      return;
     }
     try {
       const res = await axios.get(`${BASE_URL}/api/loadprofile1/${deviceId}/`);
@@ -313,7 +317,7 @@ const Loadprofile1CaptureObjects = () => {
       value: 100,
     }));
 
-    try { 
+    try {
       await axios.post(`${BASE_URL}/api/loadprofile1/`, payload);
       setSelectedItems([]);
       await fetchEnergyRegisterData();
@@ -365,15 +369,64 @@ const Loadprofile1CaptureObjects = () => {
   };
 
   /* -------------------------
-     Navigation helpers
+     Navigation helpers (reorder local array)
+     - moveItem: core operation
+     - handleFirst/Previous/Next/Last will move selected row
   -------------------------- */
-  const handleFirst = () => addedItems.length && setSelectedRow(0);
-  const handleLast = () =>
-    addedItems.length && setSelectedRow(addedItems.length - 1);
-  const handlePrevious = () => selectedRow > 0 && setSelectedRow((p) => p - 1);
-  const handleNext = () =>
-    selectedRow < addedItems.length - 1 && setSelectedRow((p) => p + 1);
+  const moveItem = (fromIndex, toIndex) => {
+    if (fromIndex === null || fromIndex === undefined) return;
+    if (toIndex < 0) toIndex = 0;
 
+    setAddedItems((prev) => {
+      if (!prev || fromIndex < 0 || fromIndex >= prev.length) return prev;
+      const next = [...prev];
+      const [item] = next.splice(fromIndex, 1);
+      // if toIndex is greater than new length, push to end
+      const insertIndex = toIndex > next.length ? next.length : toIndex;
+      next.splice(insertIndex, 0, item);
+
+      // NOTE: if you want to persist ordering on the server, do it here:
+      // e.g. send new ordered list of IDs to backend:
+      // const newOrderIds = next.map(it => it.id);
+      // axios.post(`${BASE_URL}/api/loadprofile1/reorder/${deviceId}/`, { order: newOrderIds })
+      //   .catch(err => console.warn("Persist reorder failed", err));
+
+      return next;
+    });
+
+    // update selectedRow to the new position
+    setSelectedRow(toIndex);
+  };
+
+  const handleFirst = () => {
+    if (selectedRow === null) return alert("Select a row");
+    if (selectedRow === 0) return; // already first
+    moveItem(selectedRow, 0);
+  };
+
+  const handleLast = () => {
+    if (selectedRow === null) return alert("Select a row");
+    const lastIndex = (addedItems || []).length - 1;
+    if (selectedRow === lastIndex) return; // already last
+    moveItem(selectedRow, lastIndex);
+  };
+
+  const handlePrevious = () => {
+    if (selectedRow === null) return alert("Select a row");
+    if (selectedRow <= 0) return; // can't move back
+    moveItem(selectedRow, selectedRow - 1);
+  };
+
+  const handleNext = () => {
+    if (selectedRow === null) return alert("Select a row");
+    const lastIndex = (addedItems || []).length - 1;
+    if (selectedRow >= lastIndex) return; // can't move further
+    moveItem(selectedRow, selectedRow + 1);
+  };
+
+  /* -------------------------
+     Keep row in view when selection changes
+  -------------------------- */
   useEffect(() => {
     if (selectedRow !== null && rowRefs.current[selectedRow]) {
       rowRefs.current[selectedRow].scrollIntoView({
@@ -500,44 +553,52 @@ const Loadprofile1CaptureObjects = () => {
 
       {/* RIGHT: saved table */}
       <div className="sub_container_display_2">
-        <div  className="display_table"> 
-        <table>
-          <thead>
-            <tr>
-              <th style={{ textAlign: "left", borderBottom: "1px solid #000000"}}>Name</th>
-              <th style={{ textAlign: "left", borderBottom: "1px solid #ddd" }}>Code</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(addedItems || []).length === 0 ? (
+        <div className="display_table">
+          <table className="tableTariff1">
+            <thead>
               <tr>
-                <td colSpan={3} style={{ padding: 8 }}>No saved items</td>
+                <th>Name</th>
+                <th>Code</th>
               </tr>
-            ) : (
-              (addedItems || []).map((item, idx) => (
-                <tr
-                  key={item.id || `${item.code}-${idx}`}
-                  ref={(el) => (rowRefs.current[idx] = el)}
-                  className={selectedRow === idx ? "selected-row" : ""}
-                  onClick={() => setSelectedRow(idx)}
-                  style={{
-                    background: selectedRow === idx ? "#eef" : "transparent",
-                    cursor: "pointer",
-                  }}
-                >
-                  <td  style={{ padding: 4, borderBottom: "1px solid #f0f0f0" }} >{item.name}</td>
-                  <td  style={{ padding: 4, borderBottom: "1px solid #f0f0f0" }} >{item.code}</td>
+            </thead>
+            <tbody>
+              {(addedItems || []).length === 0 ? (
+                <tr>
+                  <td colSpan={3} style={{ padding: 8 }}>No saved items</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                (addedItems || []).map((item, idx) => (
+                  <tr
+                    key={item.id || `${item.code}-${idx}`}
+                    ref={(el) => (rowRefs.current[idx] = el)}
+                    className={selectedRow === idx ? "selected-row" : ""}
+                    onClick={() => setSelectedRow(idx)}
+                    style={{
+                      background: selectedRow === idx ? "#eef" : "",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <td style={{ padding: 0.5, borderBottom: "1px solid #f0f0f0" }}>{item.name}</td>
+                    <td style={{ padding: 0.5, borderBottom: "1px solid #f0f0f0" }}>{item.code}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 };
 
+
+
+
+
+
+
+
+// make sure BASE_URL and InstantaneousCategories are available in scope
 
 const Loadprofile2CaptureObjects = () => {
   const [selectedItems, setSelectedItems] = useState([]); // items to POST
@@ -566,7 +627,7 @@ const Loadprofile2CaptureObjects = () => {
   const fetchEnergyRegisterData = async () => {
     if (!deviceId) {
       setAddedItems([]);
-      return;                    
+      return;
     }
     try {
       const res = await axios.get(`${BASE_URL}/api/loadprofile2/${deviceId}/`);
@@ -707,7 +768,6 @@ const Loadprofile2CaptureObjects = () => {
 
   /* -------------------------
      POST – Add items
-     endpoint updated -> /api/energy-registers/
   -------------------------- */
   const handleAdd = async () => {
     if (!deviceId) return alert("Select a device");
@@ -721,7 +781,7 @@ const Loadprofile2CaptureObjects = () => {
       value: 100,
     }));
 
-    try { 
+    try {
       await axios.post(`${BASE_URL}/api/loadprofile2/`, payload);
       setSelectedItems([]);
       await fetchEnergyRegisterData();
@@ -733,7 +793,6 @@ const Loadprofile2CaptureObjects = () => {
 
   /* -------------------------
      DELETE – single item (by selected row)
-     endpoint updated -> /api/energy-registers/item/{id}/
   -------------------------- */
   const handleDelete = async () => {
     if (selectedRow === null) return alert("Select a row");
@@ -755,7 +814,6 @@ const Loadprofile2CaptureObjects = () => {
 
   /* -------------------------
      DELETE – clean device (all items)
-     endpoint updated -> /api/energy-registers/clean/{deviceId}/
   -------------------------- */
   const handleClear = async () => {
     if (!deviceId) return alert("Select a device");
@@ -773,15 +831,62 @@ const Loadprofile2CaptureObjects = () => {
   };
 
   /* -------------------------
-     Navigation helpers
+     Navigation helpers (reorder local array)
+     - moveItem: core operation
+     - handleFirst/Previous/Next/Last will move selected row
   -------------------------- */
-  const handleFirst = () => addedItems.length && setSelectedRow(0);
-  const handleLast = () =>
-    addedItems.length && setSelectedRow(addedItems.length - 1);
-  const handlePrevious = () => selectedRow > 0 && setSelectedRow((p) => p - 1);
-  const handleNext = () =>
-    selectedRow < addedItems.length - 1 && setSelectedRow((p) => p + 1);
+  const moveItem = (fromIndex, toIndex) => {
+    if (fromIndex === null || fromIndex === undefined) return;
+    setAddedItems((prev) => {
+      if (!prev || fromIndex < 0 || fromIndex >= prev.length) return prev;
+      const next = [...prev];
+      const [item] = next.splice(fromIndex, 1);
+      const insertIndex = toIndex > next.length ? next.length : Math.max(0, toIndex);
+      next.splice(insertIndex, 0, item);
 
+      // Optional: persist the new order to server
+      // const newOrderIds = next.map(it => it.id);
+      // axios.post(`${BASE_URL}/api/loadprofile2/reorder/${deviceId}/`, { order: newOrderIds })
+      //   .catch(err => console.warn("Persist reorder failed", err));
+
+      return next;
+    });
+
+    // set selected row to the item new index (clamp)
+    const lastIdx = (addedItems || []).length - 1;
+    const clamped = Math.max(0, Math.min(toIndex, lastIdx));
+    setSelectedRow(clamped);
+  };
+
+  const handleFirst = () => {
+    if (selectedRow === null) return alert("Select a row");
+    if (selectedRow === 0) return;
+    moveItem(selectedRow, 0);
+  };
+
+  const handleLast = () => {
+    if (selectedRow === null) return alert("Select a row");
+    const lastIndex = (addedItems || []).length - 1;
+    if (selectedRow === lastIndex) return;
+    moveItem(selectedRow, lastIndex);
+  };
+
+  const handlePrevious = () => {
+    if (selectedRow === null) return alert("Select a row");
+    if (selectedRow <= 0) return;
+    moveItem(selectedRow, selectedRow - 1);
+  };
+
+  const handleNext = () => {
+    if (selectedRow === null) return alert("Select a row");
+    const lastIndex = (addedItems || []).length - 1;
+    if (selectedRow >= lastIndex) return;
+    moveItem(selectedRow, selectedRow + 1);
+  };
+
+  /* -------------------------
+     Keep row in view when selection changes
+  -------------------------- */
   useEffect(() => {
     if (selectedRow !== null && rowRefs.current[selectedRow]) {
       rowRefs.current[selectedRow].scrollIntoView({
@@ -794,6 +899,11 @@ const Loadprofile2CaptureObjects = () => {
   /* -------------------------
      UI
   -------------------------- */
+  const hasSelected = selectedRow !== null;
+  const lastIndex = (addedItems || []).length - 1;
+  const atFirst = hasSelected && selectedRow === 0;
+  const atLast = hasSelected && selectedRow === lastIndex;
+
   return (
     <div className="display-root" style={{ display: "flex", gap: 12 }}>
       {/* LEFT: categories & checkboxes */}
@@ -803,7 +913,6 @@ const Loadprofile2CaptureObjects = () => {
           const allChecked =
             codesInCat.length > 0 &&
             codesInCat.every((c) => selectedItems.some((s) => s.code === c) || savedCodes.has(c));
-          // const someChecked = codesInCat.some(...); // could be used for indeterminate
 
           return (
             <div
@@ -885,22 +994,22 @@ const Loadprofile2CaptureObjects = () => {
 
         <div className="tool-separator" />
 
-        <button className="tool-btn" onClick={handleFirst} title="First">
+        <button className="tool-btn" onClick={handleFirst} title="First" disabled={!hasSelected || atFirst}>
           <span className="tool-icon">|◀</span>
           <span className="tool-text">First</span>
         </button>
 
-        <button className="tool-btn" onClick={handlePrevious} title="Previous">
+        <button className="tool-btn" onClick={handlePrevious} title="Previous" disabled={!hasSelected || atFirst}>
           <span className="tool-icon">◀</span>
           <span className="tool-text">Previous</span>
         </button>
 
-        <button className="tool-btn" onClick={handleNext} title="Next">
+        <button className="tool-btn" onClick={handleNext} title="Next" disabled={!hasSelected || atLast}>
           <span className="tool-icon">▶</span>
           <span className="tool-text">Next</span>
         </button>
 
-        <button className="tool-btn" onClick={handleLast} title="Last">
+        <button className="tool-btn" onClick={handleLast} title="Last" disabled={!hasSelected || atLast}>
           <span className="tool-icon">▶|</span>
           <span className="tool-text">Last</span>
         </button>
@@ -908,45 +1017,43 @@ const Loadprofile2CaptureObjects = () => {
 
       {/* RIGHT: saved table */}
       <div className="sub_container_display_2">
-         <div  className="display_table"> 
-        <table>
-          <thead>
-            <tr>
-              <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Name</th>
-              <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Code</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(addedItems || []).length === 0 ? (
+        <div className="display_table">
+          <table className="tableTariff1">
+            <thead>
               <tr>
-                <td colSpan={3} style={{ padding: 8 }}>No saved items</td>
+                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Name</th>
+                <th style={{ textAlign: "left", borderBottom: "1px solid #ddd", padding: 8 }}>Code</th>
               </tr>
-            ) : (
-              (addedItems || []).map((item, idx) => (
-                <tr
-                  key={item.id || `${item.code}-${idx}`}
-                  ref={(el) => (rowRefs.current[idx] = el)}
-                  className={selectedRow === idx ? "selected-row" : ""}
-                  onClick={() => setSelectedRow(idx)}
-                  style={{
-                    background: selectedRow === idx ? "#eef" : "transparent",
-                    cursor: "pointer",
-                  }}
-                >
-                  <td style={{ padding: 4, borderBottom: "1px solid #f0f0f0" }}>{item.name}</td>
-                  <td style={{ padding: 4, borderBottom: "1px solid #f0f0f0" }}>{item.code}</td>
+            </thead>
+            <tbody>
+              {(addedItems || []).length === 0 ? (
+                <tr>
+                  <td colSpan={3} style={{ padding: 8 }}>No saved items</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                (addedItems || []).map((item, idx) => (
+                  <tr
+                    key={item.id || `${item.code}-${idx}`}
+                    ref={(el) => (rowRefs.current[idx] = el)}
+                    className={selectedRow === idx ? "selected-row" : ""}
+                    onClick={() => setSelectedRow(idx)}
+                    style={{
+                      background: selectedRow === idx ? "#eef" : "",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <td >{item.name}</td>
+                    <td >{item.code}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 };
-
-
 
 
 
@@ -999,7 +1106,7 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
       setDeviceId(storedId);
     }, []);
 
-  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [selectedProfile, setSelectedProfile] = useState("period1");
 
   // Handler to change the selected profile
   const handleProfileSelection = (profile) => {
@@ -1010,28 +1117,6 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
 
 
 
-  const handleRetrieveSubmit = async (e) => {
-
-    console.log("gello",selectedCodes)
-
-    
-    e.preventDefault();
-    try {
-      
-      const response = await axios.post(`${BASE_URL}/api/retrive-energy-register/`, { 
-        device_id:deviceId, 
-        codes:selectedCodes
-      });
-      
-      setRetrieveResponse(response.data);
-      
-      alert('Energy Registers retrieved successfully!');
-    } catch (error) {
-      console.error('Error retrieving energy registers:', error);
-      alert(`Error: ${error.response?.data?.error || 'An error occurred'}`);
-    }
-  };
-
   const energyRegisters1 = retrieveResponse?.data || []; 
 
   return (
@@ -1040,15 +1125,41 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
       
 
       {/* Profile Selection Buttons */}
-      <div>
-        <button onClick={() => handleProfileSelection('period1')}>
-          Load profile with period 1 configure
-        </button>
-        <button onClick={() => handleProfileSelection('period2')}>
-          Load profile with period 2 configure
-        </button>
-       
-      </div>
+     <div
+  className="view-toggle"
+  role="tablist"
+  aria-label="Load profile selection"
+>
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={selectedProfile === "period1"}
+    className={`view-btn ${
+      selectedProfile === "period1" ? "active" : ""
+    }`}
+    onClick={() => {
+      setSelectedProfile("period1");
+      handleProfileSelection("period1");
+    }}
+  >
+    Load profile with period 1 configure
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={selectedProfile === "period2"}
+    className={`view-btn ${
+      selectedProfile === "period2" ? "active" : ""
+    }`}
+    onClick={() => {
+      setSelectedProfile("period2");
+      handleProfileSelection("period2");
+    }}
+  >
+    Load profile with period 2 configure
+  </button>
+</div>
 
       {/* Render Selected Profile */}
       {selectedProfile === 'period1' && (

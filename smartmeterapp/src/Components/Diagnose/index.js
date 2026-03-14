@@ -830,11 +830,10 @@ function Diagnose2() {
 
 
 function Diagnose() {
-  const [selectedPage, setSelectedPage] = useState("");
+  const [selectedPage, setSelectedPage] = useState("stateOfInternalControl");
   const [serialNumber, setSerialNumber] = useState(() =>
     localStorage.getItem("selectedSerialNumber")
   );
-  const [showProgressModal, setShowProgressModal] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("selectedSerialNumber");
@@ -907,7 +906,6 @@ function Diagnose() {
 
   // Read handlers (populate sub-checkboxes)
   const readStateOfInternalControl = async () => {
-    setShowProgressModal(true);
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
@@ -918,29 +916,7 @@ function Diagnose() {
         `${BASE_URL}/api/create-state-of-internal-control/`,
         payload
       );
-      
-      // Check if resp.data is a string that needs parsing
-      let parsedData = resp.data;
-      if (typeof parsedData === 'string') {
-        try {
-          parsedData = JSON.parse(parsedData);
-        } catch (parseError) {
-          const match = parsedData.match(/data:\s*(\{.*\})/);
-          if (match) {
-            parsedData = JSON.parse(match[1]);
-          }
-        }
-      }
-      
-      // Navigate through nested data structures
-      let actualData = parsedData;
-      while (actualData && typeof actualData === 'object' && 'data' in actualData && !('status' in actualData)) {
-        actualData = actualData.data;
-      }
-      
-      const returned = actualData?.value || [];
-      console.log("State Of Internal Control Response:", returned);
-      
+      const returned = resp.data.data?.[0]?.value || [];
       const mapping = {
         factory_mode: "FactoryMode",
         non_business_mode: "NonBusinessMode",
@@ -968,17 +944,12 @@ function Diagnose() {
         ...prev,
         stateOfInternalControl: newState,
       }));
-      setShowProgressModal(false);
-      alert("State Of Internal Control read successfully");
-    } catch (error) {
-      console.error("Failed to read State Of Internal Control:", error);
-      setShowProgressModal(false);
+    } catch {
       alert("Failed to read State Of Internal Control.");
     }
   };
 
   const readInternalOperatingStatus = async () => {
-    setShowProgressModal(true);
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
@@ -989,42 +960,20 @@ function Diagnose() {
         `${BASE_URL}/api/create-internal-operating-status/`,
         payload
       );
-      
-      // Check if resp.data is a string that needs parsing
-      let parsedData = resp.data;
-      if (typeof parsedData === 'string') {
-        try {
-          parsedData = JSON.parse(parsedData);
-        } catch (parseError) {
-          const match = parsedData.match(/data:\s*(\{.*\})/);
-          if (match) {
-            parsedData = JSON.parse(match[1]);
-          }
-        }
-      }
-      
-      // Navigate through nested data structures
-      let actualData = parsedData;
-      while (actualData && typeof actualData === 'object' && 'data' in actualData && !('status' in actualData)) {
-        actualData = actualData.data;
-      }
-      
-      const returned = actualData?.value || [];
-      console.log("Internal Operating Status Response:", returned);
-      
+      const returned = resp.data.data?.[0]?.value || [];
       const mapping = {
         uncalibration: "Uncalibration",
         measure_error: "MeasureError",
-        program_store_error: "PRG_str_Error",
+        program_store_error: "ProgramStoreError",
         nvm_error: "NVM_Error",
-        ram_error: "RAM_error",
-        abnormal_reset: "AbnormalRST",
+        ram_error: "RAM_Error",
+        abnormal_reset: "AbnormalReset",
         module_fault: "ModuleFault",
         rtc_osc_fault: "RTC_OSC_Fault",
-        mcu_osc_fault: "MCU_USC_fault",
+        mcu_osc_fault: "MCU_OSC_Fault",
         main_relay_fault: "MainRelayFault",
         clock_invalid: "ClockInvalid",
-        ppm_fault: "PPM_fault",
+        ppm_fault: "PPM_Fault",
       };
       const newState = Object.keys(pageStates.internalOperatingStatus).reduce(
         (acc, key) => {
@@ -1037,17 +986,12 @@ function Diagnose() {
         ...prev,
         internalOperatingStatus: newState,
       }));
-      setShowProgressModal(false);
-      alert("Internal Operating Status read successfully");
-    } catch (error) {
-      console.error("Failed to read Internal Operating Status:", error);
-      setShowProgressModal(false);
+    } catch {
       alert("Failed to read Internal Operating Status.");
     }
   };
 
   const readPowerQualityStatus = async () => {
-    setShowProgressModal(true);
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
@@ -1058,29 +1002,7 @@ function Diagnose() {
         `${BASE_URL}/api/create-power-quality-status/`,
         payload
       );
-      
-      // Check if resp.data is a string that needs parsing
-      let parsedData = resp.data;
-      if (typeof parsedData === 'string') {
-        try {
-          parsedData = JSON.parse(parsedData);
-        } catch (parseError) {
-          const match = parsedData.match(/data:\s*(\{.*\})/);
-          if (match) {
-            parsedData = JSON.parse(match[1]);
-          }
-        }
-      }
-      
-      // Navigate through nested data structures
-      let actualData = parsedData;
-      while (actualData && typeof actualData === 'object' && 'data' in actualData && !('status' in actualData)) {
-        actualData = actualData.data;
-      }
-      
-      const returned = actualData?.value || [];
-      console.log("Power Quality Status Response:", returned);
-      
+      const returned = resp.data.data?.[0]?.value || [];
       const mapping = {
         a_phase_miss_voltage: "A_phase_miss_voltage",
         a_phase_low_voltage: "A_phase_low_voltage",
@@ -1100,17 +1022,12 @@ function Diagnose() {
         ...prev,
         powerQualityStatus: newState,
       }));
-      setShowProgressModal(false);
-      alert("Power Quality Status read successfully");
-    } catch (error) {
-      console.error("Failed to read Power Quality Status:", error);
-      setShowProgressModal(false);
+    } catch {
       alert("Failed to read Power Quality Status.");
     }
   };
 
   const readTamperIndicateStatus = async () => {
-    setShowProgressModal(true);
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
@@ -1121,56 +1038,7 @@ function Diagnose() {
         `${BASE_URL}/api/create-tamper-indicate-status/`,
         payload
       );
-      
-      console.log("TamperIndicateStatus Full Response:", resp);
-      console.log("TamperIndicateStatus resp.data type:", typeof resp.data);
-      console.log("TamperIndicateStatus resp.data:", resp.data);
-      
-      // Check if resp.data is a string that needs parsing
-      let parsedData = resp.data;
-      if (typeof parsedData === 'string') {
-        console.log("Response is a string, attempting to parse...");
-        try {
-          // Try to parse as JSON
-          parsedData = JSON.parse(parsedData);
-          console.log("Parsed successfully:", parsedData);
-        } catch (parseError) {
-          console.error("Failed to parse response as JSON:", parseError);
-          // If it's a string like "data: {...}", extract the JSON part
-          const match = parsedData.match(/data:\s*(\{.*\})/);
-          if (match) {
-            console.log("Found data: pattern, extracting JSON...");
-            parsedData = JSON.parse(match[1]);
-            console.log("Extracted and parsed:", parsedData);
-          }
-        }
-      }
-      
-      console.log("Parsed data type:", typeof parsedData);
-      console.log("Parsed data:", parsedData);
-      
-      // Navigate through nested data structures
-      let actualData = parsedData;
-      
-      // Keep unwrapping 'data' properties until we find the actual data with 'status'
-      while (actualData && typeof actualData === 'object' && 'data' in actualData && !('status' in actualData)) {
-        console.log("Unwrapping nested data layer");
-        actualData = actualData.data;
-      }
-      
-      console.log("Final actualData:", actualData);
-      console.log("Final actualData type:", typeof actualData);
-      console.log("actualData.value:", actualData?.value);
-      
-      const returned = actualData?.value || [];
-      console.log("Returned values:", returned);
-      console.log("Returned values type:", typeof returned);
-      console.log("Returned values is array:", Array.isArray(returned));
-      console.log("Returned values length:", returned.length);
-      if (Array.isArray(returned)) {
-        returned.forEach((val, idx) => console.log(`  [${idx}]: "${val}"`));
-      }
-
+      const returned = resp.data.data?.[0]?.value || [];
       const mapping = {
         top_cover_open: "TopCoverOpen",
         terminal_cover_open: "TerminalCoverOpen",
@@ -1178,38 +1046,18 @@ function Diagnose() {
         strong_magnetic_disturbance: "StrongMagneticDisturbance",
         sim_card_removed_exception: "SimCardRemovedException",
       };
-      
-      console.log("Mapping:", mapping);
-      
       const newState = Object.keys(pageStates.tamperIndicateStatus).reduce(
         (acc, key) => {
-          const mappedValue = mapping[key];
-          const isIncluded = returned.includes(mappedValue);
-          console.log(`Checking ${key}: mappedValue="${mappedValue}", isIncluded=${isIncluded}`);
-          acc[key] = isIncluded;
+          acc[key] = returned.includes(mapping[key]);
           return acc;
         },
         {}
       );
-      
-      console.log("New state for tamperIndicateStatus:", newState);
-      
-      setPageStates((prev) => {
-        console.log("Previous state:", prev);
-        const newFullState = {
-          ...prev,
-          tamperIndicateStatus: newState,
-        };
-        console.log("New full state:", newFullState);
-        return newFullState;
-      });
-      
-      setShowProgressModal(false);
-      alert("Success! Tamper Indicate Status data retrieved.");
-    } catch (error) {
-      console.error("Read Error (TamperIndicateStatus):", error);
-      console.error("Error details:", error.response?.data);
-      setShowProgressModal(false);
+      setPageStates((prev) => ({
+        ...prev,
+        tamperIndicateStatus: newState,
+      }));
+    } catch {
       alert("Failed to read Tamper Indicate Status.");
     }
   };
@@ -1247,14 +1095,7 @@ function Diagnose() {
         {/* Header */}
        
         
-          <button
-          className={`read-button ${
-            headerChecked[pageKey] ? "" : "disabled"
-          }`}
-          onClick={handleRead}
-        >
-          Read
-        </button>
+         
         
 
         {/* Header Checkbox + Code Display */}
@@ -1308,7 +1149,14 @@ function Diagnose() {
           </div>
         
 
-       
+        <button style={{marginLeft:'40%'}}
+          className={`scheduler-add-button ${
+            headerChecked[pageKey] ? "" : "disabled"
+          }`}
+          onClick={handleRead}
+        >
+          Read
+        </button>
       </div>
     );
   };
@@ -1384,32 +1232,31 @@ function Diagnose() {
 
      
       
-        <div className="options-grid">
-          {Object.keys(pages).map((key) => (
-            <label key={key} className="option-label1">
-              <input
-                type="radio"
-                name="page"
-                className="option-checkbox"
-                checked={selectedPage === key}
-                onChange={() => setSelectedPage(key)}
-                  
-              />
-              <span className="option-text">{pages[key].title}</span>
-            </label>
-          ))}
-        </div>
-    
+       <div
+  className="view-toggle"
+  role="tablist"
+  aria-label="Page selection"
+>
+  {Object.keys(pages).map((key) => (
+    <button
+      key={key}
+      type="button"
+      role="tab"
+      aria-pressed={selectedPage === key}
+      className={`view-btn ${
+        selectedPage === key ? "active" : ""
+      }`}
+      onClick={() => setSelectedPage(key)}
+    >
+      {pages[key].title}
+    </button>
+  ))}
+</div>
 
       {selectedPage && renderPage(selectedPage, pages[selectedPage])}
-      
-      <ProgressModal
-        isOpen={showProgressModal}
-        onClose={() => setShowProgressModal(false)}
-        title="Diagnose Operation Progress"
-      />
     </div>
   );
 }
+
 
 export default Diagnose;

@@ -220,7 +220,7 @@ function SecuritySettings() {
 
             </div>
 
-                <button type="submit">Submit</button>
+                <button  style={{marginLeft:"45%"}} className='scheduler-add-button' type="submit">Submit</button>
             </form>
         </div>
     );

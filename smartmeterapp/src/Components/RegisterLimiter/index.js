@@ -1,4 +1,4 @@
-import React, { useState, useEffect ,useMemo } from 'react';
+import React, { useState, useEffect ,useMemo,useRef } from 'react';
 import axios from 'axios';
 import './index.css';
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
@@ -19,9 +19,32 @@ const RegisterLimiter = () => {
 
  const monitorTypeMap = {
       "Supervision Monitor 1": 'supervision_monitor_1',
+      "Supervision Monitor 2": 'supervision_monitor_2',
+      "Supervision Monitor 3": 'supervision_monitor_3',
+
       "Alarm Monitor 1": 'alarm_monitor_1',
       "Alarm Monitor 2": 'alarm_monitor_2',
     };
+
+  const SUPERVISION_MONITOR_OPTIONS = [
+  { label: "Instantaneous current L1", code: "0100470700FF" },
+  { label: "Sliding average current L1", code: "0100470400FF" },
+];
+
+const SUPERVISION_MONITOR_OPTIONS2 = [
+  { label: "Instantaneous current L2", code: "0100470700FF" },
+  { label: "Sliding average current L2", code: "0100470400FF" },
+];
+
+const SUPERVISION_MONITOR_OPTIONS3 = [
+  { label: "Instantaneous current L3", code: "0100470700FF" },
+  { label: "Sliding average current L3", code: "0100470400FF" },
+];
+
+
+
+
+
 
     const monitorType = monitorTypeMap[selectedSubDashboard];
   // 🔥 Dynamic options based on selected tab
@@ -61,6 +84,8 @@ const RegisterLimiter = () => {
            const fetchData = async () => {
       const monitorTypeMap = {
         "Supervision Monitor 1": 'supervision_monitor_1',
+         "Supervision Monitor 2": 'supervision_monitor_2',
+          "Supervision Monitor 3": 'supervision_monitor_3',
         "Alarm Monitor 1": 'alarm_monitor_1',
         "Alarm Monitor 2": 'alarm_monitor_2',
       };
@@ -89,6 +114,8 @@ const RegisterLimiter = () => {
   const addThreshold = () => {
     const monitorTypeMap = {
       "Supervision Monitor 1": 'supervision_monitor_1',
+       "Supervision Monitor 2": 'supervision_monitor_2',
+        "Supervision Monitor 3": 'supervision_monitor_3',
       "Alarm Monitor 1": 'alarm_monitor_1',
       "Alarm Monitor 2": 'alarm_monitor_2',
     };
@@ -153,14 +180,148 @@ const RegisterLimiter = () => {
       });
   };
 
+   const [selectedValues, setSelectedValues] = useState({
+  "Supervision Monitor 1": SUPERVISION_MONITOR_OPTIONS[0],
+  "Supervision Monitor 2": SUPERVISION_MONITOR_OPTIONS2[0],
+  "Supervision Monitor 3": SUPERVISION_MONITOR_OPTIONS3[0],
+});
+ 
+   const [showCodes, setShowCodes] = useState(false);
+
+
+
+   const handleChange = (e) => {
+  const optionsMap = {
+    "Supervision Monitor 1": SUPERVISION_MONITOR_OPTIONS,
+    "Supervision Monitor 2": SUPERVISION_MONITOR_OPTIONS2,
+    "Supervision Monitor 3": SUPERVISION_MONITOR_OPTIONS3,
+  };
+
+  const currentOptions = optionsMap[selectedSubDashboard] || [];
+
+  const opt = currentOptions.find(
+    (o) => o.code === e.target.value
+  );
+
+  if (opt) {
+    setSelectedValues((prev) => ({
+      ...prev,
+      [selectedSubDashboard]: opt,
+    }));
+  }
+};
+
+
   const renderMonitorContent = () => {
     switch (selectedSubDashboard) {
       case "Supervision Monitor 1":
-        return <ThresholdActionTable title="Supervision Monitor 1" monitoredValue="Instantaneous current L1" />;
-      case "Alarm Monitor 1":
-        return <ThresholdActionTable title="Alarm Monitor 1" monitoredValue="Alarm descriptor 1" />;
-      case "Alarm Monitor 2":
+        
+        return (
+  <div className="security-form" >
+      <label>
+        <span>Monitored Value</span>
+
+        <select
+          aria-label="Monitored value"
+          value={selectedValues[selectedSubDashboard]?.code}
+          onChange={handleChange}
+          onFocus={() => setShowCodes(true)}   // show label + code while open/focused
+          onBlur={() => setShowCodes(false)}   // hide code after closing/blur
+          style={{
+            display: "block",
+            width: "100%",
+            marginTop: 8,
+            padding: "8px 10px",
+            borderRadius: 6,
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            fontSize: 14,
+          }}
+        >
+          {SUPERVISION_MONITOR_OPTIONS.map((opt) => (
+            <option key={opt.code} value={opt.code}>
+              {showCodes ? `${opt.label} (${opt.code})` : opt.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+       
+      
+       case "Supervision Monitor 2":
+        
+        return (
+  <div className="security-form" >
+      <label>
+        <span>Monitored Value</span>
+
+        <select
+          aria-label="Monitored value"
+         value={selectedValues[selectedSubDashboard]?.code}
+          onChange={handleChange}
+          onFocus={() => setShowCodes(true)}   // show label + code while open/focused
+          onBlur={() => setShowCodes(false)}   // hide code after closing/blur
+          style={{
+            display: "block",
+            width: "100%",
+            marginTop: 8,
+            padding: "8px 10px",
+            borderRadius: 6,
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            fontSize: 14,
+          }}
+        >
+          {SUPERVISION_MONITOR_OPTIONS2.map((opt) => (
+            <option key={opt.code} value={opt.code}>
+              {showCodes ? `${opt.label} (${opt.code})` : opt.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+
+
+  case "Supervision Monitor 3":
+        
+        return (
+  <div className="security-form" >
+      <label>
+        <span>Monitored Value</span>
+
+        <select
+          aria-label="Monitored value"
+          value={selectedValues[selectedSubDashboard]?.code}
+          onChange={handleChange}
+          onFocus={() => setShowCodes(true)}   // show label + code while open/focused
+          onBlur={() => setShowCodes(false)}   // hide code after closing/blur
+          style={{
+            display: "block",
+            width: "100%",
+            marginTop: 8,
+            padding: "8px 10px",
+            borderRadius: 6,
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            fontSize: 14,
+          }}
+        >
+          {SUPERVISION_MONITOR_OPTIONS3.map((opt) => (
+            <option key={opt.code} value={opt.code}>
+              {showCodes ? `${opt.label} (${opt.code})` : opt.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+
+  case "Alarm Monitor 2":
         return <ThresholdActionTable title="Alarm Monitor 2" monitoredValue="Alarm descriptor 2" />;
+      case "Alarm Monitor 1":
+        return <ThresholdActionTable title="Alarm Monitor 1" monitoredValue="Alarm descriptor 1" />;   
       default:
         return null;
     }
@@ -206,17 +367,22 @@ const RegisterLimiter = () => {
 
   return (
     <div>
-      <div>
-        {["Supervision Monitor 1", "Alarm Monitor 1", "Alarm Monitor 2"].map((monitor) => (
-          <button
-            key={monitor}
-            
-            onClick={() => setSelectedSubDashboard(monitor)}
-          >
-            {monitor}
-          </button>
-        ))}
-      </div>
+     
+
+<div className="view-toggle" role="tablist" aria-label="Sub dashboard selector">
+  {["Supervision Monitor 1","Supervision Monitor 2","Supervision Monitor 3", "Alarm Monitor 1", "Alarm Monitor 2"].map((monitor) => (
+    <button
+      key={monitor}
+      type="button"
+      role="tab"
+      aria-pressed={selectedSubDashboard === monitor}
+      className={`view-btn ${selectedSubDashboard === monitor ? "active" : ""}`}
+      onClick={() => setSelectedSubDashboard(monitor)}
+    >
+      {monitor}
+    </button>
+  ))}
+</div>
 
      <div className='load-control-container'> 
       <div>
@@ -267,8 +433,8 @@ const RegisterLimiter = () => {
           </table>
           </div>
           <div className='buttons_Container'>
-          <button className="button_add_threshold1" onClick={() => setOpenAddThresholds(true)}>Add Threshold</button>
-          <button className="button_delete_threshold1" onClick={deleteItem}> Delete Threshold</button>
+          <button className="scheduler-add-button" onClick={() => setOpenAddThresholds(true)}>Add Threshold</button>
+          <button className="scheduler-delete-button" onClick={deleteItem}> Delete Threshold</button>
           </div>
         </div>
 
@@ -315,8 +481,8 @@ const RegisterLimiter = () => {
           </table>
            </div>
           <div className='buttons_Container'>
-          <button className="button_add_threshold1" onClick={() => setOpenAddAction(true)}>Add Action</button>
-          <button className="button_delete_threshold1" onClick={deleteActionItem}> Delete Action</button>
+          <button className="scheduler-add-button" onClick={() => setOpenAddAction(true)}>Add Action</button>
+          <button className="scheduler-delete-button" onClick={deleteActionItem}> Delete Action</button>
           </div>
         </div>
       </div>
@@ -414,5 +580,8 @@ const ThresholdActionTable = ({  monitoredValue }) => (
    
   </div>
 );
+
+
+
 
 export default RegisterLimiter;
