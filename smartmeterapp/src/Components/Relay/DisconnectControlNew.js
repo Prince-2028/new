@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import BASE_URL from '../../apiConfig';
 import ProgressModal from '../ProgressModal';
+import './index.css'
 
 const DisconnectControlNew = () => {
   const serialNumber = localStorage.getItem('selectedSerialNumber');
@@ -443,401 +444,361 @@ const DisconnectControlNew = () => {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', padding: '20px', gap: '20px' }}>
-      {/* Left Panel - Image Display */}
-      <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
-        {/* Top Icons */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-          <button
-            onClick={handleRemoteConnect}
-            disabled={loading}
-            style={{
-              width: '50px',
-              height: '50px',
-              borderRadius: '8px',
-              border: '1px solid #ccc',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px'
-            }}
-            title="Remote Connect"
-          >
-            🔗
-          </button>
-          <button
-            onClick={handleRemoteDisconnect}
-            disabled={loading}
-            style={{
-              width: '50px',
-              height: '50px',
-              borderRadius: '8px',
-              border: '1px solid #ccc',
-              backgroundColor: '#f44336',
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px'
-            }}
-            title="Remote Disconnect"
-          >
-            ⚡
-          </button>
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            style={{
-              width: '50px',
-              height: '50px',
-              borderRadius: '8px',
-              border: '1px solid #ccc',
-              backgroundColor: '#2196F3',
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '20px'
-            }}
-            title="Refresh"
-          >
-            🔄
-          </button>
-        </div>
+   <div className="relay-container1">
 
-        {/* Image Display Area */}
-        <div style={{
-          flex: '1',
-          border: '2px solid #ccc',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#f9f9f9',
-          minHeight: '400px'
-        }}>
-          {CONTROL_MODE_IMAGES[controlMode] ? (
-            <img
-              src={CONTROL_MODE_IMAGES[controlMode]}
-              alt={`Control Mode ${controlMode}`}
-              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'block';
-              }}
-            />
-          ) : null}
-          <div style={{ 
-            display: CONTROL_MODE_IMAGES[controlMode] ? 'none' : 'block',
-            textAlign: 'center',
-            color: '#666',
-            fontSize: '18px'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '10px' }}>⚡</div>
-            <div>Control Mode {controlMode}</div>
-            <div style={{ fontSize: '14px', marginTop: '10px' }}>
-              Image placeholder - Add image path to CONTROL_MODE_IMAGES
-            </div>
+  {/* LEFT PANEL */}
+  <div  className="relay-left">
+
+    {/* Top Icons */}
+    <div className="relay-icons">
+
+      <button
+        onClick={handleRemoteConnect}
+        disabled={loading}
+        className="relay-icon-btn connect"
+        title="Remote Connect"
+      >
+        🔗
+      </button>
+
+      <button
+        onClick={handleRemoteDisconnect}
+        disabled={loading}
+        className="relay-icon-btn disconnect"
+        title="Remote Disconnect"
+      >
+        ⚡
+      </button>
+
+      <button
+        onClick={handleRefresh}
+        disabled={loading}
+        className="relay-icon-btn refresh"
+        title="Refresh"
+      >
+        🔄
+      </button>
+
+    </div>
+
+
+    {/* Image Area */}
+    <div className="relay-image-area">
+
+      {CONTROL_MODE_IMAGES[controlMode] ? (
+        <img
+          src={CONTROL_MODE_IMAGES[controlMode]}
+          alt={`Control Mode ${controlMode}`}
+          className="relay-image"
+        />
+      ) : (
+        <div className="relay-placeholder">
+
+          <div className="relay-placeholder-icon">⚡</div>
+
+          <div>Control Mode {controlMode}</div>
+
+          <div className="relay-placeholder-text">
+            Image placeholder - Add image path to CONTROL_MODE_IMAGES
           </div>
-        </div>
-      </div>
 
-      {/* Right Panel - Controls */}
-      <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
-        {/* Top Section with Relay Select and Read/Write Buttons */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '15px', gap: '10px' }}>
-          {/* Relay Select */}
-          <div style={{ flex: '1' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Relay select
-            </label>
-            <select
-              value={relaySelect}
-              onChange={(e) => setRelaySelect(e.target.value)}
-              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-            >
-              <option value="Disconnect control (Main relay)">
-                Disconnect control(main relay)
-              </option>
-            </select>
-          </div>
-          
-          {/* Read and Write Buttons */}
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              onClick={handleRead}
-              disabled={loading}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                minWidth: '70px'
-              }}
-            >
-              {loading ? 'Reading...' : 'Read'}
-            </button>
-            <button
-              onClick={handleWrite}
-              disabled={loading}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#FF9800',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                minWidth: '70px'
-              }}
-            >
-              {loading ? 'Writing...' : 'Write'}
-            </button>
-          </div>
         </div>
+      )}
 
-        {/* Output State */}
-        <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={selected.has(2)}
-            onChange={() => toggleCheckbox(2)}
-            style={{ marginRight: '10px' }}
-          />
-          <label style={{ marginRight: '10px', minWidth: '120px', fontWeight: 'bold' }}>
-            Output state
-          </label>
-          <select
-            value={outputState}
-            onChange={(e) => setOutputState(e.target.value)}
-            disabled
-            style={{ 
-              flex: '1', 
-              padding: '8px', 
-              borderRadius: '4px', 
-              border: '1px solid #ccc',
-              backgroundColor: '#f5f5f5'
-            }}
-          >
-            {OUTPUT_STATE_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
+    </div>
 
-        {/* Control State */}
-        <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={selected.has(3)}
-            onChange={() => toggleCheckbox(3)}
-            style={{ marginRight: '10px' }}
-          />
-          <label style={{ marginRight: '10px', minWidth: '120px', fontWeight: 'bold' }}>
-            Control state
-          </label>
-          <select
-            value={controlState}
-            onChange={(e) => setControlState(e.target.value)}
-            disabled
-            style={{ 
-              flex: '1', 
-              padding: '8px', 
-              borderRadius: '4px', 
-              border: '1px solid #ccc',
-              backgroundColor: '#f5f5f5'
-            }}
-          >
-            {CONTROL_STATE_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
+  </div>
 
-        {/* Control Mode */}
-        <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={selected.has(4)}
-            onChange={() => toggleCheckbox(4)}
-            style={{ marginRight: '10px' }}
-          />
-          <label style={{ marginRight: '10px', minWidth: '120px', fontWeight: 'bold' }}>
-            Control mode
-          </label>
-          <select
-            value={controlMode}
-            onChange={(e) => setControlMode(e.target.value)}
-            style={{ flex: '1', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-          >
-            {CONTROL_MODE_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
 
-        {/* Method */}
-        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            checked={selected.has(5)}
-            onChange={() => toggleCheckbox(5)}
-            style={{ marginRight: '10px' }}
-          />
-          <label style={{ marginRight: '10px', minWidth: '120px', fontWeight: 'bold' }}>
-            Method
-          </label>
-          <select
-            value={method}
-            onChange={(e) => setMethod(e.target.value)}
-            style={{ flex: '1', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-          >
-            {METHOD_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
 
-        {/* Test Times */}
-        <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center' }}>
-          <label style={{ marginRight: '10px', minWidth: '120px', fontWeight: 'bold' }}>
-            Test Times:
-          </label>
-          <input
-            type="number"
-            value={testTimes}
-            onChange={(e) => setTestTimes(parseInt(e.target.value) || 1)}
-            min="1"
-            style={{ flex: '1', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-          />
-        </div>
+  {/* RIGHT PANEL */}
+  <div  className="relay-right">
 
-        {/* Hold Connection */}
-        <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center' }}>
-          <label style={{ marginRight: '10px', minWidth: '120px', fontWeight: 'bold' }}>
-            Hold Connection(ms):
-          </label>
-          <input
-            type="number"
-            value={holdConnection}
-            onChange={(e) => setHoldConnection(parseInt(e.target.value) || 5000)}
-            min="1"
-            style={{ flex: '1', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-          />
-        </div>
 
-        {/* Hold Disconnection */}
-        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
-          <label style={{ marginRight: '10px', minWidth: '120px', fontWeight: 'bold' }}>
-            Hold Disconnection(ms):
-          </label>
-          <input
-            type="number"
-            value={holdDisconnection}
-            onChange={(e) => setHoldDisconnection(parseInt(e.target.value) || 5000)}
-            min="1"
-            style={{ flex: '1', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-          />
-        </div>
+     <div className="relay-btn-group">
 
-        {/* Relay Test Log - Scrollable Area */}
-        <div style={{
-          marginBottom: '20px',
-          border: '1px solid #ccc',
-          borderRadius: '8px',
-          padding: '10px',
-          minHeight: '150px',
-          maxHeight: '200px',
-          overflowY: 'auto',
-          backgroundColor: '#f9f9f9'
-        }}>
-          {relayTestLog.length === 0 ? (
-            <div style={{ color: '#999', textAlign: 'center', paddingTop: '50px' }}>
-              No test results yet
-            </div>
-          ) : (
-            relayTestLog.map((entry, index) => (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '8px',
-                  marginBottom: '5px',
-                  backgroundColor: 'white',
-                  borderRadius: '4px',
-                  border: '1px solid #e0e0e0'
-                }}
-              >
-                <span style={{ fontSize: '18px' }}>
-                  {entry.success ? '✅' : '❌'}
-                </span>
-                <span style={{ color: entry.success ? '#4CAF50' : '#f44336' }}>
-                  {entry.action}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Status Display */}
-        <div style={{ marginBottom: '20px', fontSize: '14px', color: '#666' }}>
-          {relayTestResults.total > 0 
-            ? `${relayTestResults.total}/${relayTestResults.failed}/${relayTestResults.successful}`
-            : '0/0/0'
-          }
-        </div>
-
-        {/* Relay Test Button */}
         <button
-          onClick={handleRelayTest}
+          onClick={handleRead}
           disabled={loading}
-          style={{
-            width: '100%',
-            padding: '12px',
-            backgroundColor: '#2196F3',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            cursor: 'pointer'
-          }}
+          className="lc-btn lc-btn-read"
         >
-          {loading ? 'Testing...' : 'Relay Test'}
+          {loading ? "Reading..." : "Read"}
         </button>
 
-        {/* Error message */}
-        {error && (
-          <div style={{ 
-            padding: '10px', 
-            backgroundColor: '#ffebee', 
-            color: '#c62828', 
-            borderRadius: '4px',
-            marginTop: '10px'
-          }}>
-            {error}
-          </div>
-        )}
+        <button
+          onClick={handleWrite}
+          disabled={loading}
+          className="lc-btn lc-btn-write"
+        >
+          {loading ? "Writing..." : "Write"}
+        </button>
+
       </div>
-      
-      <ProgressModal
-        isOpen={showProgressModal}
-        onClose={() => setShowProgressModal(false)}
-        title="Disconnect Control Operation"
+
+
+    {/* Relay Select */}
+    <div className="relay-top">
+
+
+      <div className="relay-select-box">
+
+        <label className="relay-label">
+          Relay select
+        </label>
+
+        <select
+          value={relaySelect}
+          onChange={(e) => setRelaySelect(e.target.value)}
+          className="relay-select"
+        >
+          <option value="Disconnect control (Main relay)">
+            Disconnect control(main relay)
+          </option>
+        </select>
+
+      </div>
+
+
+
+     
+
+    </div>
+
+
+
+    {/* Output state */}
+    <div className="relay-row">
+
+      <input
+        type="checkbox"
+        checked={selected.has(2)}
+        onChange={() => toggleCheckbox(2)}
+      />
+
+      <label className="relay-field-label">
+        Output state
+      </label>
+
+      <select
+        value={outputState}
+        disabled
+        className="relay-select disabled"
+      >
+        {OUTPUT_STATE_OPTIONS.map(opt => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+
+    </div>
+
+
+
+    {/* Control state */}
+    <div className="relay-row">
+
+      <input
+        type="checkbox"
+        checked={selected.has(3)}
+        onChange={() => toggleCheckbox(3)}
+      />
+
+      <label className="relay-field-label">
+        Control state
+      </label>
+
+      <select
+        value={controlState}
+        disabled
+        className="relay-select disabled"
+      >
+        {CONTROL_STATE_OPTIONS.map(opt => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+
+    </div>
+
+
+
+    {/* Control mode */}
+    <div className="relay-row">
+
+      <input
+        type="checkbox"
+        checked={selected.has(4)}
+        onChange={() => toggleCheckbox(4)}
+      />
+
+      <label className="relay-field-label">
+        Control mode
+      </label>
+
+      <select
+        value={controlMode}
+        onChange={(e) => setControlMode(e.target.value)}
+        className="relay-select"
+      >
+        {CONTROL_MODE_OPTIONS.map(opt => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+
+    </div>
+
+
+
+    {/* Method */}
+    <div className="relay-row">
+
+      <input
+        type="checkbox"
+        checked={selected.has(5)}
+        onChange={() => toggleCheckbox(5)}
+      />
+
+      <label className="relay-field-label">
+        Method
+      </label>
+
+      <select
+        value={method}
+        onChange={(e) => setMethod(e.target.value)}
+        className="relay-select"
+      >
+        {METHOD_OPTIONS.map(opt => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+
+    </div>
+
+
+
+    {/* Test Times */}
+    <div className="relay-row">
+      <label className="relay-field-label">
+        Test Times
+      </label>
+
+      <input
+        type="number"
+        value={testTimes}
+        onChange={(e) => setTestTimes(parseInt(e.target.value) || 1)}
+        className="relay-input"
       />
     </div>
+
+
+
+    {/* Hold Connection */}
+    <div className="relay-row">
+      <label className="relay-field-label">
+        Hold Connection(ms)
+      </label>
+
+      <input
+        type="number"
+        value={holdConnection}
+        onChange={(e) => setHoldConnection(parseInt(e.target.value) || 5000)}
+        className="relay-input"
+      />
+    </div>
+
+
+
+    {/* Hold Disconnection */}
+    <div className="relay-row">
+      <label className="relay-field-label">
+        Hold Disconnection(ms)
+      </label>
+
+      <input
+        type="number"
+        value={holdDisconnection}
+        onChange={(e) => setHoldDisconnection(parseInt(e.target.value) || 5000)}
+        className="relay-input"
+      />
+    </div>
+
+
+
+    {/* Log Area */}
+    <div className="relay-log">
+
+      {relayTestLog.length === 0 ? (
+
+        <div className="relay-log-empty">
+          No test results yet
+        </div>
+
+      ) : (
+
+        relayTestLog.map((entry, index) => (
+
+          <div key={index} className="relay-log-item">
+
+            <span className="relay-log-icon">
+              {entry.success ? "✅" : "❌"}
+            </span>
+
+            <span className={entry.success ? "success" : "fail"}>
+              {entry.action}
+            </span>
+
+          </div>
+
+        ))
+
+      )}
+
+    </div>
+
+
+
+    {/* Status */}
+    <div className="relay-status">
+
+      {relayTestResults.total > 0
+        ? `${relayTestResults.total}/${relayTestResults.failed}/${relayTestResults.successful}`
+        : "0/0/0"}
+
+    </div>
+
+
+ <div> 
+    {/* Relay Test */}
+    <button
+      onClick={handleRelayTest}
+      disabled={loading}
+      className="relay-test-btn"
+    >
+      {loading ? "Testing..." : "Relay Test"}
+    </button>
+    </div>
+
+
+
+    {error && (
+      <div className="lc-error">
+        {error}
+      </div>
+    )}
+
+
+
+  </div>
+
+
+
+</div>
   );
 };
 

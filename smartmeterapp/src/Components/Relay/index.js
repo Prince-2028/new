@@ -1,4 +1,4 @@
-import React, { useState,useEffect} from 'react';
+import React, { useState,useEffect,useRef} from 'react';
 import axios from 'axios';
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
 import ProgressModal from '../ProgressModal';
@@ -1351,7 +1351,7 @@ const StatusOfRelay1Configuration = ({ deviceId }) => {
       );
     } catch (error) {
       console.error("Error fetching data:", error);
-      alert("Failed to fetch data.");
+      
     }
   };
 
@@ -1481,7 +1481,7 @@ const StatusOfRelay2Configuration = ({ deviceId }) => {
       );
     } catch (error) {
       console.error("Error fetching data:", error);
-      alert("Failed to fetch data.");
+      
     }
   };
 
@@ -1619,7 +1619,7 @@ const BeepControlFilter = ({ deviceId }) => {
       );
     } catch (error) {
       console.error("Error fetching data:", error);
-      alert("Failed to fetch data.");
+      
     }
   };
   
@@ -1722,17 +1722,86 @@ const ControlConfiguration = () => {
     setDeviceId(storedId);
   }, []);
 
+  const containerRef = useRef(null);
+const underlineRef = useRef(null);
+const buttonRefs = useRef({});
+
+
+const relayTabs = [
+  { key: "relay1", label: "Status of Relay 1" },
+  { key: "relay2", label: "Status of Relay 2" },
+  { key: "beep", label: "Beep Control Filter" },
+];
+
+
+
+ const movingTimeout = useRef(null);
+
+  const moveUnderlineTo = (key) => {
+    const btn = buttonRefs.current[key];
+    const container = containerRef.current;
+    const u = underlineRef.current;
+    if (!btn || !container || !u) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const left = btnRect.left - containerRect.left;
+    const width = btnRect.width;
+
+    u.style.transform = `translateX(${left}px)`;
+    u.style.width = `${Math.max(36, width)}px`;
+
+    u.classList.add("moving");
+    clearTimeout(movingTimeout.current);
+    movingTimeout.current = setTimeout(() => u.classList.remove("moving"), 520);
+  };
+
+  useEffect(() => {
+    // initial position + move on  change
+
+    setTimeout(() => moveUnderlineTo(activeComponent), 20);
+
+    const onResize = () => moveUnderlineTo(activeComponent);
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      clearTimeout(movingTimeout.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeComponent]);
+  // Function to toggle between different credit types
+ 
 
   return (
     <div className="load-control-container">
     
 
       {/* Buttons to display respective components */}
-      <div>
-        <button onClick={() => setActiveComponent("relay1")}>Status of Relay 1</button>
-        <button onClick={() => setActiveComponent("relay2")}>Status of Relay 2</button>
-        <button onClick={() => setActiveComponent("beep")}>Beep Control Filter</button>
-      </div>
+      <div
+  style={{ marginLeft: "2%" }}
+  className="controlsGroup_tabs"
+  ref={containerRef}
+  role="tablist"
+  aria-label="Relay Controls"
+>
+  {relayTabs.map((tab) => (
+    <button
+      key={tab.key}
+      ref={(el) => (buttonRefs.current[tab.key] = el)}
+      className={`tou_button ${
+        activeComponent === tab.key ? "activeButton" : ""
+      }`}
+      onClick={() => setActiveComponent(tab.key)}
+      type="button"
+      role="tab"
+      aria-pressed={activeComponent === tab.key}
+    >
+      {tab.label}
+    </button>
+  ))}
+
+  <div ref={underlineRef} className="underline" aria-hidden="true" />
+</div>
 
       {/* Conditional Rendering of Components */}
       
@@ -1748,21 +1817,67 @@ const ControlConfiguration = () => {
 
 
 
-
 const Relay = () => {
-  const [activeComponent, setActiveComponent] = useState(null);
+  const [activeComponent, setActiveComponent] = useState("loadControl");
 
   return (
     <div className="relay-container">
     
 
       {/* Buttons to display respective components */}
-      <div className="">
-        <button onClick={() => setActiveComponent("loadControl")}>Load Control</button>
-        <button onClick={() => setActiveComponent("disconnect")}>Disconnect Control</button>
-        <button onClick={() => setActiveComponent("loadRelated")}>Load Control Related</button>
-        <button onClick={() => setActiveComponent("controlConfig")}>Control Configuration</button>
-      </div>
+        <div
+  className="view-toggle"
+  role="tablist"
+  aria-label="Control sections"
+>
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeComponent === "loadControl"}
+    className={`view-btn ${
+      activeComponent === "loadControl" ? "active" : ""
+    }`}
+    onClick={() => setActiveComponent("loadControl")}
+  >
+    Load Control
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeComponent === "disconnect"}
+    className={`view-btn ${
+      activeComponent === "disconnect" ? "active" : ""
+    }`}
+    onClick={() => setActiveComponent("disconnect")}
+  >
+    Disconnect Control
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeComponent === "loadRelated"}
+    className={`view-btn ${
+      activeComponent === "loadRelated" ? "active" : ""
+    }`}
+    onClick={() => setActiveComponent("loadRelated")}
+  >
+    Load Control Related
+  </button>
+
+  <button
+    type="button"
+    role="tab"
+    aria-pressed={activeComponent === "controlConfig"}
+    className={`view-btn ${
+      activeComponent === "controlConfig" ? "active" : ""
+    }`}
+    onClick={() => setActiveComponent("controlConfig")}
+  >
+    Control Configuration
+  </button>
+</div>
 
       {/* Conditional Rendering of Components */}
       <div className="component-display">

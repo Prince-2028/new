@@ -114,3 +114,437 @@ margin:1%;
    border:0px;
     text-align: center;
   }
+
+
+
+
+.lc-container{
+
+font-family:Arial;
+background-color:#f5f5f5;
+margin:1% 2%; 
+min-height:70vh;
+max-height:70vh;
+overflow-y: auto;
+}
+
+
+/* header */
+
+.lc-header{
+display:flex;
+justify-content:flex-end;
+gap:1px;
+margin-bottom:0;
+}
+
+
+/* buttons */
+
+.lc-btn{
+padding:4px 2px;
+border:none;
+
+font-size:14px;
+font-weight:bold;
+cursor:pointer;
+min-width:70px;
+color:white;
+margin:1% 1%;
+}
+
+.lc-btn-read{
+background:#4CAF50;
+}
+
+.lc-btn-write{
+background:#FF9800;
+}
+
+.lc-btn:disabled{
+opacity:0.6;
+cursor:not-allowed;
+}
+
+
+/* table */
+
+.lc-table{
+border:1px solid #ccc;
+border-radius:8px;
+overflow:hidden;
+}
+
+
+/* rows */
+
+.lc-row{
+display:flex;
+border-bottom:0px solid #000000;
+}
+
+.lc-row:last-child{
+border-bottom:none;
+}
+
+
+/* checkbox */
+
+.lc-checkbox{
+width:40px;
+padding:1px;
+
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+
+/* label */
+
+.lc-label{
+flex:0 0 40%;
+
+
+font-weight:bold;
+text-align:start;
+}
+
+.locked{
+background:#f5f5f5;
+}
+
+
+/* input area */
+
+.lc-input-area{
+flex:0.9;
+padding:0.5%;
+}
+
+
+/* inputs */
+
+.lc-input{
+width:100%;
+padding:4px 2px;
+border:none;
+outline:none;
+
+
+  padding:4px;
+    margin-left: 1%;
+    border-radius: 4px;
+    min-width:50%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    border-color: #f88b3e; /* Example of a blue border on focus */
+box-shadow: 3px 3px 3px rgba(255, 89, 0, 0.6);
+outline: none; /* Remove default outline */
+
+
+}
+
+
+
+.readonly{
+background:#f0f0f0;
+color:#666;
+}
+
+
+/* group inputs */
+
+.lc-group{
+display:flex;
+flex-direction:column;
+gap:8px;
+}
+
+.lc-sub-row{
+display:flex;
+align-items:center;
+gap:1px;
+}
+
+.lc-sub-label{
+min-width:150px;
+font-size:14px;
+}
+
+
+/* clickable */
+
+.clickable{
+cursor:pointer;
+}
+
+
+/* error */
+
+.lc-error{
+padding:10px;
+background:#ffebee;
+color:#c62828;
+border-radius:4px;
+margin-top:5px;
+}
+
+
+
+/* main layout */
+
+.relay-container1{
+display:flex;
+
+background-color:#f5f5f5;
+margin:1%;
+min-height:65vh;
+
+max-height:72vh;
+overflow-y:auto;
+align-items:stretch;
+
+
+}
+
+
+/* panels */
+
+.relay-left{
+flex:1;
+display:flex;
+flex-direction:column;
+
+padding:0%;
+margin-right:1%;
+border:1px solid #313131;
+min-height:65vh;
+
+max-height:72vh;
+
+
+}
+
+
+.relay-right{
+flex:1;
+display:flex;
+flex-direction:column;
+padding:1%;
+border:1px solid #313131;
+
+}
+
+
+/* icons */
+
+.relay-icons{
+display:flex;
+gap:1px;
+margin-bottom:1px;
+}
+
+.relay-icon-btn{
+width:50%;
+margin:1%;
+
+border:1px solid #ccc;
+color:white;
+font-size:20px;
+
+}
+
+.connect{
+background:#4CAF50;
+}
+
+.disconnect{
+background:#f44336;
+}
+
+.refresh{
+background:#2196F3;
+}
+
+
+/* image area */
+
+.relay-image-area{
+flex:1;
+
+border-radius:8px;
+display:flex;
+align-items:center;
+justify-content:center;
+
+min-height:70vh;
+max-height:100vh;
+}
+
+.relay-image{
+max-width:100%;
+max-height:100%;
+object-fit:contain;
+}
+
+.relay-placeholder{
+text-align:center;
+color:#666;
+font-size:18px;
+}
+
+.relay-placeholder-icon{
+font-size:48px;
+margin-bottom:10px;
+}
+
+.relay-placeholder-text{
+font-size:14px;
+margin-top:10px;
+}
+
+
+/* top controls */
+
+.relay-top{
+display:flex;
+align-items:flex-end;
+margin-bottom:15px;
+gap:10px;
+}
+
+.relay-select-box{
+flex:1;
+}
+
+.relay-label{
+display:block;
+
+font-weight:400;
+width:50%;
+}
+
+.relay-select{
+width:100%;
+
+
+
+
+
+  padding:4px;
+    margin-left: 1%;
+    border-radius: 4px;
+    min-width:50%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    border-color: #f88b3e; /* Example of a blue border on focus */
+box-shadow: 3px 3px 3px rgba(255, 89, 0, 0.6);
+outline: none; /* Remove default outline */
+}
+
+.disabled{
+background:#f5f5f5;
+}
+
+
+/* fields */
+
+.relay-row{
+margin-bottom:1%;
+display:flex;
+align-items:start;
+gap:1px;
+
+}
+
+.relay-field-label{
+width:50%;
+text-align:start;
+font-weight:500;
+color: #000000;
+
+
+}
+
+.relay-input{
+
+border:1px solid #ccc;
+ padding:4px;
+    margin-left: 1%;
+    border-radius: 4px;
+    min-width:50%;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    border-color: #f88b3e; /* Example of a blue border on focus */
+box-shadow: 3px 3px 3px rgba(255, 89, 0, 0.6);
+outline: none; /* Remove default outline */
+}
+
+
+/* log */
+
+.relay-log{
+border:1px solid #020202;
+border-radius:8px;
+padding:10px;
+min-height:40%;
+max-height:40%;
+overflow-y:auto;
+background:#f9f9f9;
+ border: 1px solid #ccc;
+    border-radius: 4px;
+    border-color: #f88b3e;
+    box-shadow: 3px 3px 3px rgba(255, 89, 0, 0.6);
+outline: none; /* Remove default outline */
+
+}
+
+.relay-log-empty{
+color:#999;
+text-align:center;
+padding-top:50px;
+}
+
+.relay-log-item{
+display:flex;
+align-items:center;
+gap:10px;
+padding:8px;
+margin-bottom:5px;
+background:white;
+border-radius:4px;
+border:1px solid #e0e0e0;
+}
+
+.success{
+color:#4CAF50;
+}
+
+.fail{
+color:#f44336;
+}
+
+
+/* status */
+
+.relay-status{
+margin-bottom:20px;
+font-size:14px;
+color:#666;
+}
+
+
+/* test button */
+
+.relay-test-btn{
+width:100%;
+padding:12px;
+background:#2196F3;
+color:white;
+border:none;
+border-radius:8px;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+}

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import BASE_URL from '../../apiConfig';
 import ProgressModal from '../ProgressModal';
-
+import './index.css'
 const monthNames = [
   "Every Month", "January","February","March","April","May","June",
   "July","August","September","October","November","December"
@@ -564,557 +564,377 @@ const LoadControlNew = () => {
 
   return (
     <>
-      <div style={{ padding: '20px' }}>
-        {/* Header with Read/Write buttons */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px', gap: '10px' }}>
-          <button
-            onClick={handleRead}
-            disabled={loading}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              minWidth: '70px'
-            }}
-          >
-            {loading ? 'Reading...' : 'Read'}
-          </button>
-          <button
-            onClick={handleWrite}
-            disabled={loading}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#FF9800',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              minWidth: '70px'
-            }}
-          >
-            {loading ? 'Writing...' : 'Write'}
-          </button>
-        </div>
+     <div className="lc-container"> 
 
-        {/* Load Control Table */}
-        <div style={{ border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden' }}>
-          {/* Monitored value - LOCKED */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
-            <div style={{ 
-              width: '40px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <input
-                type="checkbox"
-                checked={selected.has(1)}
-                onChange={() => toggleCheckbox(1)}
-              />
-            </div>
-            <div style={{ 
-              flex: '0 0 200px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              fontWeight: 'bold',
-              backgroundColor: '#f5f5f5'
-            }}>
-              Monitored value
-            </div>
-            <div style={{ flex: '1', padding: '12px' }}>
-              <input
-                type="text"
-                value={formData.monitoredValueText}
-                readOnly
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  backgroundColor: '#f0f0f0',
-                  padding: '4px',
-                  color: '#666'
-                }}
-              />
-            </div>
-          </div>
 
-          {/* Threshold active - LOCKED */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
-            <div style={{ 
-              width: '40px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <input
-                type="checkbox"
-                checked={selected.has(2)}
-                onChange={() => toggleCheckbox(2)}
-              />
-            </div>
-            <div style={{ 
-              flex: '0 0 200px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              fontWeight: 'bold',
-              backgroundColor: '#f5f5f5'
-            }}>
-              Threshold active
-            </div>
-            <div style={{ flex: '1', padding: '12px' }}>
-              <input
-                type="number"
-                value={formData.thresholdActive}
-                readOnly
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  backgroundColor: '#f0f0f0',
-                  padding: '4px',
-                  color: '#666'
-                }}
-              />
-            </div>
-          </div>
+<div>
 
-          {/* Threshold normal */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
-            <div style={{ 
-              width: '40px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <input
-                type="checkbox"
-                checked={selected.has(3)}
-                onChange={() => toggleCheckbox(3)}
-              />
-            </div>
-            <div style={{ 
-              flex: '0 0 200px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              fontWeight: 'bold'
-            }}>
-              Threshold normal
-            </div>
-            <div style={{ flex: '1', padding: '12px' }}>
-              <input
-                type="number"
-                name="thresholdNormal"
-                value={formData.thresholdNormal}
-                onChange={handleChange}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  padding: '4px'
-                }}
-              />
-            </div>
-          </div>
+  {/* Header */}
+  <div className="lc-header">
+    <button
+      onClick={handleRead}
+      disabled={loading}
+      className="lc-btn lc-btn-read"
+    >
+      {loading ? "Reading..." : "Read"}
+    </button>
 
-          {/* Threshold emergency */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
-            <div style={{ 
-              width: '40px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <input
-                type="checkbox"
-                checked={selected.has(4)}
-                onChange={() => toggleCheckbox(4)}
-              />
-            </div>
-            <div style={{ 
-              flex: '0 0 200px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              fontWeight: 'bold'
-            }}>
-              Threshold emergency
-            </div>
-            <div style={{ flex: '1', padding: '12px' }}>
-              <input
-                type="number"
-                name="thresholdEmergency"
-                value={formData.thresholdEmergency}
-                onChange={handleChange}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  padding: '4px'
-                }}
-              />
-            </div>
-          </div>
+    <button
+      onClick={handleWrite}
+      disabled={loading}
+      className="lc-btn lc-btn-write"
+    >
+      {loading ? "Writing..." : "Write"}
+    </button>
+  </div>
 
-          {/* Min over threshold duration */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
-            <div style={{ 
-              width: '40px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <input
-                type="checkbox"
-                checked={selected.has(5)}
-                onChange={() => toggleCheckbox(5)}
-              />
-            </div>
-            <div style={{ 
-              flex: '0 0 200px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              fontWeight: 'bold'
-            }}>
-              Min over threshold duration
-            </div>
-            <div style={{ flex: '1', padding: '12px' }}>
-              <input
-                type="number"
-                name="minOverThresholdDuration"
-                value={formData.minOverThresholdDuration}
-                onChange={handleChange}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  padding: '4px'
-                }}
-              />
-            </div>
-          </div>
 
-          {/* Min under threshold duration */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
-            <div style={{ 
-              width: '40px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <input
-                type="checkbox"
-                checked={selected.has(6)}
-                onChange={() => toggleCheckbox(6)}
-              />
-            </div>
-            <div style={{ 
-              flex: '0 0 200px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              fontWeight: 'bold'
-            }}>
-              Min under threshold duration
-            </div>
-            <div style={{ flex: '1', padding: '12px' }}>
-              <input
-                type="number"
-                name="minUnderThresholdDuration"
-                value={formData.minUnderThresholdDuration}
-                onChange={handleChange}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  padding: '4px'
-                }}
-              />
-            </div>
-          </div>
+  {/* Table */}
+  <div className="lc-table">
 
-          {/* Emergency profile */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
-            <div style={{ 
-              width: '40px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <input
-                type="checkbox"
-                checked={selected.has(7)}
-                onChange={() => toggleCheckbox(7)}
-              />
-            </div>
-            <div style={{ 
-              flex: '0 0 200px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              fontWeight: 'bold'
-            }}>
-              Emergency profile
-            </div>
-            <div style={{ flex: '1', padding: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ minWidth: '150px', fontSize: '14px' }}>Emergency profile id</span>
-                  <input
-                    type="number"
-                    name="emergencyProfileId"
-                    value={formData.emergencyProfileId}
-                    onChange={handleChange}
-                    style={{
-                      flex: '1',
-                      border: '1px solid #ccc',
-                      padding: '4px',
-                      borderRadius: '4px'
-                    }}
-                  />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ minWidth: '150px', fontSize: '14px' }}>Emergency activation time</span>
-                  <input
-                    type="text"
-                    name="emergencyActivationTime"
-                    value={formData.emergencyActivationTime}
-                    onClick={handleTimeClick}
-                    readOnly
-                    style={{
-                      flex: '1',
-                      border: '1px solid #ccc',
-                      padding: '4px',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ minWidth: '150px', fontSize: '14px' }}>Emergency duration</span>
-                  <input
-                    type="number"
-                    name="emergencyDuration"
-                    value={formData.emergencyDuration}
-                    onChange={handleChange}
-                    style={{
-                      flex: '1',
-                      border: '1px solid #ccc',
-                      padding: '4px',
-                      borderRadius: '4px'
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Emergency profile group id list */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
-            <div style={{ 
-              width: '40px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <input
-                type="checkbox"
-                checked={selected.has(8)}
-                onChange={() => toggleCheckbox(8)}
-              />
-            </div>
-            <div style={{ 
-              flex: '0 0 200px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              fontWeight: 'bold'
-            }}>
-              Emergency profile group id list
-            </div>
-            <div style={{ flex: '1', padding: '12px' }}>
-              <input
-                type="text"
-                name="emergencyProfileGroupIds"
-                value={formData.emergencyProfileGroupIds}
-                onChange={handleChange}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  padding: '4px'
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Emergency profile active - LOCKED */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #ccc' }}>
-            <div style={{ 
-              width: '40px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <input
-                type="checkbox"
-                checked={selected.has(9)}
-                onChange={() => toggleCheckbox(9)}
-              />
-            </div>
-            <div style={{ 
-              flex: '0 0 200px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              fontWeight: 'bold',
-              backgroundColor: '#f5f5f5'
-            }}>
-              Emergency profile active
-            </div>
-            <div style={{ flex: '1', padding: '12px' }}>
-              <select
-                value={formData.emergencyProfileActive}
-                disabled
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  padding: '4px',
-                  backgroundColor: '#f0f0f0',
-                  color: '#666'
-                }}
-              >
-                <option value="Enable">Enable</option>
-                <option value="Disable">Disable</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div style={{ display: 'flex' }}>
-            <div style={{ 
-              width: '40px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <input
-                type="checkbox"
-                checked={selected.has(10)}
-                onChange={() => toggleCheckbox(10)}
-              />
-            </div>
-            <div style={{ 
-              flex: '0 0 200px', 
-              padding: '12px', 
-              borderRight: '1px solid #ccc',
-              fontWeight: 'bold'
-            }}>
-              actions
-            </div>
-            <div style={{ flex: '1', padding: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ minWidth: '150px', fontSize: '14px' }}>Action over threshold</span>
-                  {formData.actionOverThreshold === '-' ? (
-                    <input
-                      type="text"
-                      value="-"
-                      readOnly
-                      style={{
-                        flex: '1',
-                        border: '1px solid #ccc',
-                        padding: '4px',
-                        borderRadius: '4px',
-                        backgroundColor: '#f0f0f0',
-                        color: '#666'
-                      }}
-                    />
-                  ) : (
-                    <select
-                      name="actionOverThreshold"
-                      value={formData.actionOverThreshold}
-                      onChange={handleChange}
-                      style={{
-                        flex: '1',
-                        border: '1px solid #ccc',
-                        padding: '4px',
-                        borderRadius: '4px'
-                      }}
-                    >
-                      <option value="No action">No action</option>
-                      <option value="Set ready for reconnection">Set ready for reconnection</option>
-                    </select>
-                  )}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ minWidth: '150px', fontSize: '14px' }}>Action under threshold</span>
-                  {formData.actionUnderThreshold === '-' ? (
-                    <input
-                      type="text"
-                      value="-"
-                      readOnly
-                      style={{
-                        flex: '1',
-                        border: '1px solid #ccc',
-                        padding: '4px',
-                        borderRadius: '4px',
-                        backgroundColor: '#f0f0f0',
-                        color: '#666'
-                      }}
-                    />
-                  ) : (
-                    <select
-                      name="actionUnderThreshold"
-                      value={formData.actionUnderThreshold}
-                      onChange={handleChange}
-                      style={{
-                        flex: '1',
-                        border: '1px solid #ccc',
-                        padding: '4px',
-                        borderRadius: '4px'
-                      }}
-                    >
-                      <option value="No action">No action</option>
-                      <option value="Set connected">Set connected</option>
-                    </select>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div style={{ 
-            padding: '10px', 
-            backgroundColor: '#ffebee', 
-            color: '#c62828', 
-            borderRadius: '4px',
-            marginTop: '10px'
-          }}>
-            {error}
-          </div>
-        )}
+    {/* Monitored value */}
+    <div className="lc-row">
+      <div className="lc-checkbox">
+        <input
+          type="checkbox"
+          checked={selected.has(1)}
+          onChange={() => toggleCheckbox(1)}
+        />
       </div>
 
+      <div className="lc-label locked">
+        Monitored value
+      </div>
+
+      <div className="lc-input-area">
+        <input
+          type="text"
+          value={formData.monitoredValueText}
+          readOnly
+          className="lc-input readonly"
+        />
+      </div>
+    </div>
+
+
+    {/* Threshold active */}
+    <div className="lc-row">
+      <div className="lc-checkbox">
+        <input
+          type="checkbox"
+          checked={selected.has(2)}
+          onChange={() => toggleCheckbox(2)}
+        />
+      </div>
+
+      <div className="lc-label locked">
+        Threshold active
+      </div>
+
+      <div className="lc-input-area">
+        <input
+          type="number"
+          value={formData.thresholdActive}
+          readOnly
+          className="lc-input readonly"
+        />
+      </div>
+    </div>
+
+
+    {/* Threshold normal */}
+    <div className="lc-row">
+      <div className="lc-checkbox">
+        <input
+          type="checkbox"
+          checked={selected.has(3)}
+          onChange={() => toggleCheckbox(3)}
+        />
+      </div>
+
+      <div className="lc-label">
+        Threshold normal
+      </div>
+
+      <div className="lc-input-area">
+        <input
+          type="number"
+          name="thresholdNormal"
+          value={formData.thresholdNormal}
+          onChange={handleChange}
+          className="lc-input"
+        />
+      </div>
+    </div>
+
+
+    {/* Threshold emergency */}
+    <div className="lc-row">
+      <div className="lc-checkbox">
+        <input
+          type="checkbox"
+          checked={selected.has(4)}
+          onChange={() => toggleCheckbox(4)}
+        />
+      </div>
+
+      <div className="lc-label">
+        Threshold emergency
+      </div>
+
+      <div className="lc-input-area">
+        <input
+          type="number"
+          name="thresholdEmergency"
+          value={formData.thresholdEmergency}
+          onChange={handleChange}
+          className="lc-input"
+        />
+      </div>
+    </div>
+
+
+    {/* Min over threshold */}
+    <div className="lc-row">
+      <div className="lc-checkbox">
+        <input
+          type="checkbox"
+          checked={selected.has(5)}
+          onChange={() => toggleCheckbox(5)}
+        />
+      </div>
+
+      <div className="lc-label">
+        Min over threshold duration
+      </div>
+
+      <div className="lc-input-area">
+        <input
+          type="number"
+          name="minOverThresholdDuration"
+          value={formData.minOverThresholdDuration}
+          onChange={handleChange}
+          className="lc-input"
+        />
+      </div>
+    </div>
+
+
+    {/* Min under threshold */}
+    <div className="lc-row">
+      <div className="lc-checkbox">
+        <input
+          type="checkbox"
+          checked={selected.has(6)}
+          onChange={() => toggleCheckbox(6)}
+        />
+      </div>
+
+      <div className="lc-label">
+        Min under threshold duration
+      </div>
+
+      <div className="lc-input-area">
+        <input
+          type="number"
+          name="minUnderThresholdDuration"
+          value={formData.minUnderThresholdDuration}
+          onChange={handleChange}
+          className="lc-input"
+        />
+      </div>
+    </div>
+
+
+    {/* Emergency profile */}
+    <div className="lc-row">
+      <div className="lc-checkbox">
+        <input
+          type="checkbox"
+          checked={selected.has(7)}
+          onChange={() => toggleCheckbox(7)}
+        />
+      </div>
+
+      <div className="lc-label">
+        Emergency profile
+      </div>
+
+      <div className="lc-input-area">
+
+        <div className="lc-group">
+
+          <div className="lc-sub-row">
+            <span className="lc-sub-label">
+              Emergency profile id
+            </span>
+
+            <input
+              type="number"
+              name="emergencyProfileId"
+              value={formData.emergencyProfileId}
+              onChange={handleChange}
+              className="lc-input bordered"
+            />
+          </div>
+
+
+          <div className="lc-sub-row">
+            <span className="lc-sub-label">
+              Emergency activation time
+            </span>
+
+            <input
+              type="text"
+              name="emergencyActivationTime"
+              value={formData.emergencyActivationTime}
+              readOnly
+              onClick={handleTimeClick}
+              className="lc-input bordered clickable"
+            />
+          </div>
+
+
+          <div className="lc-sub-row">
+            <span className="lc-sub-label">
+              Emergency duration
+            </span>
+
+            <input
+              type="number"
+              name="emergencyDuration"
+              value={formData.emergencyDuration}
+              onChange={handleChange}
+              className="lc-input bordered"
+            />
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    {/* Emergency profile group id list */}
+    <div className="lc-row">
+      <div className="lc-checkbox">
+        <input
+          type="checkbox"
+          checked={selected.has(8)}
+          onChange={() => toggleCheckbox(8)}
+        />
+      </div>
+
+      <div className="lc-label">
+        Emergency profile group id list
+      </div>
+
+      <div className="lc-input-area">
+        <input
+          type="text"
+          name="emergencyProfileGroupIds"
+          value={formData.emergencyProfileGroupIds}
+          onChange={handleChange}
+          className="lc-input"
+        />
+      </div>
+    </div>
+
+
+    {/* Emergency profile active */}
+    <div className="lc-row">
+      <div className="lc-checkbox">
+        <input
+          type="checkbox"
+          checked={selected.has(9)}
+          onChange={() => toggleCheckbox(9)}
+        />
+      </div>
+
+      <div className="lc-label locked">
+        Emergency profile active
+      </div>
+
+      <div className="lc-input-area">
+        <select
+          value={formData.emergencyProfileActive}
+          disabled
+          className="lc-input readonly"
+        >
+          <option>Enable</option>
+          <option>Disable</option>
+          <option>Active</option>
+          <option>Inactive</option>
+        </select>
+      </div>
+    </div>
+
+
+    {/* Actions */}
+    <div className="lc-row">
+      <div className="lc-checkbox">
+        <input
+          type="checkbox"
+          checked={selected.has(10)}
+          onChange={() => toggleCheckbox(10)}
+        />
+      </div>
+
+      <div className="lc-label">
+        Actions
+      </div>
+
+      <div className="lc-input-area">
+
+        <div className="lc-group">
+
+          <div className="lc-sub-row">
+            <span className="lc-sub-label">
+              Action over threshold
+            </span>
+
+            <select
+              name="actionOverThreshold"
+              value={formData.actionOverThreshold}
+              onChange={handleChange}
+              className="lc-input bordered"
+            >
+              <option>No action</option>
+              <option>Set ready for reconnection</option>
+            </select>
+          </div>
+
+
+          <div className="lc-sub-row">
+            <span className="lc-sub-label">
+              Action under threshold
+            </span>
+
+            <select
+              name="actionUnderThreshold"
+              value={formData.actionUnderThreshold}
+              onChange={handleChange}
+              className="lc-input bordered"
+            >
+              <option>No action</option>
+              <option>Set connected</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  {/* Error */}
+  {error && (
+    <div className="lc-error">
+      {error}
+    </div>
+  )}
+
+</div>
       {/* Time selection modal */}
       {showTimePopup && (
         <div className="modal" role="dialog" id="time-popup" aria-modal="true">
@@ -1181,7 +1001,9 @@ const LoadControlNew = () => {
         onClose={() => setShowProgressModal(false)}
         title="Load Control Operation"
       />
+      </div>
     </>
+
   );
 };
 
