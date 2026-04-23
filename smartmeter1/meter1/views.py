@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import IntegrityError
+from django.contrib.auth import logout
 from .models import member, RegistrationVerification,Media
 import uuid
 from .models import * 
@@ -15,7 +16,7 @@ from .meter_utils import (
     get_db_record_for_obis,
     update_or_clear_db_value,
 )
-from .dlms_helper import execute_dlms_action
+from .dlms_helper import execute_dlms_action, clear_association_cache
 import logging
 
 # Define logger if not already done
@@ -13547,3 +13548,84 @@ def add_log_separator(request):
             'message': str(e)
         }, status=500)
 
+
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class LogoutAndClearCacheView(APIView):
+    """
+    API endpoint to handle user logout with DLMS cache clearing.
+    
+    This endpoint:
+    1. Clears the Association View cache (DLMS connection cache)
+    2. Logs out the user (clears session)
+    3. Returns success status
+    
+    This is safer than restarting the server as it only affects
+    the current user's cached data without disrupting other users.
+    
+    POST /api/logout/
+    Request body: {} (empty or with optional serial_number)
+    
+    Response:
+    {
+        "status": "success",
+        "message": "Logged out successfully and cleared DLMS cache",
+        "cache_cleared": {
+            "cleared_connections": <number>,
+            "message": "..."
+        }
+    }
+    """
+    
+    def post(self, request, format=None):
+        try:
+            # Optional: Clear cache for specific device if serial_number provided
+            serial_number = request.data.get('serial_number')
+            
+            if serial_number:
+                # Clear cache for specific device connection
+                try:
+                    device = Device.objects.select_related('addressing', 'security').get(serial_number=serial_number)
+                    media = Media.objects.filter(device=device, is_active=True).first()
+                    
+                    if media:
+                        # Build connection key same way as in dlms_helper
+                        port_info = media.port if media.media == 'Serial' else f"{media.remoteip}:{media.remoteport}"
+                        client_addr = device.addressing.client_address if device.addressing else 16
+                        server_addr = device.addressing.server_address if device.addressing else 1
+                        connection_key = f"{port_info}_{client_addr}_{server_addr}"
+                        
+                        cache_result = clear_association_cache(connection_key)
+                        logger.info(f"Cleared cache for device {serial_number}: {cache_result}")
+                    else:
+                        cache_result = {"status": "success", "message": "No active media found", "cleared_connections": 0}
+                        
+                except Device.DoesNotExist:
+                    logger.warning(f"Device {serial_number} not found for cache clearing")
+                    cache_result = {"status": "success", "message": "Device not found", "cleared_connections": 0}
+            else:
+                # Clear entire cache (all connections)
+                cache_result = clear_association_cache()
+                logger.info(f"Cleared entire DLMS cache: {cache_result}")
+            
+            # Logout the user (clear Django session)
+            if request.user.is_authenticated:
+                username = request.user.username
+                logout(request)
+                logger.info(f"User {username} logged out successfully")
+            else:
+                logger.info("Logout called but no authenticated user found")
+            
+            return Response({
+                "status": "success",
+                "message": "Logged out successfully and cleared DLMS cache",
+                "cache_cleared": cache_result
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"Error during logout and cache clear: {e}", exc_info=True)
+            return Response({
+                "status": "error",
+                "message": f"Logout failed: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

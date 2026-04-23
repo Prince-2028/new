@@ -135,12 +135,42 @@ WSGI_APPLICATION = 'smartmeter1.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+#DATABASES = {
+ #   'default': {
+ #       'ENGINE': 'django.db.backends.sqlite3',
+  #      'NAME': BASE_DIR / 'db.sqlite3',
+ #   }
+#}
+
+
+
+
+import os
+
+# Get user home directory (works on any Windows system)
+USER_HOME = os.path.expanduser("~")
+
+# Create app data folder inside user profile
+DATA_DIR = os.path.join(USER_HOME, "SmartAppData")
+
+# Auto create folder if not exists
+os.makedirs(DATA_DIR, exist_ok=True)
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.path.join(DATA_DIR, 'db.sqlite3'),
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 # Password validation

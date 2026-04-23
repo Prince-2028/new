@@ -22,6 +22,7 @@ urlpatterns = [
     path('create_user/', CreateUser.as_view(), name='create_user'),
     path('roles/', RoleListAPIView.as_view(), name='role-list'), 
     path('login/', LoginUser.as_view(), name='login'),
+    path('api/logout/', LogoutAndClearCacheView.as_view(), name='logout-clear-cache'),
     path('add_user/',AddUser.as_view(),name="add_user"),
     
     path('get_users/', GetUsers.as_view(),name="get_users"),

@@ -22,6 +22,6 @@ class Meter1Config(AppConfig):
             try:
                 with open(log_file_path, 'w', encoding='utf-8') as f:
                     f.write('')
-                print(f"✓ Log file cleared on startup: {log_file_path}")
+                print(f" Log file cleared on startup: {log_file_path}")
             except Exception as e:
-                print(f"✗ Failed to clear log file on startup: {e}")
+                print(f" Failed to clear log file on startup: {e}")

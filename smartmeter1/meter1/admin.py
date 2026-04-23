@@ -15,7 +15,7 @@ class PCAuthenticationAdmin(admin.ModelAdmin):
     search_fields = ('user_code',)
     readonly_fields = ('user_code', 'created_at', 'updated_at', 'activated_at')
 
-
+     
 
 
 admin.site.register(member)

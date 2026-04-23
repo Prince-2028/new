@@ -27,11 +27,62 @@ from gurux_dlms.GXFloat32 import GXFloat32
 from gurux_dlms.internal._GXCommon import _GXCommon
 from enum import IntFlag
 from .GXDLMSReader import GXDLMSReader
+import logging
+
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
+
+
 # Configure logging for this module
 logger = logging.getLogger(__name__)
 
 # Module-level storage for Association View objects (persists until server restart)
 _association_view_store = {}
+
+def clear_association_cache(connection_key=None):
+    """
+    Clear the Association View cache.
+    
+    Args:
+        connection_key (str, optional): Specific connection key to clear.
+                                       If None, clears entire cache.
+    
+    Returns:
+        dict: Status information about the cache clearing operation
+    """
+    global _association_view_store
+    
+    if connection_key:
+        # Clear specific connection
+        if connection_key in _association_view_store:
+            del _association_view_store[connection_key]
+            logger.info(f"Cleared Association View cache for connection: {connection_key}")
+            return {
+                "status": "success",
+                "message": f"Cleared cache for connection: {connection_key}",
+                "cleared_connections": 1
+            }
+        else:
+            logger.warning(f"Connection key not found in cache: {connection_key}")
+            return {
+                "status": "success",
+                "message": f"Connection key not found in cache: {connection_key}",
+                "cleared_connections": 0
+            }
+    else:
+        # Clear entire cache
+        cache_size = len(_association_view_store)
+        _association_view_store.clear()
+        logger.info(f"Cleared entire Association View cache. Removed {cache_size} connection(s).")
+        return {
+            "status": "success",
+            "message": f"Cleared entire Association View cache",
+            "cleared_connections": cache_size
+        }
+
 
 def datetime_to_dlms_octet_string(iso_string: str) -> bytes:
     # Parse the ISO 8601 timestamp including timezone
@@ -206,24 +257,40 @@ def get_tamper_flags(value_input: str | int | bytes | bytearray, obis: str) -> l
 
 # --- Helper Function for Cleanup ---
 def _cleanup_dlms(reader, media):
-    """Safely disconnects reader and closes media."""
+    """Safely disconnects reader and closes media with improved error handling for Windows."""
     if reader:
         try:
             logger.debug("Disconnecting DLMS reader...")
             reader.disconnect()
             logger.info("DLMS Reader disconnected.")
         except Exception as e:
-            logger.error(f"Error during reader disconnect: {e}", exc_info=False)
+            logger.error(f"Error during reader disconnect: {e}", exc_info=True)
+    
     if media:
         try:
             if media.isOpen():
                 logger.debug("Closing media connection...")
+                # Add small delay before closing on Windows
+                time.sleep(0.5)
                 media.close()
                 logger.info("Media connection closed.")
+                # Add delay after closing to allow OS to release port
+                time.sleep(0.5)
             else:
                 logger.debug("Media connection was already closed.")
+        except OSError as e:
+            if e.winerror == 995:  # ERROR_OPERATION_ABORTED
+                logger.warning(f"Serial port operation aborted (Windows error 995). Port may be in use by another process.")
+                # Force close attempt
+                try:
+                    if hasattr(media, '_serial') and media._serial:
+                        media._serial.close()
+                except:
+                    pass
+            else:
+                logger.warning(f"OSError closing media: {e}", exc_info=True)
         except Exception as e:
-            logger.warning(f"Error closing media: {e}", exc_info=False)
+            logger.warning(f"Error closing media: {e}", exc_info=True)
 
 # --- Helper Function to Convert Read Value to JSON Serializable Format ---
 def _convert_read_value(value, obis=None):
@@ -506,7 +573,7 @@ def _convert_write_value(value_str, data_type: DataType):
                 return gxdt
         
             except ValueError as e:
-                logger.error(f"Failed to parse datetime: {e}")
+                logger.error(f"Failed to parse datetime: {e}", exc_info=True)
                 raise ValueError(f"Cannot convert '{value_str}' to DataType.DATE_TIME: {e}")
             
         elif data_type == DataType.DATE:
@@ -602,7 +669,7 @@ def _convert_write_value(value_str, data_type: DataType):
             logger.warning(f"Write conversion not explicitly handled for {data_type.name}. Using raw string.")
             return str(value_str)
     except (ValueError, TypeError) as e:
-        logger.error(f"Error converting value '{value_str}' to {data_type.name} for writing: {e}")
+        logger.error(f"Error converting value '{value_str}' to {data_type.name} for writing: {e}", exc_info=True)
         raise ValueError(f"Cannot convert '{value_str}' to {data_type.name}: {e}")
 
 def get_access_rights(obj, attribute_index):
@@ -672,9 +739,12 @@ def execute_dlms_action(config, action_details):
             media.baudRate = 9600
             media.timeout = 10 
             # Standard serial settings (usually don't need changing unless specified)
-            # media.dataBits = 8
-            # media.parity = Parity.NONE
-            # media.stopBits = StopBits.ONE
+            media.dataBits = 8
+            media.parity = Parity.NONE
+            media.stopBits = StopBits.ONE
+            # Windows-specific fix for OSError 995
+            media.writeTimeout = 5000  # 5 second write timeout
+            media.readTimeout = 10000  # 10 second read timeout
             logger.info(f"Configured Serial media: {port_info}, Baud=9600, Timeout=10s")
 
         # --- 2. Map Security & Prepare Client Args ---
@@ -760,14 +830,14 @@ def execute_dlms_action(config, action_details):
                  raise RuntimeError("Could not apply HLS settings using expected 'settings.cipher' path.") from e
 
         # --- 4. Create Reader ---
-        ic_obis = 1 # Hardcoded based on user's working script
+        ic_obis = 1000 # Hardcoded based on user's working script
         ic_obis_code="0.0.43.1.3.255"
         logger.debug(f"Instantiating GXDLMSReader. Invocation Counter: {ic_obis}")
         reader = GXDLMSReader(
             client=client,
             media=media,
             trace=trace_level, # Use 0xFF for verbose trace like original
-            invocationCounter=ic_obis_code
+            invocationCounter=ic_obis
         )
 
         if interface == InterfaceType.HDLC:
@@ -779,7 +849,50 @@ def execute_dlms_action(config, action_details):
         if connection_key not in _association_view_store:
             # First action for this connection - do full initialization
             logger.info("Opening media connection...")
-            media.open()
+            
+            # Retry logic for Windows serial port issues
+            max_retries = 3
+            retry_delay = 1.0
+            last_error = None
+            
+            for attempt in range(max_retries):
+                try:
+                    if attempt > 0:
+                        logger.info(f"Retry attempt {attempt + 1}/{max_retries} after {retry_delay}s delay...")
+                        time.sleep(retry_delay)
+                    
+                    media.open()
+                    logger.info("Media connection opened successfully.")
+                    break
+                    
+                except OSError as e:
+                    last_error = e
+                    if e.winerror == 995:  # ERROR_OPERATION_ABORTED
+                        logger.warning(f"Serial port error 995 on attempt {attempt + 1}. Port may be in use.")
+                        # Try to force close any existing connection
+                        try:
+                            media.close()
+                            time.sleep(1.0)
+                        except:
+                            pass
+                    else:
+                        logger.error(f"OSError opening media: {e}")
+                        
+                    if attempt == max_retries - 1:
+                        raise RuntimeError(
+                            f"Failed to open serial port after {max_retries} attempts. "
+                            f"Error: {last_error}. "
+                            f"Please ensure:\n"
+                            f"1. No other application is using {port_info}\n"
+                            f"2. The device is properly connected\n"
+                            f"3. You have permission to access the port"
+                        ) from last_error
+                        
+                except Exception as e:
+                    logger.error(f"Unexpected error opening media: {e}")
+                    if attempt == max_retries - 1:
+                        raise
+            
             logger.info("Initializing DLMS connection (AARQ)...")
             reader.initializeConnection() # Sends AARQ, parses AARE
             logger.info("Connection established. Reading Association View...")
@@ -1585,6 +1698,18 @@ def execute_dlms_action(config, action_details):
     except Exception as e:
         logger.exception("Unexpected error during DLMS operation:")
         result = {"status": "error", "message": f"An unexpected error occurred: {type(e).__name__}"}
+    except Exception as e:
+        print("\n🔥 FULL ERROR START 🔥")
+        print("Error:", str(e))
+        traceback.print_exc()
+        print("🔥 FULL ERROR END 🔥\n")
+
+        logger.error("DLMS Exception occurred", exc_info=True)
+
+        result = {
+            "status": "error",
+            "message": str(e)
+        }
 
     # --- Cleanup ---
     finally:

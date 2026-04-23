@@ -270,6 +270,7 @@ class Device(models.Model):
    
 ]
     serial_number = models.CharField(max_length=255, unique=True)  # Enforced uniqueness
+    enable_db_storage = models.BooleanField(default=True) #2 change
     meter_type = models.CharField(max_length=100, choices=METER_TYPE_CHOICES)
     manufacturer_code = models.CharField(max_length=255)
     addressing = models.OneToOneField('Addressing', on_delete=models.CASCADE)

@@ -267,56 +267,56 @@ class GXDLMSReader:
 
     def updateFrameCounter(self):
         #IC Value Working
-        # if self.invocationCounter and self.client.ciphering is not None and self.client.ciphering.security != Security.NONE:
-        #     if GXDLMSReader.stored_invocation_counter == 0:
-        #         if isinstance(self.invocationCounter, int) and self.invocationCounter > 0:
-        #             GXDLMSReader.stored_invocation_counter = self.invocationCounter
-        #         else:
-        #             GXDLMSReader.stored_invocation_counter = 1
-        #     else:
-        #         GXDLMSReader.stored_invocation_counter += 20
+        if self.invocationCounter and self.client.ciphering is not None and self.client.ciphering.security != Security.NONE:
+            if GXDLMSReader.stored_invocation_counter == 0:
+                if isinstance(self.invocationCounter, int) and self.invocationCounter > 0:
+                    GXDLMSReader.stored_invocation_counter = self.invocationCounter
+                else:
+                    GXDLMSReader.stored_invocation_counter = 1
+            else:
+                GXDLMSReader.stored_invocation_counter += 271
             
-        #     self.client.ciphering.invocationCounter = GXDLMSReader.stored_invocation_counter+1
-        #     print("Invocation counter: " + str(self.client.ciphering.invocationCounter))
+            self.client.ciphering.invocationCounter = GXDLMSReader.stored_invocation_counter+1
+            print("Invocation counter: " + str(self.client.ciphering.invocationCounter))
 
         #IC OBIS Value working
-        if self.invocationCounter and self.client.ciphering is not None and self.client.ciphering.security != Security.NONE:
-            self.initializeOpticalHead()
-            self.client.proposedConformance |= Conformance.GENERAL_PROTECTION
-            add = self.client.clientAddress
-            auth = self.client.authentication
-            security = self.client.ciphering.security
-            challenge = self.client.ctoSChallenge
-            try:
-                self.client.clientAddress = 16
-                self.client.authentication = Authentication.NONE
-                self.client.ciphering.security = Security.NONE
-                reply = GXReplyData()
-                data = self.client.snrmRequest()
-                if data:
-                    self.readDLMSPacket(data, reply)
-                    self.client.parseUAResponse(reply.data)
-                    size = self.client.hdlcSettings.maxInfoTX + 40
-                    self.replyBuff = bytearray(size)
-                reply.clear()
-                self.readDataBlock(self.client.aarqRequest(), reply)
-                self.client.parseAareResponse(reply.data)
-                reply.clear()
-                d = GXDLMSData(self.invocationCounter)
-                self.read(d, 2)
-                self.client.ciphering.invocationCounter = 1 + d.value
-                print("Invocation counter: " + str(self.client.ciphering.invocationCounter))
-                self.disconnect()
-                if self.client.interfaceType==InterfaceType.WRAPPER:
-                    self.media.close()
-                    time.sleep(2)
-                    self.media.open()
-                #except Exception as ex:
-            finally:
-                self.client.clientAddress = add
-                self.client.authentication = auth
-                self.client.ciphering.security = security
-                self.client.ctoSChallenge = challenge
+        # if self.invocationCounter and self.client.ciphering is not None and self.client.ciphering.security != Security.NONE:
+        #     self.initializeOpticalHead()
+        #     self.client.proposedConformance |= Conformance.GENERAL_PROTECTION
+        #     add = self.client.clientAddress
+        #     auth = self.client.authentication
+        #     security = self.client.ciphering.security
+        #     challenge = self.client.ctoSChallenge
+        #     try:
+        #         self.client.clientAddress = 16
+        #         self.client.authentication = Authentication.NONE
+        #         self.client.ciphering.security = Security.NONE
+        #         reply = GXReplyData()
+        #         data = self.client.snrmRequest()
+        #         if data:
+        #             self.readDLMSPacket(data, reply)
+        #             self.client.parseUAResponse(reply.data)
+        #             size = self.client.hdlcSettings.maxInfoTX + 40
+        #             self.replyBuff = bytearray(size)
+        #         reply.clear()
+        #         self.readDataBlock(self.client.aarqRequest(), reply)
+        #         self.client.parseAareResponse(reply.data)
+        #         reply.clear()
+        #         d = GXDLMSData(self.invocationCounter)
+        #         self.read(d, 2)
+        #         self.client.ciphering.invocationCounter = 1 + d.value
+        #         print("Invocation counter: " + str(self.client.ciphering.invocationCounter))
+        #         self.disconnect()
+        #         if self.client.interfaceType==InterfaceType.WRAPPER:
+        #             self.media.close()
+        #             time.sleep(2)
+        #             self.media.open()
+        #         #except Exception as ex:
+        #     finally:
+        #         self.client.clientAddress = add
+        #         self.client.authentication = auth
+        #         self.client.ciphering.security = security
+        #         self.client.ctoSChallenge = challenge
 
     def initializeConnection(self):
         print("Standard: " + str(self.client.standard))
