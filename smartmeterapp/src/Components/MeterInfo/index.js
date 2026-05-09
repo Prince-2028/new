@@ -94,7 +94,7 @@ const MeterInfo = () => {
   const handleGetClick = async () => {
     try {
       const response = await axios.post(`${BASE_URL}/api/getmeterinfo/`, { 'serial_number': serialNumber });
-      
+      console.log("API Response-------------------------------------:", response.data);
       console.log(response.data);
     } catch (error) {
       console.error("Error fetching meter info:", error);

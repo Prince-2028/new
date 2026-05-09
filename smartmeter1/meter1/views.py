@@ -17,7 +17,7 @@ from .meter_utils import (
     update_or_clear_db_value,
 )
 from .dlms_helper import execute_dlms_action, clear_association_cache
-import logging
+import logging 
 
 # Define logger if not already done
 logger = logging.getLogger(__name__)
@@ -13395,7 +13395,7 @@ class Loadprofile2EnergyRegisterView(View):
         return HttpResponseBadRequest("item_id or device_id required")
 
 
-class InvocationCounterAPIView(APIView):
+class InvocationCounterAPIView1(APIView):
     """
     API endpoint to get and update the Invocation Counter (IC) value.
     GET: Returns current IC value from GXDLMSReader.stored_invocation_counter
@@ -13457,6 +13457,131 @@ class InvocationCounterAPIView(APIView):
             }, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+from .models import Device, MeterIC
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+from .models import Device, MeterIC
+
+
+class InvocationCounterAPIView(APIView):
+    """
+    GET  → Get current IC using device_id
+    POST → Manually set IC using device_id
+    """
+
+    def get(self, request):
+        try:
+            device_id = request.query_params.get("device_id")
+
+            if not device_id:
+                return Response(
+                    {"error": "device_id is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            device = Device.objects.filter(id=device_id).first()
+
+            if not device:
+                return Response(
+                    {"error": "Device not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            ic_obj = MeterIC.objects.filter(device=device).first()
+
+            return Response({
+                "device_id": device_id,
+                "serial_number": device.serial_number,
+                "current_ic": ic_obj.last_ic if ic_obj else 0
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def post(self, request):
+        try:
+            device_id = request.data.get("device_id")
+            ic_value = request.data.get("ic_value")
+
+            print(device_id, 
+                  ic_value)
+
+            if not device_id or ic_value is None:
+                return Response(
+                    {"error": "device_id and ic_value are required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            try:
+                ic_value = int(ic_value)
+                if ic_value < 0:
+                    return Response(
+                        {"error": "IC must be >= 0"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            except:
+                return Response(
+                    {"error": "Invalid IC value"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            device = Device.objects.filter(id=device_id).first()
+
+            if not device:
+                return Response(
+                    {"error": "Device not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            ic_obj, _ = MeterIC.objects.update_or_create(
+                device=device,
+                defaults={"last_ic": ic_value}
+            )
+
+            return Response({
+                "message": "IC updated successfully",
+                "device_id": device_id,
+                "serial_number": device.serial_number,
+                "updated_ic": ic_obj.last_ic
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # API endpoint to serve logFile.txt for progress monitoring

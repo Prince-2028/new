@@ -1,12 +1,21 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_all
+
+datas = [('db.sqlite3', '.'), ('static', 'static'), ('meter1', 'meter1'), ('C:\\Users\\AVC\\Desktop\\DLMS_app\\.venv\\Lib\\site-packages\\gurux_dlms\\OBISCodes.txt', 'gurux_dlms')]
+binaries = []
+hiddenimports = ['rest_framework.permissions', 'rest_framework.authentication', 'coloredlogs', 'rest_framework.views', 'rest_framework.parsers', 'rest_framework.schemas', 'rest_framework.renderers', 'rest_framework.exceptions', 'rest_framework.negotiation', 'rest_framework.metadata']
+tmp_ret = collect_all('django')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('gurux_dlms')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
     ['start_server.py'],
     pathex=[],
-    binaries=[],
-    datas=[('db.sqlite3', '.'), ('static', 'static'), ('meter1', 'meter1')],
-    hiddenimports=['rest_framework.permissions', 'rest_framework.authentication', 'rest_framework.views', 'rest_framework.parsers', 'rest_framework.schemas', 'rest_framework.renderers', 'rest_framework.exceptions', 'rest_framework.negotiation', 'rest_framework.metadata'],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

@@ -49,11 +49,30 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+from django.db import transaction
+from .models import MeterIC,Device
+def update_meter_ic(device,value):
+    with transaction.atomic():
+        obj, created = MeterIC.objects.select_for_update().get_or_create(
+            device=device
+        )
+
+        
+        obj.last_ic =value 
+        obj.save()
+        print(" saving value",obj.last_ic)
+        
+        return obj.last_ic 
+    
+
+
+
 class GXDLMSReader:
-    stored_invocation_counter = 0
+    stored_invocation_counter = 0  
+    print(" stored_invocation_counter", stored_invocation_counter)
 
     #pylint: disable=too-many-public-methods, too-many-instance-attributes
-    def __init__(self, client, media, trace, invocationCounter):
+    def __init__(self, client, media, trace, invocationCounter,device):
         #pylint: disable=too-many-arguments
         self.replyBuff = bytearray(8 + 1024)
         self.waitTime = -1
@@ -63,6 +82,7 @@ class GXDLMSReader:
         self.media = media
         self.invocationCounter = invocationCounter
         self.client = client
+        self.device=device
         if self.trace > TraceLevel.WARNING:
             print("Authentication: " + str(self.client.authentication))
             print("ClientAddress: " + hex(self.client.clientAddress))
@@ -270,13 +290,16 @@ class GXDLMSReader:
         if self.invocationCounter and self.client.ciphering is not None and self.client.ciphering.security != Security.NONE:
             if GXDLMSReader.stored_invocation_counter == 0:
                 if isinstance(self.invocationCounter, int) and self.invocationCounter > 0:
-                    GXDLMSReader.stored_invocation_counter = self.invocationCounter
+                    GXDLMSReader.stored_invocation_counter = self.invocationCounter + 271
                 else:
                     GXDLMSReader.stored_invocation_counter = 1
             else:
+                print( " hello this +271 code  ")
                 GXDLMSReader.stored_invocation_counter += 271
+                print("value",GXDLMSReader.stored_invocation_counter) 
             
-            self.client.ciphering.invocationCounter = GXDLMSReader.stored_invocation_counter+1
+            self.client.ciphering.invocationCounter = GXDLMSReader.stored_invocation_counter+1    #store in data base 
+            print(update_meter_ic(self.device,GXDLMSReader.stored_invocation_counter+1))
             print("Invocation counter: " + str(self.client.ciphering.invocationCounter))
 
         #IC OBIS Value working

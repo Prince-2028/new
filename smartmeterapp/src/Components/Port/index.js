@@ -14,7 +14,7 @@ const protocolOptions = {
 const baudRateOptions = [300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200];
 
 const baseUrl =BASE_URL;
-const userId = localStorage.getItem('userId');;
+
 
 const CounterBar = ({ count, setCount }) => {
   const handleInputChange = (e) => {
@@ -159,6 +159,7 @@ export default function Port({ closePortPopup,deviceId  }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const userId = localStorage.getItem('userId');
 
     console.log("=== SAVING CONFIGURATION ===");
     const formData = {

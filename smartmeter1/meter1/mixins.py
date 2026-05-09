@@ -104,7 +104,8 @@ class OBISStreamingMixin:
                 
                 # Use batch processing via execute_dlms_action
                 logger.debug(f"Stream: Processing batch OBIS read for {len(parameters)} codes")
-                result = execute_dlms_action(dlms_config, action_details={"action": "read_obis", "parameters": parameters})
+                # result = execute_dlms_action(dlms_config, action_details={"action": "read_obis", "parameters": parameters})
+                result = execute_dlms_action(dlms_config, action_details={"action": "read_obis", "parameters": parameters, "serial_number": serial_number}) #SUMIT
 
                 if result.get("status") == "success" or result.get("successful_reads", 0) > 0:
                     # Stream each result from the batch response

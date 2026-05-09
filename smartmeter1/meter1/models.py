@@ -282,6 +282,17 @@ class Device(models.Model):
         return f"Device(serial_number={self.serial_number}, meter_type={self.meter_type}, manufacturer_code={self.manufacturer_code})"
 
 
+class MeterIC(models.Model):
+    device = models.OneToOneField(Device, on_delete=models.CASCADE)
+    last_ic = models.BigIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.device.serial_number} -> {self.last_ic}"
+
+
+
+
 
 from django.db.models import Q, UniqueConstraint
 

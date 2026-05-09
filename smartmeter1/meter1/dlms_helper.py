@@ -256,7 +256,7 @@ def get_tamper_flags(value_input: str | int | bytes | bytearray, obis: str) -> l
     return flags if flags else ["NONE"]
 
 # --- Helper Function for Cleanup ---
-def _cleanup_dlms(reader, media):
+def _cleanup_dlms1(reader, media):
     """Safely disconnects reader and closes media with improved error handling for Windows."""
     if reader:
         try:
@@ -293,6 +293,53 @@ def _cleanup_dlms(reader, media):
             logger.warning(f"Error closing media: {e}", exc_info=True)
 
 # --- Helper Function to Convert Read Value to JSON Serializable Format ---
+def _cleanup_dlms(reader, media):
+    """Proper DLMS disconnect (Production safe)"""
+
+    if reader and media and media.isOpen():
+        try:
+            logger.info("Sending DLMS Release Request (RLRQ)...")
+
+            # Step 1: Release Request
+            try:
+                data = reader.client.releaseRequest()
+                if data:
+                    reader.readDLMSPacket(data)
+                    logger.info("RLRQ completed")
+                else:
+                    logger.warning("No RLRQ data generated")
+            except Exception as e:
+                logger.warning(f"ReleaseRequest failed: {e}")
+
+            time.sleep(0.2)
+
+            # Step 2: Disconnect Request
+            try:
+                disc = reader.client.disconnectRequest()
+                if disc:
+                    reader.readDLMSPacket(disc)
+                    logger.info("DisconnectRequest completed")
+                else:
+                    logger.warning("No DISC data generated")
+            except Exception as e:
+                logger.warning(f"DisconnectRequest failed: {e}")
+
+        except Exception as e:
+            logger.error(f"DLMS cleanup error: {e}")
+
+    # Step 3: Close media
+    if media:
+        try:
+            if media.isOpen():
+                time.sleep(0.3)
+                media.close()
+                logger.info("Media closed")
+                time.sleep(0.3)
+        except Exception as e:
+            logger.warning(f"Media close error: {e}")
+# --- Helper Function to Convert Read Value to JSON Serializable Format ---
+
+
 def _convert_read_value(value, obis=None):
     """Converts DLMS read values to JSON serializable types."""
     logger.warning(f"Real value : {value} and type of value is {type(value)}")
@@ -693,7 +740,101 @@ def get_access_rights(obj, attribute_index):
             return f"Error ({e})"
 
 
-# --- Main Execution Function ---
+
+
+from django.db import transaction
+from .models import MeterIC,Device
+def get_next_ic(device):
+    with transaction.atomic():
+        obj, created = MeterIC.objects.select_for_update().get_or_create(
+            device=device
+        )
+
+        
+        #obj.last_ic =4148
+        #obj.save()
+        return obj.last_ic
+    
+
+
+
+
+
+from gurux_dlms import GXDLMSClient
+from gurux_dlms.objects import GXDLMSData
+from gurux_dlms.enums import *
+
+from gurux_dlms.enums import Authentication, Security, InterfaceType
+
+from gurux_dlms import GXDLMSClient, GXReplyData
+from gurux_dlms.objects import GXDLMSData
+from gurux_dlms.enums import Authentication, Security, InterfaceType
+
+import traceback
+from gurux_dlms import GXDLMSClient, GXReplyData, GXDLMSException
+from gurux_dlms.objects import GXDLMSData
+from gurux_dlms.enums import Authentication, Security, InterfaceType
+
+
+
+def get_meter_ic(media, client_addr=16, server_addr=1, interface=InterfaceType.HDLC):
+    # Standard OBIS for Invocation Counter
+    ic_obis = "0.0.43.1.0.255" 
+    
+    # Initialize Client
+    temp_client = GXDLMSClient(useLogicalNameReferencing=True)
+    temp_client.interfaceType = interface
+    temp_client.clientAddress = client_addr
+    temp_client.serverAddress = server_addr
+    temp_client.authentication = Authentication.NONE
+
+    # Helper function to send and receive properly without 'eop' errors
+    def read_packet(data):
+        reply = GXReplyData()
+        # media.receive(reply) is the standard way to fill the reply object
+        media.send(data)
+        media.receive(reply)
+        return reply
+
+    try:
+        if not media.isOpen():
+            media.open()
+
+        # 1. SNRM
+        snrm_data = temp_client.snrmRequest()
+        if snrm_data:
+            reply = read_packet(snrm_data)
+            temp_client.parseUAResponse(reply.data)
+
+        # 2. AARQ
+        aarq_data = temp_client.aarqRequest()
+        reply = read_packet(aarq_data)
+        temp_client.parseAareResponse(reply.data)
+
+        # 3. Read IC
+        ic_data = GXDLMSData(ic_obis)
+        # Attribute 2 is the value (the counter)
+        read_req = temp_client.read(ic_data, 2)
+        reply = read_packet(read_req)
+        
+        # This parses the bytes from the meter into a Python integer
+        val = temp_client.updateValue(ic_data, 2, reply.data)
+        
+        print(f"Successfully retrieved IC: {val}")
+
+        # 4. Disconnect cleanly so the meter is ready for the real session
+        media.send(temp_client.disconnectRequest())
+        reply = GXReplyData()
+        media.receive(reply)
+        
+        return int(val)
+
+    except Exception as e:
+        print(f"Failed to read IC: {str(e)}")
+        # If the specific OBIS failed, it might be a different address
+        return None
+
+
 def execute_dlms_action(config, action_details):
     """
     Connects to a meter using provided config, performs an action, and returns results.
@@ -709,6 +850,12 @@ def execute_dlms_action(config, action_details):
     try:
         action = action_details.get('action')
         parameters = action_details.get('parameters', {})
+        serial_number = action_details.get('serial_number') #sumit
+       
+
+        print(serial_number,"serial_number") 
+        
+
         logger.info(f"Starting DLMS Action: '{action}' | Config Port: '{config.get('port')}'")
         logger.debug(f"Full Config: {config}")
         logger.debug(f"Action Parameters: {parameters}")
@@ -793,6 +940,13 @@ def execute_dlms_action(config, action_details):
              logger.info("Mapping NOSEC -> Auth=NONE, Sec=NONE")
         else:
             raise ValueError(f"Unsupported security level: {sec_level_str}")
+        
+
+
+   
+
+
+
 
         # --- 3. Instantiate Client 
         logger.debug(f"Instantiating GXDLMSSecureClient: Auth={auth.name}, Pwd={'YES' if pwd_bytes else 'NO'}, Iface={interface.name}")
@@ -830,15 +984,59 @@ def execute_dlms_action(config, action_details):
                  raise RuntimeError("Could not apply HLS settings using expected 'settings.cipher' path.") from e
 
         # --- 4. Create Reader ---
-        ic_obis = 1000 # Hardcoded based on user's working script
+        
+        # device = Device.objects.get(serial_number='Avc')
+        device=Device.objects.get(serial_number=serial_number) #sumit
+
+       
+
+  
+        ic_obis = get_next_ic(device) 
+        
+        print("ic_obis **********",ic_obis)
+       
+
+        print(ic_obis,"ic_obis") 
+
         ic_obis_code="0.0.43.1.3.255"
-        logger.debug(f"Instantiating GXDLMSReader. Invocation Counter: {ic_obis}")
+        #logger.debug(f"Instantiating GXDLMSReader. Invocation Counter: {ic_obis}") 
+        #print(f" ic: {ic_obis}")
+
+       
+        print("%%%%%%%%%%%%%%testing  %%%%%%%%%%%%%")
+
+        
+
+        #next_ic = get_meter_ic(media, client_addr=16, server_addr=1) 
+        #print("next_ic",next_ic)
+
+       
+       
+        
+
+        print("%%%%%%%%%%%%%%testing obis code %%%%%%%%%%%%%")
+
+         
+        
+        
+        
         reader = GXDLMSReader(
             client=client,
             media=media,
             trace=trace_level, # Use 0xFF for verbose trace like original
-            invocationCounter=ic_obis
+            invocationCounter=ic_obis,
+            device=device
         )
+
+
+        ################# testing ########### 
+
+        
+
+
+
+
+        ############## testing ############
 
         if interface == InterfaceType.HDLC:
             reader.waitTime = 5000
@@ -907,7 +1105,8 @@ def execute_dlms_action(config, action_details):
                 logger.warning(f"Could not deep copy objects, storing reference instead: {copy_error}")
                 _association_view_store[connection_key] = client.objects
             
-            reader.close()
+            reader.close()      #1111111111111111111111111  
+
             if interface == InterfaceType.WRAPPER:
                 time.sleep(2.5)
         else:
@@ -924,8 +1123,8 @@ def execute_dlms_action(config, action_details):
         # --- 6. Perform Action ---
         logger.info(f"Executing action: '{action}'")
         if action == "read_obis":
-            media.open()
-            reader.initializeConnection()
+            media.open()              #22222222222222222222222
+            reader.initializeConnection() 
 
             # Handle multiple OBIS codes - collect all results
             results = []
@@ -1030,8 +1229,8 @@ def execute_dlms_action(config, action_details):
             }
 
         elif action == "write_obis":
-            media.open()  # Ensure media is open
-            reader.initializeConnection()
+          #  media.open()  # Ensure media is open
+          #  reader.initializeConnection()
             
             # Handle both single write and batch writes
             if isinstance(parameters, list):
@@ -1264,8 +1463,8 @@ def execute_dlms_action(config, action_details):
                       "profile_buffer": decoded_buffer, "message": "Profile read successful."}
 
         elif action == "execute_method":
-            media.open()
-            reader.initializeConnection()
+         #   media.open()
+         #   reader.initializeConnection()
             
             obis = parameters.get('obis_code')
             method_index_str = parameters.get('method_index')
@@ -1660,8 +1859,8 @@ def execute_dlms_action(config, action_details):
         elif action == "refresh_relay":
             # Simple refresh action - just open media and initialize connection
             logger.info("Executing refresh_relay action...")
-            media.open()
-            reader.initializeConnection()
+        #    media.open()
+        #    reader.initializeConnection()
             logger.info("Refresh relay action completed successfully")
             result = {
                 "status": "success",
@@ -1713,7 +1912,11 @@ def execute_dlms_action(config, action_details):
 
     # --- Cleanup ---
     finally:
+        print("finally block calling")
+    
+
         _cleanup_dlms(reader, media)
+        time.sleep(2)
         end_time = time.monotonic()
         duration = end_time - start_time
         logger.info(f"DLMS action '{action_details.get('action')}' finished in {duration:.2f} seconds. Result status: '{result.get('status')}'")

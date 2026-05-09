@@ -1,5 +1,6 @@
 // src/Components/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import './index.css'
 import { VscDebugDisconnect } from "react-icons/vsc";
 import Header from "../Header";
@@ -10,6 +11,7 @@ import ExecuteSection from '../Execute';
 import ImageTransferSection from '../ImageTransfer';
 import ImageTransferREN from '../ImageTransferREN';
 import { redirect, useNavigate } from 'react-router-dom';
+import BASE_URL from '../../apiConfig';
 
 import { TiDelete } from 'react-icons/ti';
 import { RiAccountCircleFill } from 'react-icons/ri';
@@ -43,7 +45,6 @@ export default function DashboardTwo({
   // optional props you already referenced in your snippet
   
   openPortPopup = () => {},
-  handleLogout = () => {},
   setIsPopupOpen = () => {},
   setIsLogsPopupOpen = () => {},
 }) {
@@ -60,6 +61,43 @@ export default function DashboardTwo({
       console.log('DashboardTwo fullscreen failed:', err);
     });
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      console.log("Logging out and clearing cache...");
+      
+      // Call the backend logout endpoint
+      const response = await axios.post(`${BASE_URL}/api/logout/`, {}, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.data.status === 'success') {
+        console.log("Logout successful:", response.data);
+        console.log("Cache cleared:", response.data.cache_cleared);
+        
+        // Clear local storage
+        localStorage.removeItem('userId');
+        localStorage.removeItem('selectedDeviceId');
+        localStorage.removeItem('selectedSerialNumber');
+        localStorage.removeItem('userRole');
+        
+        // Redirect to login
+        navigate('/');
+      } else {
+        console.error("Logout failed:", response.data.message);
+        // Still clear local storage and redirect even if backend fails
+        localStorage.clear();
+        navigate('/');
+      }
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // Still clear local storage and redirect even if request fails
+      localStorage.clear();
+      navigate('/');
+    }
+  };
 
   const renderPanel = () => {
     switch (active) {

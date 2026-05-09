@@ -7,7 +7,8 @@ urlpatterns = [
     
 
        # STEP 1: Generate user code (CLIENT PC)
-    path('api/step1-generate-code/', GenerateUserCodeView.as_view(), name='step1_generate_code'),
+    path('api/step1-generate-code/', GenerateUserCodeView.as_view(), name='step1_generate_code'), 
+    
     
     # STEP 2: Generate serial (MANUFACTURER)
     path('api/step2-generate-serial/', GenerateSerialView.as_view(), name='step2_generate_serial'),

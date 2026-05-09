@@ -237,7 +237,7 @@ const Dashboard = () => {
         }
     };
 
-    const handleIC = async () => {
+    const handleIC1 = async () => {
         try {
             // First, get the current IC value
             const getResponse = await axios.get(`${BASE_URL}/invocation-counter/`);
@@ -252,7 +252,25 @@ const Dashboard = () => {
         }
     };
 
-    const handleICSubmit = async (icValue) => {
+    const handleIC = async (deviceId) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/invocation-counter/`, {
+            params: { device_id: selectedDeviceId }
+        });
+
+        const currentICValue = response.data.current_ic;
+
+        setCurrentIC(currentICValue);
+        setSelectedDeviceId(selectedDeviceId);   // store for POST
+        setIsICModalOpen(true);
+
+    } catch (err) {
+        console.error('Error getting IC:', err);
+        alert('Error: ' + (err.response?.data?.error || 'Failed to get IC value.'));
+    }
+};
+
+    const handleICSubmit1 = async (icValue) => {
         try {
             // Update the IC value in dlms_helper.py
             const postResponse = await axios.post(`${BASE_URL}/invocation-counter/`, {
@@ -266,6 +284,34 @@ const Dashboard = () => {
             alert('Error: ' + (err.response?.data?.error || 'Failed to update IC value.'));
         }
     };
+
+  
+  
+  
+    const handleICSubmit = async (icValue) => {
+    try {
+        const response = await axios.post(`${BASE_URL}/invocation-counter/`, {
+            device_id: selectedDeviceId,   // 🔥 IMPORTANT
+            ic_value: icValue
+        });
+
+        alert(response.data.message);
+        setIsICModalOpen(false);
+
+    } catch (err) {
+        console.error('Error updating IC:', err);
+        alert('Error: ' + (err.response?.data?.error || 'Failed to update IC value.'));
+    }
+};
+
+
+
+
+
+
+
+
+
 
     const handleRowClick = (item) => {
         // Save device ID and serial number in localStorage
@@ -282,11 +328,39 @@ const Dashboard = () => {
 
 
 
-    const handleLogout = () => {
-        console.log("hello1")
-    localStorage.removeItem('userId'); // clear the selected device only
-    navigate('/'); // redirect to login
-        };
+    const handleLogout = async () => {
+        try {
+            console.log("Logging out and clearing cache...");
+            
+            // Call the backend logout endpoint
+            const response = await axios.post(`${BASE_URL}/api/logout/`, {}, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.data.status === 'success') {
+                console.log("Logout successful:", response.data);
+                console.log("Cache cleared:", response.data.cache_cleared);
+                
+                // Clear local storage
+                localStorage.removeItem('userId');
+                
+                // Redirect to login
+                navigate('/');
+            } else {
+                console.error("Logout failed:", response.data.message);
+                // Still clear local storage and redirect even if backend fails
+                localStorage.removeItem('userId');
+                navigate('/');
+            }
+        } catch (error) {
+            console.error("Error during logout:", error);
+            // Still clear local storage and redirect even if request fails
+            localStorage.removeItem('userId');
+            navigate('/');
+        }
+    };
 
     
  
