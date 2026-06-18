@@ -1474,7 +1474,7 @@ const LcdDisplayFormat = () => {
 
 
 
-const DisplayParameters = () => {
+const DisplayParameters1 = () => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [parameters, setParameters] = useState(
 
@@ -1566,7 +1566,161 @@ const DisplayParameters = () => {
 
 
 
-  
+
+
+const DisplayParameters = () => {
+  const [apiData, setApiData] = useState([]);
+
+  const [deviceId, setDeviceId] = useState(() =>
+    localStorage.getItem("selectedDeviceId")
+  );
+
+  const [rows, setRows] = useState([
+    {
+      checked: false,
+      no: 1,
+      name: "Auto display scroll interval",
+      code: "(3,1-0:35.5.0.255)",
+      value: "",
+      unit: "s",
+    },
+    {
+      checked: false,
+      no: 2,
+      name: "Manual display interval",
+      code: "(3,1-0:35.5.0.256)",
+      value: "",
+      unit: "s",
+    },
+  ]);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("selectedDeviceId");
+    setDeviceId(storedId);
+  }, []);
+
+  const handleCheckboxChange = (index) => {
+    setRows((prevRows) =>
+      prevRows.map((row, i) =>
+        i === index ? { ...row, checked: !row.checked } : row
+      )
+    );
+  };
+
+  const handleSelectAll = (e) => {
+    const isChecked = e.target.checked;
+
+    setRows((prevRows) =>
+      prevRows.map((row) => ({
+        ...row,
+        checked: isChecked,
+      }))
+    );
+  };
+
+  const fetchDisplayParameters = async () => {
+    if (!deviceId) {
+      alert("Device ID not found");
+      return;
+    }
+
+    const selectedItems = rows.filter((row) => row.checked);
+
+    if (selectedItems.length === 0) {
+      alert("Please select at least one item");
+      return;
+    }
+
+    try {
+      const payload = {
+        device_id: deviceId,
+        action: "read_obis",
+        serial_number: localStorage.getItem("serial_number") || "",
+        parameters: selectedItems.map((item) => ({
+          name: item.name,
+          code: item.code,
+          value: item.value || "",
+          unit: item.unit || "",
+        })),
+      };
+
+      console.log("Display Payload:", payload);
+
+      const response = await axios.post(
+        `${BASE_URL}/api/display-parameters/`,
+        payload
+      );
+
+      console.log("Display Response:", response.data);
+
+      setApiData(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching display parameters:", error);
+      if (error.response) {
+        console.log("Backend Error:", error.response.data);
+      }
+    }
+  };
+
+  const getValueByCode = (code) => {
+    const found = apiData.find((item) => item.code === code);
+    return found ? found.value : "";
+  };
+
+  return (
+    <div className="display-root-lcd">
+       <div className="lcd-save-button-container">
+        <button
+          style={{ marginLeft: "60%" }}
+          className="scheduler-add-button"
+          onClick={fetchDisplayParameters}
+        >
+          Read
+        </button>
+      </div>
+      <table style={{ marginTop: "5%" }} className="tableTariff1">
+        <thead>
+          <tr>
+            <th>
+              <input
+                type="checkbox"
+                checked={rows.length > 0 && rows.every((row) => row.checked)}
+                onChange={handleSelectAll}
+              />
+            </th>
+            <th>No</th>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Value</th>
+            <th>Unit</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {rows.map((param, index) => (
+            <tr key={param.no}>
+              <td>
+                <input
+                  type="checkbox"
+                  checked={param.checked}
+                  onChange={() => handleCheckboxChange(index)}
+                />
+              </td>
+              <td>{param.no}</td>
+              <td>{param.name}</td>
+              <td>{param.code}</td>
+              <td>{getValueByCode(param.code) || param.value}</td>
+              <td>{param.unit}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+     
+    </div>
+  );
+};
+
 
 
 

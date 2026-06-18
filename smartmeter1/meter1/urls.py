@@ -194,7 +194,7 @@ urlpatterns = [
     path('api/token-credit/', TokenCreditView.as_view(), name="token-credit-create"),  # POST for multiple token credits
     path('api/token-credit/<int:device_id>/', TokenCreditView.as_view(), name="token-credit-get"),  # GET token credits by device_id
     path('api/token-credit/<str:action>/', TokenCreditView.as_view(), name="token-credit-action"),  # POST with action (update/set/invoke)
-    path('api/emergency-credit/', EmergencyCreditView.as_view(), name='emergency_credit_create'),  # POST to create new emergency credit
+    path('api/emergency-credit', EmergencyCreditView.as_view(), name='emergency_credit_create'),  # POST to create new emergency credit
     path('api/emergency-credit/<int:device_id>/', EmergencyCreditView.as_view(), name='emergency_credit_list'),  # GET to get emergency credit details by device_id
     path('api/emergency-credit/<str:action>/', EmergencyCreditView.as_view(), name='emergency_credit_action'),  # PUT for update/set/invoke actions
     

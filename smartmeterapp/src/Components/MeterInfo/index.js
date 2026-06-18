@@ -25,6 +25,7 @@ const MeterInfo = () => {
   
 
   const [apiData, setApiData] = useState(null);
+  console.log("apiData------------------------this one is the api data we are useimh tja dlms$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$",apiData)
   const [checkedItems, setCheckedItems] = useState({
     "Meter Identifier": [],
     "Meter Version": [],
@@ -346,7 +347,7 @@ const MeterInfo = () => {
 
     axios.post(`${BASE_URL}/api/getmeterinfo/`, payload)
       .then(response => {
-        console.log("Read OBIS success:", response.data);
+        console.log("Read OBIS success-------@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@prince:", response.data);
         setApiData(response.data)
         alert("Read OBIS success");
       })

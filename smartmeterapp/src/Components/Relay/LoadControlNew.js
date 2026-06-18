@@ -36,6 +36,8 @@ const LoadControlNew = () => {
 
   // UI state
   const [loading, setLoading] = useState(false);
+  const [isReading, setIsReading] = useState(false);
+  const [isWriting, setIsWriting] = useState(false);
   const [error, setError] = useState(null);
   const [showProgressModal, setShowProgressModal] = useState(false);
 
@@ -318,7 +320,8 @@ const LoadControlNew = () => {
       return;
     }
 
-    setLoading(true);
+    //setLoading(true);
+    setIsReading(true);
     setError(null);
     setShowProgressModal(true);
 
@@ -417,7 +420,8 @@ const LoadControlNew = () => {
       setError(`Read failed: ${e.message}`);
       setTimeout(() => setError(null), 3000);
     } finally {
-      setLoading(false);
+      //setLoading(false);
+      setIsReading(false);
       setShowProgressModal(false);
     }
   };
@@ -435,7 +439,8 @@ const LoadControlNew = () => {
       return;
     }
 
-    setLoading(true);
+    //setLoading(true);
+    setIsWriting(true);
     setError(null);
     setShowProgressModal(true);
 
@@ -493,6 +498,7 @@ const LoadControlNew = () => {
       if (writeOperations.length === 0) {
         setError('No writable attributes selected. Monitored value, Threshold active, and Emergency profile active are read-only.');
         setLoading(false);
+        setIsWriting(false);
         setShowProgressModal(false);
         setTimeout(() => setError(null), 3000);
         return;
@@ -558,6 +564,7 @@ const LoadControlNew = () => {
       setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);
+      setIsWriting(false);
       setShowProgressModal(false);
     }
   };
@@ -571,21 +578,16 @@ const LoadControlNew = () => {
 
   {/* Header */}
   <div className="lc-header">
-    <button
-      onClick={handleRead}
-      disabled={loading}
-      className="lc-btn lc-btn-read"
-    >
-      {loading ? "Reading..." : "Read"}
-    </button>
+    
 
-    <button
-      onClick={handleWrite}
-      disabled={loading}
-      className="lc-btn lc-btn-write"
-    >
-      {loading ? "Writing..." : "Write"}
-    </button>
+    
+        <button className="lc-btn lc-btn-read" onClick={handleRead} disabled={isReading || isWriting}>
+  {isReading ? "Reading..." : "Read"}
+</button>
+
+<button  className="lc-btn lc-btn-write" onClick={handleWrite} disabled={isReading || isWriting}>
+  {isWriting ? "Writing..." : "Write"}
+</button>
   </div>
 
 

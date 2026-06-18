@@ -24,6 +24,8 @@ const DisconnectControlNew = () => {
   
   // UI state
   const [loading, setLoading] = useState(false);
+    const [isReading, setIsReading] = useState(false);
+const [isWriting, setIsWriting] = useState(false);
   const [error, setError] = useState(null);
   const [showProgressModal, setShowProgressModal] = useState(false);
 
@@ -278,7 +280,8 @@ const DisconnectControlNew = () => {
       return;
     }
 
-    setLoading(true);
+    //setLoading(true);
+    setIsReading(true);
     setError(null);
     setShowProgressModal(true);
 
@@ -292,7 +295,8 @@ const DisconnectControlNew = () => {
 
     if (parameters.length === 0) {
       setError('Method cannot be read. Please select other attributes.');
-      setLoading(false);
+      //setLoading(false);
+      setIsReading(false);
       setShowProgressModal(false);
       setTimeout(() => setError(null), 3000);
       return;
@@ -344,7 +348,8 @@ const DisconnectControlNew = () => {
       setError(`Read failed: ${e.message}`);
       setTimeout(() => setError(null), 3000);
     } finally {
-      setLoading(false);
+      //setLoading(false);
+       setIsReading(false);
       setShowProgressModal(false);
     }
   };
@@ -362,7 +367,8 @@ const DisconnectControlNew = () => {
       return;
     }
 
-    setLoading(true);
+    //setLoading(true);
+    setIsWriting(true);
     setError(null);
     setShowProgressModal(true);
 
@@ -395,7 +401,8 @@ const DisconnectControlNew = () => {
 
     if (writeOperations.length === 0) {
       setError('No writable attributes selected. Output State and Control State are read-only.');
-      setLoading(false);
+      //setLoading(false);
+      setIsWriting(false);
       setShowProgressModal(false);
       setTimeout(() => setError(null), 3000);
       return;
@@ -438,7 +445,8 @@ const DisconnectControlNew = () => {
       setError(`Write failed: ${e.message}`);
       setTimeout(() => setError(null), 3000);
     } finally {
-      setLoading(false);
+      //setLoading(false);
+      setIsWriting(false);
       setShowProgressModal(false);
     }
   };
@@ -517,21 +525,16 @@ const DisconnectControlNew = () => {
 
      <div className="relay-btn-group">
 
-        <button
-          onClick={handleRead}
-          disabled={loading}
-          className="lc-btn lc-btn-read"
-        >
-          {loading ? "Reading..." : "Read"}
-        </button>
+        
 
-        <button
-          onClick={handleWrite}
-          disabled={loading}
-          className="lc-btn lc-btn-write"
-        >
-          {loading ? "Writing..." : "Write"}
-        </button>
+
+        <button className="lc-btn lc-btn-read" onClick={handleRead} disabled={isReading || isWriting}>
+  {isReading ? "Reading..." : "Read"}
+</button>
+
+<button  className="lc-btn lc-btn-write" onClick={handleWrite} disabled={isReading || isWriting}>
+  {isWriting ? "Writing..." : "Write"}
+</button>
 
       </div>
 

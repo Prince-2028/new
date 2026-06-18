@@ -493,7 +493,8 @@ const StandardEventLogDashboard = () => {
 
     try {
       const resp = await axios.post(
-        `${BASE_URL}/api/standard_event_log/save_events/`,
+        // `${BASE_URL}/api/standard_event_log/save_events/`,
+        `${BASE_URL}/api/event-log/`,                                 //sumit 
         payload,
         { headers: { "Content-Type": "application/json" } }
       );
@@ -505,7 +506,7 @@ const StandardEventLogDashboard = () => {
       alert("Save failed: " + (e.response?.data?.error || e.message));
     }
   };
-
+// -------------------------------------------------------------------------------------------------------------------------------------------------------
   const handleRefresh = () => {
     console.log("🔄 Refresh clicked — clearing rows");
     setRows([]);
@@ -807,7 +808,8 @@ const FraudDetectionLog = () => {
 
     try {
       const resp = await axios.post(
-        `${BASE_URL}/api/standard_event_log/save_events/`,
+        // `${BASE_URL}/api/standard_event_log/save_events/`,
+        `${BASE_URL}/api/event-log/`,                                 //sumit 
         payload,
         { headers: { "Content-Type": "application/json" } }
       );
@@ -1119,7 +1121,8 @@ const DisconnectorControlLog = () => {
 
     try {
       const resp = await axios.post(
-        `${BASE_URL}/api/standard_event_log/save_events/`,
+        // `${BASE_URL}/api/standard_event_log/save_events/`,
+        `${BASE_URL}/api/event-log/`,                                 //sumit 
         payload,
         { headers: { "Content-Type": "application/json" } }
       );
@@ -1432,7 +1435,8 @@ const PowerQualityLog = () => {
 
     try {
       const resp = await axios.post(
-        `${BASE_URL}/api/standard_event_log/save_events/`,
+        // `${BASE_URL}/api/standard_event_log/save_events/`,
+          `${BASE_URL}/api/event-log/`,                                 //sumit 
         payload,
         { headers: { "Content-Type": "application/json" } }
       );
@@ -1745,7 +1749,8 @@ const CommunicationEventLog = () => {
 
     try {
       const resp = await axios.post(
-        `${BASE_URL}/api/standard_event_log/save_events/`,
+        // `${BASE_URL}/api/standard_event_log/save_events/`,
+          `${BASE_URL}/api/event-log/`,                                 //sumit 
         payload,
         { headers: { "Content-Type": "application/json" } }
       );
@@ -2062,7 +2067,8 @@ const OtherEventLog = () => {
 
     try {
       const resp = await axios.post(
-        `${BASE_URL}/api/standard_event_log/save_events/`,
+        // `${BASE_URL}/api/standard_event_log/save_events/`,
+          `${BASE_URL}/api/event-log/`,                                 //sumit 
         payload,
         { headers: { "Content-Type": "application/json" } }
       );

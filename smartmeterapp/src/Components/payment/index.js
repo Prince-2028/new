@@ -36,23 +36,40 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
 
 
   const handleSubmit = async () => {
+    //////////update code Bug0022**************
+    
     const requestData = [{
-      "device_id": deviceId,
-      account_mode_and_status: StatusformData.accountModeAndStatus,
-      payment_mode: StatusformData.paymentMode,
-      account_status: StatusformData.accountStatus,
-      current_credit_in_use: StatusformData.currentCreditInUse,
-      current_credit_status: StatusformData.currentCreditStatus,
-      method: StatusformData.method,
-    }];
-  
-    // Validation: Check for empty fields
-    for (const [key, value] of Object.entries(requestData)) {
-      if (value === "" || value === null || value === undefined) {
-        alert(`Data is missing: Please fill all fields. Missing field: ${key.replace(/_/g, ' ')}`);
-        return;
-      }
-    }
+    device_id: deviceId,
+    payment_mode: StatusformData.paymentMode,
+    account_status: StatusformData.accountStatus,
+    current_credit_in_use: StatusformData.currentCreditInUse,
+    current_credit_status: StatusformData.currentCreditStatus,
+    method: StatusformData.method,
+  }];
+
+  // Validate all fields
+  const formData = requestData[0];
+
+  const missingFields = Object.entries(formData)
+    .filter(([key, value]) =>
+      value === "" ||
+      value === null ||
+      value === "EditValue is null" ||
+      value === undefined 
+      //(Array.isArray(value) && value.length === 0)
+    )
+    .map(([key]) => key.replace(/_/g, " "));
+
+  if (missingFields.length > 0) {
+    alert(
+      `Please fill all required fields:\n\n${missingFields.join("\n")}`
+    );
+    return;
+  }
+
+  console.log("Request Data:", requestData);
+
+  ///////////////end update bug 0023 
   
     console.log("Request Data", requestData); // Debug log
   
@@ -117,10 +134,74 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
     e.preventDefault();
    
   
-    const convertToUTC = (datetimeStr) => {
-      const date = new Date(datetimeStr);
-      return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString();
-    };
+  const isEmpty = (val) =>
+    val === "" || val === null || val === undefined;
+
+  const isInvalidNumber = (val) =>
+    isEmpty(val) || Number.isNaN(Number(val));
+
+  const convertToUTC = (datetimeStr) => {
+    if (isEmpty(datetimeStr)) return null;
+
+    const date = new Date(datetimeStr);
+    if (Number.isNaN(date.getTime())) return null;
+
+    return new Date(
+      date.getTime() - date.getTimezoneOffset() * 60000
+    ).toISOString();
+  };
+
+  const missingFields = [];
+
+  if (isInvalidNumber(valueFormData.availableCredit))
+    missingFields.push("available credit");
+  if (isInvalidNumber(valueFormData.amountToClear))
+    missingFields.push("amount to clear");
+  if (isInvalidNumber(valueFormData.clearanceThreshold))
+    missingFields.push("clearance threshold");
+  if (isInvalidNumber(valueFormData.aggregatedDebt))
+    missingFields.push("aggregated debt");
+
+  if (isEmpty(valueFormData.accountActivationTime))
+    missingFields.push("account activation time");
+  if (isEmpty(valueFormData.accountClosureTime))
+    missingFields.push("account closure time");
+
+  if (!valueFormData.currency || isEmpty(valueFormData.currency.name))
+    missingFields.push("currency name");
+  if (!valueFormData.currency || isEmpty(valueFormData.currency.scale))
+    missingFields.push("currency scale");
+  if (!valueFormData.currency || isEmpty(valueFormData.currency.unit))
+    missingFields.push("currency unit name");
+
+  if (isInvalidNumber(valueFormData.lowCreditThreshold))
+    missingFields.push("low credit threshold");
+  if (isInvalidNumber(valueFormData.nextCreditAvailableThreshold))
+    missingFields.push("next credit available threshold");
+  if (isInvalidNumber(valueFormData.maxProvision))
+    missingFields.push("max provision");
+  if (isInvalidNumber(valueFormData.maxProvisionPeriod))
+    missingFields.push("max provision period");
+
+  if (!deviceId) {
+    missingFields.push("device id");
+  }
+
+  const activationTime = convertToUTC(valueFormData.accountActivationTime);
+  const closureTime = convertToUTC(valueFormData.accountClosureTime);
+
+  if (!activationTime) {
+    missingFields.push("valid account activation time");
+  }
+
+  if (!closureTime) {
+    missingFields.push("valid account closure time");
+  }
+
+  if (missingFields.length > 0) {
+    alert(`Please fill the following details:\n\n${missingFields.join("\n")}`);
+    return;
+  }
     
     // Convert the dates to UTC before sending
     const formattedData = {
@@ -947,7 +1028,7 @@ const Credit = () => {
   
 
  
-  const tokenValueHandleSubmit = (e) => {
+  const tokenValueHandleSubmit1 = (e) => {
     e.preventDefault();
 
   
@@ -970,6 +1051,76 @@ const Credit = () => {
         console.error("Error updating token credit:", error);
       });
   };
+
+//***********33333333333333 */
+ ////////////****** */
+  const tokenValueHandleSubmit = (e) => {
+    e.preventDefault();
+
+    ////////////****** */
+
+
+      const isEmpty = (val) =>
+    val === "" || val === null || val === undefined;
+
+  const missingFields = [];
+
+  if (isEmpty(TokenValuesData.currentCreditAmount))
+    missingFields.push("current credit amount");
+
+  if (isEmpty(TokenValuesData.creditType))
+    missingFields.push("credit type");
+
+  if (isEmpty(TokenValuesData.priority))
+    missingFields.push("priority");
+
+  if (isEmpty(TokenValuesData.limit))
+    missingFields.push("limit");
+
+  if (isEmpty(TokenValuesData.creditConfiguration))
+    missingFields.push("credit configuration");
+
+  if (isEmpty(TokenValuesData.presetCreditAmount))
+    missingFields.push("preset credit amount");
+
+  if (isEmpty(TokenValuesData.creditAvailableThreshold))
+    missingFields.push("credit available threshold");
+
+  if (isEmpty(TokenValuesData.period))
+    missingFields.push("period");
+
+  if (!deviceId) {
+    missingFields.push("device id");
+  }
+
+  if (missingFields.length > 0) {
+    alert(`Please fill the following details:\n\n${missingFields.join(",")}`);
+    return;
+  }
+
+   ////////////****** */
+    
+    axios.post(`${BASE_URL}/api/token-credit/`, [{
+      device_id: deviceId,  // This matches the backend expected field
+      current_credit_amount: TokenValuesData.currentCreditAmount,
+      credit_type: TokenValuesData.creditType,
+      priority: TokenValuesData.priority,
+      limit: TokenValuesData.limit,
+      credit_configuration: TokenValuesData.creditConfiguration,
+      preset_credit_amount: TokenValuesData.presetCreditAmount,
+      credit_available_threshold: TokenValuesData.creditAvailableThreshold,
+      period: TokenValuesData.period,
+    }])
+      .then(response => {
+        alert("Token Credit Updated Successfully!");
+      })
+      .catch(error => {
+        console.error("Error updating token credit:", error);
+      });
+  };
+
+
+
 
   // Function to fetch token credit data
 const fetchTokenCreditData = async (deviceId) => {
@@ -1084,7 +1235,7 @@ useEffect(() => {
     setEmergencyMethodData((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  const handleEmergencyValueSubmit = async () => {
+  const handleEmergencyValueSubmit1 = async () => {
     try {
       const payload = [
         {
@@ -1114,6 +1265,89 @@ useEffect(() => {
     }
   };
 
+ const handleEmergencyValueSubmit = async () => {
+
+/////////////*********44444444 */
+
+     const isEmpty = (val) =>
+    val === "" || val === null || val === undefined;
+
+  const missingFields = [];
+
+  if (isEmpty(emergencyValueData.currentCreditAmount))
+    missingFields.push("current credit amount");
+
+  if (isEmpty(emergencyValueData.creditType))
+    missingFields.push("credit type");
+
+  if (isEmpty(emergencyValueData.priority))
+    missingFields.push("priority");
+
+  if (isEmpty(emergencyValueData.warningThreshold1))
+    missingFields.push("warning threshold 1");
+
+  if (isEmpty(emergencyValueData.limit))
+    missingFields.push("limit");
+
+  if (isEmpty(emergencyValueData.creditConfiguration))
+    missingFields.push("credit configuration");
+
+  if (isEmpty(emergencyValueData.creditStatus))
+    missingFields.push("credit status");
+
+  if (isEmpty(emergencyValueData.presetCreditAmount))
+    missingFields.push("preset credit amount");
+
+  if (isEmpty(emergencyValueData.creditAvailableThreshold))
+    missingFields.push("credit available threshold");
+
+  if (isEmpty(emergencyValueData.period))
+    missingFields.push("period");
+
+  if (!deviceId)
+    missingFields.push("device id");
+
+  if (missingFields.length > 0) {
+    alert(
+      `Please fill the following details: ${missingFields.join(", ")}`
+    );
+    return;
+  }
+
+  /////////////*********44444444 */
+
+
+
+    try {
+      const payload = [
+        {
+          device_id:deviceId,  // Ensure device_id is included
+          current_credit_amount: emergencyValueData.currentCreditAmount,
+          credit_type: emergencyValueData.creditType,
+          priority: emergencyValueData.priority,
+          warning_threshold_1: emergencyValueData.warningThreshold1,
+          limit: emergencyValueData.limit,
+          credit_configuration: emergencyValueData.creditConfiguration,
+          credit_status: emergencyValueData.creditStatus,
+          preset_credit_amount: emergencyValueData.presetCreditAmount,
+          credit_available_threshold: emergencyValueData.creditAvailableThreshold,
+          period: emergencyValueData.period
+        }
+      ];
+  
+      const response = await axios.post(
+        `${BASE_URL}/api/emergency-credit`,
+        payload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+  
+      console.log("Value data submitted successfully:", response.data);
+    } catch (error) {
+      console.error("Error submitting Value data:", error.response?.data || error.message);
+    }
+  };
+
+  
 
   const fetchEmergencyCreditData = async (deviceId) => {
     try {
@@ -1762,91 +1996,503 @@ const pages = [
 
 
 
+const CHARGE_VALUE_OPTIONS = [
+  {
+    index: 2,
+    field: "total_amount_paid",
+    label: "Total Amount Paid",
+    type: "number",
+  },
+
+  {
+    index: 3,
+    field: "charge_type",
+    label: "Charge Type",
+    type: "text",
+  },
+
+  {
+    index: 4,
+    field: "priority",
+    label: "Priority",
+    type: "number",
+  },
+
+  // corrected index
+  {
+    index: 8,
+    field: "period",
+    label: "Period",
+    type: "number",
+  },
+
+  {
+    index: 9,
+    field: "charge_configuration",
+    label: "Charge Configuration",
+    type: "text",
+  },
+
+  {
+    index: 10,
+    field: "last_collection_time",
+    label: "Last Collection Time",
+    type: "text",
+  },
+
+  {
+    index: 11,
+    field: "last_collection_amount",
+    label: "Last Collection Amount",
+    type: "number",
+  },
+
+  {
+    index: 12,
+    field: "total_amount_remaining",
+    label: "Total Amount Remaining",
+    type: "number",
+  },
+
+  {
+    index: 13,
+    field: "proportion",
+    label: "Proportion",
+    type: "number",
+  },
+];
 
 
-const Charge = () => {
-  const [currentPage, setCurrentPage] = useState('value');
 
+
+const Charge1 = () => {
   
-
-  const handleButtonClick = (pageName) => {
-    setCurrentPage(pageName);
-  };
+  const UNIT_CHARGE_TABLE_ROWS = Array.from({ length: 10 }, (_, i) => i + 1);
 
 
-  const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
+  const [currentPage, setCurrentPage] = useState("value");
+
+  const [deviceId, setDeviceId] = useState(() =>
+    localStorage.getItem("selectedDeviceId")
+  );
+
   useEffect(() => {
-    const storedId = localStorage.getItem('selectedDeviceId');
+    const storedId = localStorage.getItem("selectedDeviceId");
     setDeviceId(storedId);
   }, []);
 
- 
   const [valueFormData, setValueFormData] = useState({
     device_id: deviceId,
     total_amount_paid: "",
     charge_type: "",
     priority: "",
-    charge_configuration: [], // Array instead of string
+    period: "",
+    charge_configuration: [],
     last_collection_time: "",
     last_collection_amount: "",
     total_amount_remaining: "",
     proportion: "",
   });
 
-  const valueHandleChange = (name, value) => {
+  useEffect(() => {
     setValueFormData((prev) => ({
       ...prev,
-      [name]: value,
+      device_id: deviceId,
     }));
-  };
+  }, [deviceId]);
 
-  const handleMultiSelectChange = (e) => {
-    const { options } = e.target;
-    const selectedValues = [];
-    for (let i = 0; i < options.length; i++) {
-      if (options[i].selected) {
-        selectedValues.push(options[i].value);
-      }
-    }
-    setValueFormData((prev) => ({
-      ...prev,
-      charge_configuration: selectedValues,
-    }));
-  };
 
-  const handleCheckboxChange = (e) => {
-    const { value, checked } = e.target;
-    setValueFormData((prev) => ({
-      ...prev,
-      charge_configuration: checked
-        ? [...prev.charge_configuration, value]
-        : prev.charge_configuration.filter((item) => item !== value),
-    }));
-  };
+  // Change these to your actual meter OBIS if needed
+const UNIT_CHARGE_ACTIVE_OBIS_CODE = "0.0.19.20.0.255";
+const UNIT_CHARGE_PASSIVE_OBIS_CODE = "0.0.19.20.0.255";
 
-  
+const createChargeTable = () =>
+  UNIT_CHARGE_TABLE_ROWS.map((step) => ({
+    step: `Step ${step}`,
+    tariff1: "",
+    tariff2: "",
+    tariff3: "",
+    tariff4: "",
+  }));
 
-  const valueHandleSubmit = async (e) => {
-    e.preventDefault();
-  
-    const formattedData = {
-      ...valueFormData,
-      total_amount_paid: parseFloat(valueFormData.total_amount_paid) || 0,
-      last_collection_amount: parseFloat(valueFormData.last_collection_amount) || 0,
-      total_amount_remaining: parseFloat(valueFormData.total_amount_remaining) || 0,
-      proportion: parseFloat(valueFormData.proportion) || 0,
-      last_collection_time: new Date(valueFormData.last_collection_time).toISOString(),
+
+
+const createUnitChargeState = () => ({
+  selected: false,
+  activationTimeSelected: false,
+  commodityScale: "",
+  priceScale: "",
+  classId: "",
+  logicalName: "",
+  attributeId: "",
+  unitChargeActivationTime: "",
+  chargeTable: createChargeTable(),
+});
+
+const [unitChargeActiveData, setUnitChargeActiveData] = useState(
+  createUnitChargeState()
+);
+const [unitChargePassiveData, setUnitChargePassiveData] = useState(
+  createUnitChargeState()
+);
+
+const getUnitChargeState = (mode) =>
+  mode === "active" ? unitChargeActiveData : unitChargePassiveData;
+
+const setUnitChargeState = (mode, updater) => {
+  if (mode === "active") {
+    setUnitChargeActiveData(updater);
+  } else {
+    setUnitChargePassiveData(updater);
+  }
+};
+
+const handleUnitChargeFieldChange = (mode, field, value) => {
+  setUnitChargeState(mode, (prev) => ({
+    ...prev,
+    [field]: value,
+  }));
+};
+
+const handleUnitChargeTableChange = (mode, rowIndex, field, value) => {
+  setUnitChargeState(mode, (prev) => {
+    const nextTable = [...prev.chargeTable];
+    nextTable[rowIndex] = {
+      ...nextTable[rowIndex],
+      [field]: value,
     };
-  
-    try {
-      await axios.post(`${BASE_URL}/api/payment-charge-value/`, [formattedData]); // Wrap in an array
-      alert("Data sent successfully!");
-    } catch (error) {
-      console.error("Error sending data:", error.response?.data || error);
+    return {
+      ...prev,
+      chargeTable: nextTable,
+    };
+  });
+};
+
+const normalizeUnitChargeTable = (rawTable) => {
+  const baseTable = createChargeTable();
+
+  if (!Array.isArray(rawTable)) return baseTable;
+
+  return baseTable.map((row, index) => {
+    const src = rawTable[index] ?? {};
+
+    if (Array.isArray(src)) {
+      return {
+        step: row.step,
+        tariff1: src[0] ?? "",
+        tariff2: src[1] ?? "",
+        tariff3: src[2] ?? "",
+        tariff4: src[3] ?? "",
+      };
     }
+
+    return {
+      step: row.step,
+      tariff1: src.tariff1 ?? src.value1 ?? src.charge_per_unit ?? "",
+      tariff2: src.tariff2 ?? src.value2 ?? "",
+      tariff3: src.tariff3 ?? src.value3 ?? "",
+      tariff4: src.tariff4 ?? src.value4 ?? "",
+    };
+  });
+};
+
+const parseUnitChargeResponse = (rawData) => {
+  const root = Array.isArray(rawData) ? rawData[0] : rawData;
+  const payload = root?.value ?? root?.data ?? root?.result ?? root ?? {};
+
+  const scaling =
+    payload.charge_per_unit_scaling ??
+    payload.scaling ??
+    payload.chargePerUnitScaling ??
+    {};
+
+  const reference =
+    payload.commodity_reference ??
+    payload.reference ??
+    payload.commodityReference ??
+    {};
+
+  const table =
+    payload.charge_table ??
+    payload.chargeTable ??
+    payload.table ??
+    [];
+
+  return {
+    selected: true,
+    activationTimeSelected: true,
+    commodityScale: scaling.commodity_scale ?? scaling.commodityScale ?? "",
+    priceScale: scaling.price_scale ?? scaling.priceScale ?? "",
+    classId: reference.class_id ?? reference.classId ?? "",
+    logicalName: reference.logical_name ?? reference.logicalName ?? "",
+    attributeId: reference.attribute_index ?? reference.attributeId ?? "",
+    unitChargeActivationTime:
+      payload.unit_charge_activation_time ??
+      payload.unitChargeActivationTime ??
+      "",
+    chargeTable: normalizeUnitChargeTable(table),
   };
-  
+};
+
+const handleUnitChargeRead = async (mode) => {
+  const serial =
+    localStorage.getItem("selectedSerialNumber") ||
+    localStorage.getItem("selectedDeviceId") ||
+    deviceId;
+
+  if (!serial) {
+    alert("No serial/device selected");
+    return;
+  }
+
+  const current = getUnitChargeState(mode);
+
+  if (!current.selected && !(mode === "passive" && current.activationTimeSelected)) {
+    alert(`Please select ${mode === "active" ? "Unit charge active" : "Unit charge passive"}`);
+    return;
+  }
+
+  const parameters = [];
+
+  if (mode === "active" && current.selected) {
+    parameters.push({
+      obis_code: UNIT_CHARGE_ACTIVE_OBIS_CODE,
+      attribute_index: "5",
+    });
+  }
+
+  if (mode === "passive") {
+    if (current.selected) {
+      parameters.push({
+        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+        attribute_index: "6",
+      });
+    }
+
+    if (current.activationTimeSelected) {
+      parameters.push({
+        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+        attribute_index: "7",
+      });
+    }
+  }
+
+  const payload = {
+    serial_number: serial,
+    action: "read_obis",
+    parameters,
+  };
+
+  try {
+    setReadLoading(true);
+
+    const response = await axios.post(`${BASE_URL}/api/getmeterinfo/`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const data = response?.data?.data ?? response?.data ?? {};
+    const nextState = parseUnitChargeResponse(data);
+
+    setUnitChargeState(mode, (prev) => ({
+      ...prev,
+      ...nextState,
+    }));
+  } catch (error) {
+    console.error("Unit charge read error:", error);
+    alert("Failed to read unit charge data");
+  } finally {
+    setReadLoading(false);
+  }
+};
+
+const renderUnitChargeSection = (mode) => {
+  const isActive = mode === "active";
+  const state = getUnitChargeState(mode);
+
+  const setSelected = (checked) =>
+    setUnitChargeState(mode, (prev) => ({
+      ...prev,
+      selected: checked,
+    }));
+
+  const setActivationSelected = (checked) =>
+    setUnitChargeState(mode, (prev) => ({
+      ...prev,
+      activationTimeSelected: checked,
+    }));
+
+  return (
+    <form onSubmit={(e) => handleSubmit(e, mode)}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={state.selected}
+            onChange={(e) => setSelected(e.target.checked)}
+          />
+          {isActive ? "Unit charge active" : "Unit charge passive"}
+          <span style={{ marginLeft: 8, color: "#666" }}>
+            (Attribute Index: {isActive ? "5" : "6"})
+          </span>
+        </label>
+
+        <button
+          type="button"
+          className="scheduler-add-button"
+          onClick={() => handleUnitChargeRead(mode)}
+          disabled={readLoading}
+        >
+          {readLoading ? "Reading..." : "Read"}
+        </button>
+      </div>
+
+      <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
+        <legend style={{ padding: "0 8px" }}>Per unit scaling</legend>
+
+        <div className="security-form">
+          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ minWidth: 120 }}>Commodity scale</span>
+            <input
+              type="number"
+              value={state.commodityScale}
+              onChange={(e) =>
+                handleUnitChargeFieldChange(mode, "commodityScale", e.target.value)
+              }
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ minWidth: 120 }}>Price scale</span>
+            <input
+              type="number"
+              value={state.priceScale}
+              onChange={(e) =>
+                handleUnitChargeFieldChange(mode, "priceScale", e.target.value)
+              }
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
+        <legend style={{ padding: "0 8px" }}>Commodity reference</legend>
+
+        <div className="security-form">
+          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ minWidth: 120 }}>Class ID</span>
+            <input
+              type="text"
+              value={state.classId}
+              onChange={(e) =>
+                handleUnitChargeFieldChange(mode, "classId", e.target.value)
+              }
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ minWidth: 120 }}>Logical name</span>
+            <input
+              type="text"
+              value={state.logicalName}
+              onChange={(e) =>
+                handleUnitChargeFieldChange(mode, "logicalName", e.target.value)
+              }
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ minWidth: 120 }}>Attribute ID</span>
+            <input
+              type="text"
+              value={state.attributeId}
+              onChange={(e) =>
+                handleUnitChargeFieldChange(mode, "attributeId", e.target.value)
+              }
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      {!isActive && (
+        <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
+          <legend style={{ padding: "0 8px" }}>Activation time</legend>
+
+          <div className="security-form" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <input
+              type="checkbox"
+              checked={state.activationTimeSelected}
+              onChange={(e) => setActivationSelected(e.target.checked)}
+            />
+            <span style={{ minWidth: 120 }}>Unit charge activation time</span>
+            <input
+              type="text"
+              value={state.unitChargeActivationTime}
+              onChange={(e) =>
+                handleUnitChargeFieldChange(mode, "unitChargeActivationTime", e.target.value)
+              }
+            />
+          </div>
+        </fieldset>
+      )}
+
+      <fieldset style={{ border: "1px solid #ddd", padding: 12 }}>
+        <legend style={{ padding: "0 8px" }}>Charge table</legend>
+
+        <div style={{ maxWidth: "100%", overflowX: "auto" }}>
+          <table className="tableTariff1" style={{ width: "100%" }}>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Tariff 1</th>
+                <th>Tariff 2</th>
+                <th>Tariff 3</th>
+                <th>Tariff 4</th>
+              </tr>
+            </thead>
+            <tbody>
+              {state.chargeTable.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  <td style={{ whiteSpace: "nowrap", padding: "6px 8px" }}>
+                    {row.step}
+                  </td>
+
+                  {["tariff1", "tariff2", "tariff3", "tariff4"].map((field) => (
+                    <td key={field}>
+                      <input
+                        type="text"
+                        value={row[field]}
+                        onChange={(e) =>
+                          handleUnitChargeTableChange(
+                            mode,
+                            rowIndex,
+                            field,
+                            e.target.value
+                          )
+                        }
+                        style={{ width: "100%" }}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </fieldset>
+    </form>
+  );
+};
+
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [selectAll, setSelectAll] = useState(false);
+  const [readValues, setReadValues] = useState({});
+  const [readLoading, setReadLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     commodityScale: 0,
@@ -1856,101 +2502,17 @@ const Charge = () => {
     attributeId: "",
     unitChargeActivationTime: "",
     tariffs: {
-        tariff1: "",
-        tariff2: "",
-        tariff3: "",
-        tariff4: "",
+      tariff1: "",
+      tariff2: "",
+      tariff3: "",
+      tariff4: "",
     },
-});
+  });
 
-const [loading, setLoading] = useState(false);
-const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-const handleChange = (e) => {
-    const { name, value } = e.target;
-    
-    const parsedValue = ["commodityScale", "priceScale"].includes(name) ? parseFloat(value) || 0 : value;
-
-    if (name.startsWith("tariff")) {
-        setFormData({
-            ...formData,
-            tariffs: {
-                ...formData.tariffs,
-                [name]: value,
-            },
-        });
-    } else {
-        setFormData({
-            ...formData,
-            [name]: parsedValue,
-        });
-    }
-};
-
-
-
-const handleSubmit = async (e,unit_type) => {
-  e.preventDefault();
-  setLoading(true);
-  setMessage("");
-
-  // Prepare data with unit_type set to "active"
-  const formattedData = [{
-
-device:deviceId , // Ensure device ID is present
- unit_type: unit_type, // Always set to "active"
-    commodity_scale: formData.commodityScale,
-    price_scale: formData.priceScale,
-    class_id: formData.classId,
-    logical_name: formData.logicalName,
-    attribute_id: formData.attributeId,
-    unit_charge_activation_time: formData.unitChargeActivationTime,
-    tariff_1: parseFloat(formData.tariffs.tariff1) || 0.00,
-    tariff_2: parseFloat(formData.tariffs.tariff2) || 0.00,
-    tariff_3: parseFloat(formData.tariffs.tariff3) || 0.00,
-    tariff_4: parseFloat(formData.tariffs.tariff4) || 0.00,
-  }];
-
-  try {
-    const response = await axios.post(`${BASE_URL}/api/unit-charges/`, formattedData, {
-      headers: { "Content-Type": "application/json" }
-    });
-
-    if (response.status === 201) {
-      setMessage("✅ Data successfully submitted!");
-      
-      // Reset form fields after successful submission
-      setFormData({
-        device: "", 
-        unitType: "active", // Default to active
-        commodityScale: 0,
-        priceScale: 0,
-        classId: "",
-        logicalName: "",
-        attributeId: "",
-        unitChargeActivationTime: "",
-        tariffs: {
-          tariff1: "",
-          tariff2: "",
-          tariff3: "",
-          tariff4: "",
-        },
-      });
-    }
-  } catch (error) {
-    if (error.response) {
-      setMessage(`❌ Error: ${error.response.data.detail || "Invalid data submission."}`);
-    } else {
-      setMessage("❌ Error submitting data. Please try again.");
-    }
-    console.error("Error:", error);
-  }
-
-  setLoading(false);
-};
-
-
- const tabs = [
+  const tabs = [
     { key: "value", label: "Value" },
     { key: "unitChargeActive", label: "Unit Charge Active" },
     { key: "unitChargePassive", label: "Unit Charge Passive" },
@@ -1974,467 +2536,767 @@ device:deviceId , // Ensure device ID is present
   };
 
   useEffect(() => {
-    setTimeout(() => moveUnderline(currentPage), 20);
-
+    const timer = setTimeout(() => moveUnderline(currentPage), 20);
     const handleResize = () => moveUnderline(currentPage);
+
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+    };
   }, [currentPage]);
 
+  const valueHandleChange = (name, value) => {
+    setValueFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleChargeConfigCheckboxChange = (e) => {
+    const { value, checked } = e.target;
+
+    setValueFormData((prev) => {
+      const current = Array.isArray(prev.charge_configuration)
+        ? prev.charge_configuration
+        : [];
+
+      return {
+        ...prev,
+        charge_configuration: checked
+          ? Array.from(new Set([...current, value]))
+          : current.filter((item) => item !== value),
+      };
+    });
+  };
+
+  const handleReadCheckbox = (index) => {
+    const next = new Set(selectedItems);
+    if (next.has(index)) next.delete(index);
+    else next.add(index);
+
+    setSelectedItems(next);
+    setSelectAll(next.size === CHARGE_VALUE_OPTIONS.length);
+  };
+
+  const handleSelectAll = (checked) => {
+    setSelectAll(checked);
+    setSelectedItems(
+      checked ? new Set(CHARGE_VALUE_OPTIONS.map((_, i) => i)) : new Set()
+    );
+  };
+
+  const normalizeChargeConfig = (rawValue) => {
+    if (Array.isArray(rawValue)) return rawValue.map(String).filter(Boolean);
+
+    if (typeof rawValue === "string") {
+      return rawValue
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean);
+    }
+
+    if (rawValue !== null && rawValue !== undefined && rawValue !== "") {
+      return [String(rawValue)];
+    }
+
+    return [];
+  };
+
+  const handleReadValues1 = async () => {
+    const serial =
+      localStorage.getItem("selectedSerialNumber") ||
+      localStorage.getItem("selectedDeviceId") ||
+      deviceId;
+
+    if (!serial) {
+      alert("No serial/device selected");
+      return;
+    }
+
+    if (selectedItems.size === 0) {
+      alert("Please select at least one checkbox");
+      return;
+    }
+
+    const parameters = Array.from(selectedItems).map((i) => {
+      const item = CHARGE_VALUE_OPTIONS[i];
+      return {
+        obis_code: "0.0.19.20.0.255",
+        attribute_index: String(item.index),
+      };
+    });
+
+    const payload = {
+      serial_number: serial,
+      action: "read_obis",
+      parameters,
+    };
+
+    try {
+      setReadLoading(true);
+
+      const response = await axios.post(`${BASE_URL}/api/getmeterinfo/`, payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = response?.data?.data ?? response?.data ?? [];
+      const nextReadValues = {};
+      const nextFormValues = {};
+
+      const processItem = (attrIndex, rawValue) => {
+        const matched = CHARGE_VALUE_OPTIONS.find(
+          (x) => String(x.index) === String(attrIndex)
+        );
+        if (!matched) return;
+
+        if (matched.field === "charge_configuration") {
+          const arrayValue = normalizeChargeConfig(rawValue);
+          nextReadValues[matched.field] = arrayValue.join(", ");
+          nextFormValues[matched.field] = arrayValue;
+          return;
+        }
+
+        nextReadValues[matched.field] =
+          rawValue === null || rawValue === undefined ? "" : String(rawValue);
+        nextFormValues[matched.field] = rawValue;
+      };
+
+      if (Array.isArray(data)) {
+        data.forEach((item) => {
+          processItem(
+            item.attribute_index ?? item.index ?? item.parameter_index,
+            item.value ?? item.result ?? item.data ?? item.response
+          );
+        });
+      } else if (data && typeof data === "object") {
+        Object.keys(data).forEach((key) => {
+          processItem(key, data[key]);
+        });
+      }
+
+      setReadValues((prev) => ({
+        ...prev,
+        ...nextReadValues,
+      }));
+
+      setValueFormData((prev) => ({
+        ...prev,
+        ...nextFormValues,
+        device_id: serial,
+      }));
+    } catch (error) {
+      console.error("Read Error:", error);
+      alert("Failed to read charge values");
+    } finally {
+      setReadLoading(false);
+    }
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+  const controllerRef = useRef(null);
+
+const handleReadValues = async () => {
+  const serial =
+    localStorage.getItem("selectedSerialNumber") ||
+    localStorage.getItem("selectedDeviceId") ||
+    deviceId;
+
+  if (!serial) {
+    alert("No serial/device selected");
+    return;
+  }
+
+  if (selectedItems.size === 0) {
+    alert("Please select at least one checkbox");
+    return;
+  }
+
+  const parameters = Array.from(selectedItems).map((i) => {
+    const item = CHARGE_VALUE_OPTIONS[i];
+    return {
+      obis_code: "0.0.19.20.0.255",
+      attribute_index: String(item.index),
+    };
+  });
+
+  const payload = {
+    serial_number: serial,
+    action: "read_obis",
+    parameters,
+  };
+
+  try {
+    setReadLoading(true);
+
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+    }
+
+    controllerRef.current = new AbortController();
+
+    const response = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: controllerRef.current.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    let buffer = "";
+    const nextReadValues = {};
+    const nextFormValues = {};
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split("\n\n");
+      buffer = chunks.pop();
+
+      for (const chunk of chunks) {
+        if (!chunk.startsWith("data:")) continue;
+
+        try {
+          const msg = JSON.parse(chunk.replace(/^data:\s*/, ""));
+
+          const matched = CHARGE_VALUE_OPTIONS.find(
+            (x) => String(x.index) === String(msg.attribute_index)
+          );
+
+          if (!matched) continue;
+
+          if (matched.field === "charge_configuration") {
+            const arrayValue = normalizeChargeConfig(msg.value);
+            nextReadValues[matched.field] = arrayValue.join(", ");
+            nextFormValues[matched.field] = arrayValue;
+          } else {
+            const displayValue =
+              msg.value === null || msg.value === undefined
+                ? ""
+                : typeof msg.value === "object"
+                ? JSON.stringify(msg.value)
+                : String(msg.value);
+
+            nextReadValues[matched.field] = displayValue;
+            nextFormValues[matched.field] = msg.value;
+          }
+
+          setReadValues((prev) => ({
+            ...prev,
+            ...nextReadValues,
+          }));
+
+          setValueFormData((prev) => ({
+            ...prev,
+            ...nextFormValues,
+            device_id: serial,
+          }));
+        } catch (err) {
+          console.error("Chunk parse error:", err);
+        }
+      }
+    }
+  } catch (error) {
+    if (error.name === "AbortError") {
+      console.log("Request was aborted");
+    } else {
+      console.error("Read Error:", error);
+      alert("Failed to read charge values");
+    }
+  } finally {
+    setReadLoading(false);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const valueHandleSubmit = async (e) => {
+    e.preventDefault();
+
+    const formattedData = {
+      ...valueFormData,
+      total_amount_paid: parseFloat(valueFormData.total_amount_paid) || 0,
+      period: parseFloat(valueFormData.period) || 0,
+      last_collection_amount:
+        parseFloat(valueFormData.last_collection_amount) || 0,
+      total_amount_remaining:
+        parseFloat(valueFormData.total_amount_remaining) || 0,
+      proportion: parseFloat(valueFormData.proportion) || 0,
+      charge_configuration: Array.isArray(valueFormData.charge_configuration)
+        ? valueFormData.charge_configuration
+        : [],
+    };
+
+    try {
+      await axios.post(`${BASE_URL}/api/payment-charge-value/`, [formattedData]);
+      alert("Data sent successfully!");
+    } catch (error) {
+      console.error("Error sending data:", error.response?.data || error);
+      alert("Failed to submit charge value data");
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    const parsedValue = ["commodityScale", "priceScale"].includes(name)
+      ? parseFloat(value) || 0
+      : value;
+
+    if (name.startsWith("tariff")) {
+      setFormData((prev) => ({
+        ...prev,
+        tariffs: {
+          ...prev.tariffs,
+          [name]: value,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parsedValue,
+      }));
+    }
+  };
+
+  const handleSubmit = async (e, unit_type) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    const formattedData = [
+      {
+        device: deviceId,
+        unit_type: unit_type,
+        commodity_scale: formData.commodityScale,
+        price_scale: formData.priceScale,
+        class_id: formData.classId,
+        logical_name: formData.logicalName,
+        attribute_id: formData.attributeId,
+        unit_charge_activation_time: formData.unitChargeActivationTime,
+        tariff_1: parseFloat(formData.tariffs.tariff1) || 0.0,
+        tariff_2: parseFloat(formData.tariffs.tariff2) || 0.0,
+        tariff_3: parseFloat(formData.tariffs.tariff3) || 0.0,
+        tariff_4: parseFloat(formData.tariffs.tariff4) || 0.0,
+      },
+    ];
+
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/api/unit-charges/`,
+        formattedData,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (response.status === 201) {
+        setMessage("✅ Data successfully submitted!");
+        setFormData({
+          device: "",
+          unitType: "active",
+          commodityScale: 0,
+          priceScale: 0,
+          classId: "",
+          logicalName: "",
+          attributeId: "",
+          unitChargeActivationTime: "",
+          tariffs: {
+            tariff1: "",
+            tariff2: "",
+            tariff3: "",
+            tariff4: "",
+          },
+        });
+      }
+    } catch (error) {
+      if (error.response) {
+        setMessage(
+          `❌ Error: ${error.response.data.detail || "Invalid data submission."}`
+        );
+      } else {
+        setMessage("❌ Error submitting data. Please try again.");
+      }
+      console.error("Error:", error);
+    }
+
+    setLoading(false);
+  };
+
+  const getFieldValue = (field) =>
+    readValues[field] ?? valueFormData[field] ?? "";
+
+  const renderValueField = (field, label, type, idx) => {
+    let displayValue = getFieldValue(field);
+
+    // Add % for proportion field
+  if (
+    field === "proportion" &&
+    displayValue !== "" &&
+    displayValue !== null &&
+    displayValue !== undefined
+  ) {
+    displayValue = `${displayValue}%`;
+  }
+
+    return (
+      <div className="security-form" key={field}>
+        <label >
+          <input
+            type="checkbox"
+            checked={selectedItems.has(idx)}
+            onChange={() => handleReadCheckbox(idx)}
+          />
+          <span>{label}:</span>
+           <input
+          type={type}
+          value={displayValue}
+          readOnly
+          onChange={(e) => valueHandleChange(field, e.target.value)}
+        />
+        </label>
+
+       
+      </div>
+    );
+  };
+
+
+
+ const getChargeTypeDisplay = (value) => {
+  // Empty before meter read
+  if (value === "" || value === null || value === undefined) {
+    return "";
+  }
+
+  switch (Number(value)) {
+    case 0:
+      return "0 (Consumption Based Collection)";
+    case 1:
+      return "1 (Time Based Collection)";
+    case 2:
+      return "2 (Payment Event Based Collection)";
+    default:
+      return value;
+  }
+};
+
+const renderChargeTypeField = () => {
+  const rawValue = getFieldValue("charge_type");
+  const displayValue = getChargeTypeDisplay(rawValue);
+
+  return (
+    <div className="security-form" key="charge_type">
+      <label>
+        <input
+          type="checkbox"
+          checked={selectedItems.has(1)}
+          onChange={() => handleReadCheckbox(1)}
+        />
+        <span>Charge Type:</span>
+
+        <input
+          type="text"
+          value={displayValue}
+          readOnly
+        />
+      </label>
+    </div>
+  );
+};
+
+
+
+
+
+
+
+  const renderChargeConfigurationField = () => {
+    let displayValue =
+      readValues.charge_configuration ??
+      (Array.isArray(valueFormData.charge_configuration)
+        ? valueFormData.charge_configuration.join(", ")
+        : "");
+    
+    displayValue=parseInt(displayValue)
+    return (
+      <div className="security-form">
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedItems.has(4)}
+            onChange={() => handleReadCheckbox(4)}
+          />
+          <span>Charge Configuration:</span>
+         
+          <label>
+            <input
+              type="checkbox"
+              value="continuous"
+               checked={displayValue === 2 || displayValue === 3}
+              
+            />
+            Continuous collection
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              value="percentage_based"
+              checked={displayValue === 1 || displayValue === 3}
+            />
+             Percentage collection
+          </label>
+        
+    
+        </label>
+          </div>
+
+       
+
+        
+    );
+  };
+
+
+  const getPriorityDisplay = (value) => {
+  // Empty before meter read
+  if (value === "" || value === null || value === undefined) {
+    return "";
+  }
+
+  switch (Number(value)) {
+    case 1:
+      return "1 (Highest Priority)";
+    case 0:
+      return "0 (Not Activated)";
+    case 255:
+      return "255 (Lowest Priority)";
+    default:
+      return value;
+  }
+};
+
+const renderPriorityField = () => {
+  const rawValue = getFieldValue("priority");
+  const displayValue = getPriorityDisplay(rawValue);
+
+  return (
+    <div className="security-form" key="priority">
+      <label>
+        <input
+          type="checkbox"
+          checked={selectedItems.has(2)}
+          onChange={() => handleReadCheckbox(2)}
+        />
+        <span>Priority:</span>
+        <input
+          type="text"
+          value={displayValue}
+          readOnly
+        />
+      </label>
+    </div>
+  );
+};
+
+
+
+
+const formatPeriod = (seconds) => {
+  // Empty before meter read
+  if (seconds === "" || seconds === null || seconds === undefined) {
+    return "";
+  }
+
+  const totalSeconds = Number(seconds);
+
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  return `${hrs}h:${mins}m:${secs}s`;
+};
+
+const renderPeriodField = () => {
+  const rawValue = getFieldValue("period");
+  const displayValue = formatPeriod(rawValue);
+
+  return (
+    <div className="security-form" key="period">
+      <label>
+        <input
+          type="checkbox"
+          checked={selectedItems.has(3)}
+          onChange={() => handleReadCheckbox(3)}
+        />
+        <span>Period:</span>
+
+        <input
+          type="text"
+          value={displayValue}
+          readOnly
+        />
+      </label>
+    </div>
+  );
+};
+
+
+
+
+
+const formatLastCollectionTime = (value) => {
+  if (!value) return "";
+
+  // If value comes as a JSON string
+  let data = value;
+  if (typeof value === "string") {
+    try {
+      data = JSON.parse(value);
+    } catch (error) {
+      return value;
+    }
+  }
+
+  const datePart = data?.Date || "";
+  const timePart = data?.Time || "";
+
+  // Remove extra text like "(Deviation: Z)"
+  const cleanTime = timePart.split(" ")[0];
+
+  // Remove weekday text like "Saturday,"
+  const cleanDate = datePart.includes(",")
+    ? datePart.split(",")[1].trim()
+    : datePart;
+
+  if (!cleanDate && !cleanTime) return "";
+
+  return `${cleanDate} ${cleanTime}`.trim();
+};
+
+const renderLastCollectionTimeField = () => {
+  const rawValue = getFieldValue("last_collection_time");
+  const displayValue = formatLastCollectionTime(rawValue);
+
+  return (
+    <div className="security-form" key="last_collection_time">
+      <label>
+        <input
+          type="checkbox"
+          checked={selectedItems.has(4)}
+          onChange={() => handleReadCheckbox(4)}
+        />
+        <span>Last Collection Time:</span>
+
+        <input
+          type="text"
+          value={displayValue}
+          readOnly
+        />
+      </label>
+    </div>
+  );
+};
 
   const renderContent = () => {
     switch (currentPage) {
-      case 'value':
+      case "value":
         return (
-         <form onSubmit={valueHandleSubmit}>
+          <form onSubmit={valueHandleSubmit}>
+            <div className="security-form">
+              <button
+                type="button"
+                className="scheduler-add-button"
+                onClick={handleReadValues}
+                disabled={readLoading}
+                style={{ marginLeft: "60%" }}
+              >
+                {readLoading ? "Reading..." : "Read"}
+              </button>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Total Amount Paid:</span>
-      <input
-        type="number"
-        name="total_amount_paid"
-        value={valueFormData.total_amount_paid}
-        onChange={(e) =>
-          valueHandleChange("total_amount_paid", e.target.value)
-        }
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                />
+                Select All
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Charge Type:</span>
-      <input
-        type="text"
-        name="charge_type"
-        value={valueFormData.charge_type}
-        onChange={(e) =>
-          valueHandleChange("charge_type", e.target.value)
-        }
-      />
-    </label>
-  </div>
+            {renderValueField("total_amount_paid", "Total Amount Paid", "number", 0)}
+            
+            {renderChargeTypeField()}
+            {renderPriorityField()}
+            {renderPeriodField()}
+            {renderChargeConfigurationField()}
+             {renderLastCollectionTimeField()}
+            {renderValueField(
+              "last_collection_amount",
+              "Last Collection Amount",
+              "number",
+              6
+            )}
+            {renderValueField(
+              "total_amount_remaining",
+              "Total Amount Remaining",
+              "number",
+              7
+            )}
+            {renderValueField("proportion", "Proportion", "text", 8)}
 
-  <div className="security-form">
-    <label>
-      <span>Priority:</span>
-      <input
-        type="text"
-        name="priority"
-        value={valueFormData.priority}
-        onChange={(e) =>
-          valueHandleChange("priority", e.target.value)
-        }
-      />
-    </label>
-  </div>
-
-  {/* Charge Configuration */}
-  <div className="security-form">
-    <label>
-      <span>Charge Configuration:</span>
-    </label>
-
-    <div style={{ display: "flex", gap: "20px", marginTop: "6px" }}>
-      <label>
-        <input
-          type="checkbox"
-          value="continuous"
-          checked={valueFormData.charge_configuration.includes("continuous")}
-          onChange={handleCheckboxChange}
-        />
-        Continuous
-      </label>
-
-      <label>
-        <input
-          type="checkbox"
-          value="percentageBased"
-          checked={valueFormData.charge_configuration.includes("percentageBased")}
-          onChange={handleCheckboxChange}
-        />
-        Percentage Based
-      </label>
-    </div>
-  </div>
-
-  <div className="security-form">
-    <label>
-      <span>Last Collection Time:</span>
-      <input
-        type="datetime-local"
-        name="last_collection_time"
-        value={valueFormData.last_collection_time}
-        onChange={(e) =>
-          valueHandleChange("last_collection_time", e.target.value)
-        }
-      />
-    </label>
-  </div>
-
-  <div className="security-form">
-    <label>
-      <span>Last Collection Amount:</span>
-      <input
-        type="number"
-        name="last_collection_amount"
-        value={valueFormData.last_collection_amount}
-        onChange={(e) =>
-          valueHandleChange("last_collection_amount", e.target.value)
-        }
-      />
-    </label>
-  </div>
-
-  <div className="security-form">
-    <label>
-      <span>Total Amount Remaining:</span>
-      <input
-        type="number"
-        name="total_amount_remaining"
-        value={valueFormData.total_amount_remaining}
-        onChange={(e) =>
-          valueHandleChange("total_amount_remaining", e.target.value)
-        }
-      />
-    </label>
-  </div>
-
-  <div className="security-form">
-    <label>
-      <span>Proportion:</span>
-      <input
-        type="text"
-        name="proportion"
-        value={valueFormData.proportion}
-        onChange={(e) =>
-          valueHandleChange("proportion", e.target.value)
-        }
-      />
-    </label>
-  </div>
-
-  <div className="security-form">
-    <button  style={{marginLeft:"42%"}} className='scheduler-add-button' type="submit">Submit</button>
-  </div>
-
-</form>
+           
+          </form>
         );
-      case 'unitChargeActive':
-        return (
-     
-  <div>
-   
-    <form onSubmit={(e) => handleSubmit(e, "active")}>
+
+        case "unitChargeActive":
+  return renderUnitChargeSection("active");
+
+case "unitChargePassive":
+  return renderUnitChargeSection("passive");
+
+        
+
     
 
-      <div className="ppp-container-payment" >
-
-         
-          <p className="ppp-heading-payment">Per Unit Scaling</p>
-        
-          <div className="security-form">
-            <label>
-              <span>Commodity Scale</span>
-              <input
-                type="number"
-                name="commodityScale"
-                value={formData.commodityScale}
-                onChange={handleChange}
-                className="border p-2 rounded w-full"
-              />
-            </label>
-          </div>
-       
-
-       
-          <div className="security-form">
-            <label>
-              <span>Price Scale</span>
-              <input
-                type="number"
-                name="priceScale"
-                value={formData.priceScale}
-                onChange={handleChange}
-                className="border p-2 rounded w-full"
-              />
-            </label>
-          </div>
-       
-      </div>
-
-     
-      <div className="ppp-container-payment">
-         <p className="ppp-heading-payment">Commodity Reference</p>
-        <div>
-          <div className="security-form">
-            <label>
-              <span>Class ID</span>
-              <input
-                type="text"
-                name="classId"
-                value={formData.classId}
-                onChange={handleChange}
-                className="border p-2 rounded w-full"
-              />
-            </label>
-          </div>
-        </div>
-
-        <div>
-          <div className="security-form">
-            <label>
-              <span>Logical Name</span>
-              <input
-                type="text"
-                name="logicalName"
-                value={formData.logicalName}
-                onChange={handleChange}
-                className="border p-2 rounded w-full"
-              />
-            </label>
-          </div>
-        </div>
-
-        <div>
-          <div className="security-form">
-            <label>
-              <span>Attribute ID</span>
-              <input
-                type="text"
-                name="attributeId"
-                value={formData.attributeId}
-                onChange={handleChange}
-                className="border p-2 rounded w-full"
-              />
-            </label>
-          </div>
-        </div>
-      </div>
-
-     
-      <div style={{ maxWidth: '100%', overflowX: 'auto' }}> 
-      
-      <table className="tableTariff1" >
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border p-2"></th>
-            <th className="border p-2">Tariff 1</th>
-            <th className="border p-2">Tariff 2</th>
-            <th className="border p-2">Tariff 3</th>
-            <th className="border p-2">Tariff 4</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td className="border p-2 font-semibold">Unit Charge</td>
-            {Object.keys(formData.tariffs).map((tariff, index) => (
-              <td key={index} className="border p-2">
-                <div className="security-form">
-                  <label>
-                    <span className="sr-only">{tariff}</span>
-                    <input
-                      placeholder={tariff}
-                      type="text"
-                      name={tariff}
-                      value={formData.tariffs[tariff]}
-                      onChange={handleChange}
-                      className="w-full p-1"
-                    />
-                  </label>
-                </div>
-              </td>
-            ))}
-          </tr>
-        </tbody>
-      </table>
-      </div>
-
-     
-      <div className="security-form">
-        <label>
-          <span>Activation Time</span>
-          <input
-            type="datetime-local"
-            name="unitChargeActivationTime"
-            value={formData.unitChargeActivationTime}
-            onChange={handleChange}
-            className="border p-2 rounded w-full mt-2"
-          />
-        </label>
-      </div>
-
-      <div className="security-form">
-        <button
-          type="submit"
-          style={{marginLeft:"42%"}} className='scheduler-add-button'
-          disabled={loading}
-        >
-          {loading ? "Submitting..." : "Submit"}
-        </button>
-      </div>
-    </form>
-
-    {message && <p className="mt-4 text-center text-lg">{message}</p>}
-  </div>
-
-        );
-      case 'unitChargePassive':
-        return (
-        <div>
-
-  <form onSubmit={(e) => handleSubmit(e, "passive")}>
-
-    {/* Per Unit Scaling */}
-    <div className="ppp-container-payment">
-
-      <p className="ppp-heading-payment">
-        Per Unit Scaling
-      </p>
-
-      <div className="security-form">
-        <label>
-          <span>Commodity Scale</span>
-          <input
-            type="number"
-            name="commodityScale"
-            value={formData.commodityScale}
-            onChange={handleChange}
-          />
-        </label>
-      </div>
-
-      <div className="security-form">
-        <label>
-          <span>Price Scale</span>
-          <input
-            type="number"
-            name="priceScale"
-            value={formData.priceScale}
-            onChange={handleChange}
-          />
-        </label>
-      </div>
-
-    </div>
-
-
-    {/* Commodity Reference */}
-    <div className="ppp-container-payment">
-
-      <p className="ppp-heading-payment">
-        Commodity Reference
-      </p>
-
-      <div className="security-form">
-        <label>
-          <span>Class ID</span>
-          <input
-            type="text"
-            name="classId"
-            value={formData.classId}
-            onChange={handleChange}
-          />
-        </label>
-      </div>
-
-      <div className="security-form">
-        <label>
-          <span>Logical Name</span>
-          <input
-            type="text"
-            name="logicalName"
-            value={formData.logicalName}
-            onChange={handleChange}
-          />
-        </label>
-      </div>
-
-      <div className="security-form">
-        <label>
-          <span>Attribute ID</span>
-          <input
-            type="text"
-            name="attributeId"
-            value={formData.attributeId}
-            onChange={handleChange}
-          />
-        </label>
-      </div>
-
-    </div>
-
-
-    {/* Charge Table */}
-    <div style={{ maxWidth: "100%", overflowX: "auto" }}>
-
-      <table className="tableTariff1">
-        <thead>
-          <tr>
-            <th></th>
-            <th>Tariff 1</th>
-            <th>Tariff 2</th>
-            <th>Tariff 3</th>
-            <th>Tariff 4</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr>
-            <td>Unit Charge</td>
-
-            {Object.keys(formData.tariffs).map((tariff, index) => (
-              <td key={index}>
-                <div className="security-form">
-                  <label>
-                    <span className="sr-only">{tariff}</span>
-                    <input
-                      type="text"
-                      name={tariff}
-                      value={formData.tariffs[tariff]}
-                      onChange={handleChange}
-                      placeholder={tariff}
-                    />
-                  </label>
-                </div>
-              </td>
-            ))}
-
-          </tr>
-        </tbody>
-      </table>
-
-    </div>
-
-
-    {/* Activation Time */}
-    <div className="security-form">
-      <label>
-        <span>Activation Time</span>
-        <input
-          type="datetime-local"
-          name="unitChargeActivationTime"
-          value={formData.unitChargeActivationTime}
-          onChange={handleChange}
-        />
-      </label>
-    </div>
-
-
-    {/* Submit */}
-    <div className="security-form">
-      <button style={{marginLeft:"42%"}} className='scheduler-add-button' type="submit" disabled={loading}>
-        {loading ? "Submitting..." : "Submit"}
-      </button>
-    </div>
-
-  </form>
-
-  {message && <p className="message-text">{message}</p>}
-
-</div>
-        );
       default:
         return <p>Please select an option above.</p>;
     }
@@ -2442,29 +3304,1730 @@ device:deviceId , // Ensure device ID is present
 
   return (
     <div>
-     
-     <div className="controlsGroup_tabs" ref={containerRef}>
-      {tabs.map((tab) => (
-        <button
-          key={tab.key}
-          ref={(el) => (buttonRefs.current[tab.key] = el)}
-          className={`tou_button ${
-            currentPage === tab.key ? "activeButton" : ""
-          }`}
-          onClick={() => setCurrentPage(tab.key)}
-          type="button"
-        >
-          {tab.label}
-        </button>
-      ))}
+      <div className="controlsGroup_tabs" ref={containerRef}>
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            ref={(el) => (buttonRefs.current[tab.key] = el)}
+            className={`tou_button ${currentPage === tab.key ? "activeButton" : ""}`}
+            onClick={() => setCurrentPage(tab.key)}
+            type="button"
+          >
+            {tab.label}
+          </button>
+        ))}
+        <div ref={underlineRef} className="underline" />
+      </div>
 
-      <div ref={underlineRef} className="underline" />
-    </div>
-  
       <div>{renderContent()}</div>
     </div>
   );
 };
+
+
+
+
+
+
+const Charge = () => {
+  
+  const UNIT_CHARGE_TABLE_ROWS = Array.from({ length: 10 }, (_, i) => i + 1);
+
+const unitChargeControllerRef = useRef(null);
+  const [currentPage, setCurrentPage] = useState("value");
+
+  const [deviceId, setDeviceId] = useState(() =>
+    localStorage.getItem("selectedDeviceId")
+  );
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("selectedDeviceId");
+    setDeviceId(storedId);
+  }, []);
+
+  const [valueFormData, setValueFormData] = useState({
+    device_id: deviceId,
+    total_amount_paid: "",
+    charge_type: "",
+    priority: "",
+    period: "",
+    charge_configuration: [],
+    last_collection_time: "",
+    last_collection_amount: "",
+    total_amount_remaining: "",
+    proportion: "",
+  });
+
+  useEffect(() => {
+    setValueFormData((prev) => ({
+      ...prev,
+      device_id: deviceId,
+    }));
+  }, [deviceId]);
+
+
+  // Change these to your actual meter OBIS if needed
+const UNIT_CHARGE_ACTIVE_OBIS_CODE = "0.0.19.20.0.255";
+const UNIT_CHARGE_PASSIVE_OBIS_CODE = "0.0.19.20.0.255";
+
+const createChargeTable = () =>
+  UNIT_CHARGE_TABLE_ROWS.map((step) => ({
+    step: `Step ${step}`,
+    tariff1: "",
+    tariff2: "",
+    tariff3: "",
+    tariff4: "",
+  }));
+
+ 
+
+
+
+
+const createUnitChargeState = () => ({
+  selected: false,
+  activationTimeSelected: false,
+  commodityScale: "",
+  priceScale: "",
+  classId: "",
+  logicalName: "",
+  attributeId: "",
+  unitChargeActivationTime: "",
+  chargeTableRaw: "",
+  chargeTable: createChargeTable(),
+});
+
+
+const [unitChargeActiveData, setUnitChargeActiveData] = useState(
+  createUnitChargeState()
+);
+const [unitChargePassiveData, setUnitChargePassiveData] = useState(
+  createUnitChargeState()
+);
+
+const getUnitChargeState = (mode) =>
+  mode === "active" ? unitChargeActiveData : unitChargePassiveData;
+
+const setUnitChargeState = (mode, updater) => {
+  if (mode === "active") {
+    setUnitChargeActiveData(updater);
+  } else {
+    setUnitChargePassiveData(updater);
+  }
+};
+
+const handleUnitChargeFieldChange = (mode, field, value) => {
+  setUnitChargeState(mode, (prev) => ({
+    ...prev,
+    [field]: value,
+  }));
+};
+
+const handleUnitChargeTableChange = (mode, rowIndex, field, value) => {
+  setUnitChargeState(mode, (prev) => {
+    const nextTable = [...prev.chargeTable];
+    nextTable[rowIndex] = {
+      ...nextTable[rowIndex],
+      [field]: value,
+    };
+    return {
+      ...prev,
+      chargeTable: nextTable,
+    };
+  });
+};
+
+const normalizeUnitChargeTable = (rawTable) => {
+  const baseTable = createChargeTable();
+
+  if (!Array.isArray(rawTable)) return baseTable;
+
+  return baseTable.map((row, index) => {
+    const src = rawTable[index] ?? {};
+
+    if (Array.isArray(src)) {
+      return {
+        step: row.step,
+        tariff1: src[0] ?? "",
+        tariff2: src[1] ?? "",
+        tariff3: src[2] ?? "",
+        tariff4: src[3] ?? "",
+      };
+    }
+
+    return {
+      step: row.step,
+      tariff1: src.tariff1 ?? src.value1 ?? src.charge_per_unit ?? "",
+      tariff2: src.tariff2 ?? src.value2 ?? "",
+      tariff3: src.tariff3 ?? src.value3 ?? "",
+      tariff4: src.tariff4 ?? src.value4 ?? "",
+    };
+  });
+};
+
+const parseUnitChargeResponse = (rawData) => {
+  const root = Array.isArray(rawData) ? rawData[0] : rawData;
+  const payload = root?.value ?? root?.data ?? root?.result ?? root ?? {};
+
+  const scaling =
+    payload.charge_per_unit_scaling ??
+    payload.scaling ??
+    payload.chargePerUnitScaling ??
+    {};
+
+  const reference =
+    payload.commodity_reference ??
+    payload.reference ??
+    payload.commodityReference ??
+    {};
+
+  const table =
+    payload.charge_table ??
+    payload.chargeTable ??
+    payload.table ??
+    [];
+
+  return {
+    selected: true,
+    activationTimeSelected: true,
+    commodityScale: scaling.commodity_scale ?? scaling.commodityScale ?? "",
+    priceScale: scaling.price_scale ?? scaling.priceScale ?? "",
+    classId: reference.class_id ?? reference.classId ?? "",
+    logicalName: reference.logical_name ?? reference.logicalName ?? "",
+    attributeId: reference.attribute_index ?? reference.attributeId ?? "",
+    unitChargeActivationTime:
+      payload.unit_charge_activation_time ??
+      payload.unitChargeActivationTime ??
+      "",
+    chargeTable: normalizeUnitChargeTable(table),
+  };
+};
+
+const handleUnitChargeRead1 = async (mode) => {
+  const serial =
+    localStorage.getItem("selectedSerialNumber") ||
+    localStorage.getItem("selectedDeviceId") ||
+    deviceId;
+
+  if (!serial) {
+    alert("No serial/device selected");
+    return;
+  }
+
+  const current = getUnitChargeState(mode);
+
+  if (!current.selected && !(mode === "passive" && current.activationTimeSelected)) {
+    alert(`Please select ${mode === "active" ? "Unit charge active" : "Unit charge passive"}`);
+    return;
+  }
+
+  const parameters = [];
+
+  if (mode === "active" && current.selected) {
+    parameters.push({
+      obis_code: UNIT_CHARGE_ACTIVE_OBIS_CODE,
+      attribute_index: "5",
+    });
+  }
+
+  if (mode === "passive") {
+    if (current.selected) {
+      parameters.push({
+        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+        attribute_index: "6",
+      });
+    }
+
+    if (current.activationTimeSelected) {
+      parameters.push({
+        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+        attribute_index: "7",
+      });
+    }
+  }
+
+  const payload = {
+    serial_number: serial,
+    action: "read_obis",
+    parameters,
+  };
+
+  try {
+    setReadLoading(true);
+
+    const response = await axios.post(`${BASE_URL}/api/getmeterinfo/`, payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const data = response?.data?.data ?? response?.data ?? {};
+    const nextState = parseUnitChargeResponse(data);
+
+    setUnitChargeState(mode, (prev) => ({
+      ...prev,
+      ...nextState,
+    }));
+  } catch (error) {
+    console.error("Unit charge read error:", error);
+    alert("Failed to read unit charge data");
+  } finally {
+    setReadLoading(false);
+  }
+};
+
+
+
+
+
+
+
+const renderUnitChargeSection = (mode) => {
+  const isActive = mode === "active";
+  const state = getUnitChargeState(mode);
+
+  const setSelected = (checked) =>
+    setUnitChargeState(mode, (prev) => ({
+      ...prev,
+      selected: checked,
+    }));
+
+  const setActivationSelected = (checked) =>
+    setUnitChargeState(mode, (prev) => ({
+      ...prev,
+      activationTimeSelected: checked,
+    }));
+
+
+
+  
+
+const parseUnitChargeResponseItem = (item) => {
+  const attr = String(
+    item?.attribute_index ?? item?.attributeId ?? item?.attribute_index ?? ""
+  );
+
+  const value = item?.value ?? item?.data ?? item?.result ?? item;
+
+  const next = { selected: true };
+
+  const scaling =
+    value?.charge_per_unit_scaling ??
+    value?.scaling ??
+    value?.chargePerUnitScaling ??
+    null;
+
+  if (scaling) {
+    next.commodityScale =
+      scaling.commodity_scale ?? scaling.commodityScale ?? "";
+    next.priceScale = scaling.price_scale ?? scaling.priceScale ?? "";
+  }
+
+  const reference =
+    value?.commodity_reference ??
+    value?.reference ??
+    value?.commodityReference ??
+    null;
+
+  if (reference) {
+    next.classId = reference.class_id ?? reference.classId ?? "";
+    next.logicalName = reference.logical_name ?? reference.logicalName ?? "";
+    next.attributeId = reference.attribute_index ?? reference.attributeId ?? "";
+  }
+
+  if (attr === "6") {
+    next.chargeTableRaw =
+      typeof value === "string" ? value : JSON.stringify(value ?? "");
+
+    const maybeTable = Array.isArray(value)
+      ? value
+      : value?.charge_table ?? value?.chargeTable ?? value?.table ?? null;
+
+    if (maybeTable) {
+      next.chargeTable = normalizeUnitChargeTable(maybeTable);
+    }
+  }
+
+  if (attr === "7") {
+    next.activationTimeSelected = true;
+    next.unitChargeActivationTime = formatUnitChargeActivationTime(value);
+  }
+
+  const maybeTable =
+    value?.charge_table ?? value?.chargeTable ?? value?.table ?? null;
+
+  if (Array.isArray(maybeTable)) {
+    next.chargeTable = normalizeUnitChargeTable(maybeTable);
+  }
+
+  return next;
+};
+
+const parseUnitChargeRaw = (raw) => {
+  const text = String(raw ?? "");
+
+  // Example:
+  // "-120, -89None, 30[]"
+  const parts = text.split(",");
+
+  const commodityScale = parts[0]?.trim() ?? "";
+
+  const secondPart = parts[1]?.trim() ?? "";
+  const priceMatch = secondPart.match(/-?\d+/);
+  const priceScale = priceMatch?.[0] ?? "";
+
+  const logicalName = secondPart.replace(/-?\d+/, "").trim() || "None";
+
+  const chargeTableRaw = parts.slice(2).join(",").trim();
+
+  return {
+    commodityScale,
+    priceScale,
+    logicalName,
+    chargeTableRaw,
+  };
+};
+
+const mergeUnitChargeResponse = (rawData) => {
+  const items = Array.isArray(rawData) ? rawData : rawData ? [rawData] : [];
+
+  return items.reduce((acc, item) => {
+    const parsed = parseUnitChargeResponseItem(item);
+
+    return {
+      ...acc,
+      ...parsed,
+      chargeTable: parsed.chargeTable ?? acc.chargeTable,
+    };
+  }, {});
+};
+
+
+//*************** */ 
+
+const normalizeUnitChargeTable = (rows = []) => {
+  if (!Array.isArray(rows)) return [];
+
+  const result = [];
+
+  for (let i = 0; i < rows.length; i += 4) {
+    result.push({
+      step: `Step ${Math.floor(i / 4) + 1}`,
+
+      tariff1: rows[i]?.chargePerUnit ?? "",
+
+      tariff2: rows[i + 1]?.chargePerUnit ?? "",
+
+      tariff3: rows[i + 2]?.chargePerUnit ?? "",
+
+      tariff4: rows[i + 3]?.chargePerUnit ?? "",
+    });
+  }
+
+  return result;
+};
+
+const formatUnitChargeActivationTime = (value) => {
+  if (value == null) return "";
+  if (typeof value === "string") return value;
+  if (typeof value !== "object") return String(value);
+
+  const date = value.Date ?? value.date ?? "";
+  const time = value.Time ?? value.time ?? "";
+  const status =
+    value["Clock Status"] ??
+    value.clock_status ??
+    value.clockStatus ??
+    "";
+
+  return [date, time, status !== "" ? `Clock Status: ${status}` : ""]
+    .filter(Boolean)
+    .join(" | ");
+};
+
+const applyUnitChargeResponse = (mode, msg) => {
+  const attr = String(msg?.attribute_index ?? "");
+  const value = msg?.value ?? {};
+
+  setUnitChargeState(mode, (prev) => {
+    const next = {
+      ...prev,
+      selected: true,
+    };
+
+    if (attr === "5" || attr === "6") {
+      next.commodityScale =
+        value?.chargePerUnitScaling?.commodityScale ?? "";
+
+      next.priceScale =
+        value?.chargePerUnitScaling?.priceScale ?? "";
+
+      next.classId = value?.commodity?.classId ?? "";
+      next.logicalName = value?.commodity?.logicalName ?? "";
+      next.attributeId = value?.commodity?.attributeIndex ?? "";
+
+      next.chargeTableRaw = JSON.stringify(
+        value?.chargeTables ?? [],
+        null,
+        2
+      );
+
+      next.chargeTable = normalizeUnitChargeTable(
+        value?.chargeTables ?? []
+      );
+    }
+
+    if (mode === "passive" && attr === "7") {
+      next.activationTimeSelected = true;
+      next.unitChargeActivationTime =
+        formatUnitChargeActivationTime(value);
+    }
+
+    return next;
+  });
+};
+
+const handleUnitChargeRead = async (mode) => {
+  const serial =
+    localStorage.getItem("selectedSerialNumber") ||
+    localStorage.getItem("selectedDeviceId") ||
+    deviceId;
+
+  if (!serial) {
+    alert("No serial/device selected");
+    return;
+  }
+
+  const current = getUnitChargeState(mode);
+
+  if (
+    !current.selected &&
+    !(mode === "passive" && current.activationTimeSelected)
+  ) {
+    alert(
+      `Please select ${
+        mode === "active" ? "Unit charge active" : "Unit charge passive"
+      }`
+    );
+    return;
+  }
+
+  const parameters = [];
+
+  if (mode === "active" && current.selected) {
+    parameters.push({
+      obis_code: UNIT_CHARGE_ACTIVE_OBIS_CODE,
+      attribute_index: "5",
+    });
+  }
+
+  if (mode === "passive") {
+    if (current.selected) {
+      parameters.push({
+        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+        attribute_index: "6",
+      });
+    }
+
+    if (current.activationTimeSelected) {
+      parameters.push({
+        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+        attribute_index: "7",
+      });
+    }
+  }
+
+  const payload = {
+    serial_number: serial,
+    action: "read_obis",
+    parameters,
+  };
+
+  try {
+    setReadLoading(true);
+
+    if (unitChargeControllerRef.current) {
+      unitChargeControllerRef.current.abort();
+    }
+
+    unitChargeControllerRef.current = new AbortController();
+
+    const response = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: unitChargeControllerRef.current.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      const chunks = buffer.split("\n\n");
+      buffer = chunks.pop() || "";
+
+      for (const chunk of chunks) {
+        if (!chunk.startsWith("data:")) continue;
+
+        try {
+          const msg = JSON.parse(chunk.replace(/^data:\s*/, ""));
+          console.log("STREAM MSG", msg);
+
+          applyUnitChargeResponse(mode, msg);
+        } catch (err) {
+          console.error("Unit charge chunk parse error:", err);
+        }
+      }
+    }
+  } catch (error) {
+    if (error.name === "AbortError") {
+      console.log("Request was aborted");
+    } else {
+      console.error("Unit charge read error:", error);
+      alert("Failed to read unit charge data");
+    }
+  } finally {
+    setReadLoading(false);
+  }
+};
+////////////////////********** */
+
+
+const handleUnitChargeRead1 = async (mode) => {
+  const serial =
+    localStorage.getItem("selectedSerialNumber") ||
+    localStorage.getItem("selectedDeviceId") ||
+    deviceId;
+
+  if (!serial) {
+    alert("No serial/device selected");
+    return;
+  }
+
+  const current = getUnitChargeState(mode);
+
+  if (
+    !current.selected &&
+    !(mode === "passive" && current.activationTimeSelected)
+  ) {
+    alert(
+      `Please select ${
+        mode === "active"
+          ? "Unit charge active"
+          : "Unit charge passive"
+      }`
+    );
+    return;
+  }
+
+  const parameters = [];
+
+  if (mode === "active" && current.selected) {
+    parameters.push({
+      obis_code: UNIT_CHARGE_ACTIVE_OBIS_CODE,
+      attribute_index: "5",
+    });
+  }
+
+  if (mode === "passive") {
+    if (current.selected) {
+      parameters.push({
+        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+        attribute_index: "6",
+      });
+    }
+
+    if (current.activationTimeSelected) {
+      parameters.push({
+        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+        attribute_index: "7",
+      });
+    }
+  }
+
+  const payload = {
+    serial_number: serial,
+    action: "read_obis",
+    parameters,
+  };
+
+  try {
+    setReadLoading(true);
+
+    if (unitChargeControllerRef.current) {
+      unitChargeControllerRef.current.abort();
+    }
+
+    unitChargeControllerRef.current = new AbortController();
+
+    const response = await fetch(
+      `${BASE_URL}/api/getmeterinfo/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        signal: unitChargeControllerRef.current.signal,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    let buffer = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      const chunks = buffer.split("\n\n");
+
+      buffer = chunks.pop();
+
+      for (const chunk of chunks) {
+        if (!chunk.startsWith("data:")) continue;
+
+        try {
+          const msg = JSON.parse(
+            chunk.replace(/^data:\s*/, "")
+          );
+
+          console.log("STREAM MSG", msg);
+
+
+          const attr = String(msg.attribute_index ?? "");
+
+                
+          setUnitChargeState(mode, (prev) => {
+  const next = { ...prev };
+
+  const attr = String(msg.attribute_index ?? "");
+  const rawValue = msg.value;
+
+  next.selected = true;
+
+  if (mode === "active" && attr === "5") {
+    const parsed = parseUnitChargeRaw(rawValue);
+
+    next.commodityScale = parsed.commodityScale;
+    next.priceScale = parsed.priceScale;
+    next.logicalName = parsed.logicalName;
+    next.chargeTableRaw = parsed.chargeTableRaw;
+
+    next.chargeTable = createChargeTable().map((row, index) => ({
+      ...row,
+      tariff1: index === 0 ? parsed.chargeTableRaw : "",
+    }));
+  }
+
+  if (mode === "passive" && attr === "6") {
+    const parsed = parseUnitChargeRaw(rawValue);
+
+    next.commodityScale = parsed.commodityScale;
+    next.priceScale = parsed.priceScale;
+    next.logicalName = parsed.logicalName;
+    next.chargeTableRaw = parsed.chargeTableRaw;
+
+    next.chargeTable = createChargeTable().map((row, index) => ({
+      ...row,
+      tariff1: index === 0 ? parsed.chargeTableRaw : "",
+    }));
+  }
+
+  if (mode === "passive" && attr === "7") {
+    next.activationTimeSelected = true;
+
+    const date = rawValue?.Date ?? "";
+    const time = rawValue?.Time ?? "";
+    const status = rawValue?.["Clock Status"] ?? "";
+
+    next.unitChargeActivationTime =
+      [date, time, status ? `Clock Status: ${status}` : ""]
+        .filter(Boolean)
+        .join(" | ");
+  }
+
+  return next;
+});
+
+  
+           
+
+
+        } catch (err) {
+          console.error(
+            "Unit charge chunk parse error:",
+            err
+          );
+        }
+      }
+    }
+  } catch (error) {
+    if (error.name === "AbortError") {
+      console.log("Request was aborted");
+    } else {
+      console.error("Unit charge read error:", error);
+      alert("Failed to read unit charge data");
+    }
+  } finally {
+    setReadLoading(false);
+  }
+};
+
+  return (
+    <form onSubmit={(e) => handleSubmit(e, mode)}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={state.selected}
+            onChange={(e) => setSelected(e.target.checked)}
+          />
+          {isActive ? "Unit charge active" : "Unit charge passive"}
+          <span style={{ marginLeft: 8, color: "#666" }}>
+            (Attribute Index: {isActive ? "5" : "6"})
+          </span>
+        </label>
+
+        <button
+          type="button"
+          className="scheduler-add-button"
+          onClick={() => handleUnitChargeRead(mode)}
+          disabled={readLoading}
+        >
+          {readLoading ? "Reading..." : "Read"}
+        </button>
+      </div>
+
+      <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
+        <legend style={{ padding: "0 8px" }}>Per unit scaling</legend>
+
+        <div className="security-form">
+          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ minWidth: 120 }}>Commodity scale</span>
+            <input
+              type="number"
+              value={state.commodityScale}
+              onChange={(e) =>
+                handleUnitChargeFieldChange(mode, "commodityScale", e.target.value)
+              }
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ minWidth: 120 }}>Price scale</span>
+            <input
+              type="number"
+              value={state.priceScale}
+              onChange={(e) =>
+                handleUnitChargeFieldChange(mode, "priceScale", e.target.value)
+              }
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
+        <legend style={{ padding: "0 8px" }}>Commodity reference</legend>
+
+        <div className="security-form">
+          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ minWidth: 120 }}>Class ID</span>
+            <input
+              type="text"
+              value={state.classId}
+              onChange={(e) =>
+                handleUnitChargeFieldChange(mode, "classId", e.target.value)
+              }
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ minWidth: 120 }}>Logical name</span>
+            <input
+              type="text"
+              value={state.logicalName}
+              onChange={(e) =>
+                handleUnitChargeFieldChange(mode, "logicalName", e.target.value)
+              }
+            />
+          </label>
+        </div>
+
+        <div className="security-form">
+          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ minWidth: 120 }}>Attribute ID</span>
+            <input
+              type="text"
+              value={state.attributeId}
+              onChange={(e) =>
+                handleUnitChargeFieldChange(mode, "attributeId", e.target.value)
+              }
+            />
+          </label>
+        </div>
+      </fieldset>
+
+      {!isActive && (
+        <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
+          <legend style={{ padding: "0 8px" }}>Activation time</legend>
+
+          <div className="security-form" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <input
+              type="checkbox"
+              checked={state.activationTimeSelected}
+              onChange={(e) => setActivationSelected(e.target.checked)}
+            />
+            <span style={{ minWidth: 120 }}>Unit charge activation time</span>
+            <input
+              type="text"
+              value={state.unitChargeActivationTime}
+              onChange={(e) =>
+                handleUnitChargeFieldChange(mode, "unitChargeActivationTime", e.target.value)
+              }
+            />
+          </div>
+        </fieldset>
+      )}
+
+      
+
+
+
+      <table  className="tableTariff1">
+  <thead>
+    <tr>
+      <th>Step</th>
+      <th>Tariff 1</th>
+      <th>Tariff 2</th>
+      <th>Tariff 3</th>
+      <th>Tariff 4</th>
+    </tr>
+  </thead>
+  <tbody>
+    {(Array.isArray(state.chargeTable) ? state.chargeTable : []).map((row, rowIndex) => (
+      <tr key={rowIndex}>
+        <td style={{ width: "180px" }} >{row.step}</td>
+        {["tariff1", "tariff2", "tariff3", "tariff4"].map((field) => (
+          <td style={{ width: "180px" }} key={field}>
+            <input
+
+             style={{
+        width: "100%",
+        minWidth: "160px",
+        padding: "6px 10px",
+        boxSizing: "border-box",
+      }}
+             
+              type="text"
+              value={row[field]}
+              onChange={(e) =>
+                handleUnitChargeTableChange(mode, rowIndex, field, e.target.value)
+              }
+            />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </tbody>
+</table>
+      
+    </form>
+  );
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [selectAll, setSelectAll] = useState(false);
+  const [readValues, setReadValues] = useState({});
+  const [readLoading, setReadLoading] = useState(false);
+
+  const [formData, setFormData] = useState({
+    commodityScale: 0,
+    priceScale: 0,
+    classId: "",
+    logicalName: "",
+    attributeId: "",
+    unitChargeActivationTime: "",
+    tariffs: {
+      tariff1: "",
+      tariff2: "",
+      tariff3: "",
+      tariff4: "",
+    },
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const tabs = [
+    { key: "value", label: "Value" },
+    { key: "unitChargeActive", label: "Unit Charge Active" },
+    { key: "unitChargePassive", label: "Unit Charge Passive" },
+  ];
+
+  const containerRef = useRef(null);
+  const buttonRefs = useRef({});
+  const underlineRef = useRef(null);
+
+  const moveUnderline = (key) => {
+    const btn = buttonRefs.current[key];
+    const container = containerRef.current;
+    const underline = underlineRef.current;
+    if (!btn || !container || !underline) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+
+    underline.style.transform = `translateX(${btnRect.left - containerRect.left}px)`;
+    underline.style.width = `${btnRect.width}px`;
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => moveUnderline(currentPage), 20);
+    const handleResize = () => moveUnderline(currentPage);
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [currentPage]);
+
+  const valueHandleChange = (name, value) => {
+    setValueFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleChargeConfigCheckboxChange = (e) => {
+    const { value, checked } = e.target;
+
+    setValueFormData((prev) => {
+      const current = Array.isArray(prev.charge_configuration)
+        ? prev.charge_configuration
+        : [];
+
+      return {
+        ...prev,
+        charge_configuration: checked
+          ? Array.from(new Set([...current, value]))
+          : current.filter((item) => item !== value),
+      };
+    });
+  };
+
+  const handleReadCheckbox = (index) => {
+    const next = new Set(selectedItems);
+    if (next.has(index)) next.delete(index);
+    else next.add(index);
+
+    setSelectedItems(next);
+    setSelectAll(next.size === CHARGE_VALUE_OPTIONS.length);
+  };
+
+  const handleSelectAll = (checked) => {
+    setSelectAll(checked);
+    setSelectedItems(
+      checked ? new Set(CHARGE_VALUE_OPTIONS.map((_, i) => i)) : new Set()
+    );
+  };
+
+  const normalizeChargeConfig = (rawValue) => {
+    if (Array.isArray(rawValue)) return rawValue.map(String).filter(Boolean);
+
+    if (typeof rawValue === "string") {
+      return rawValue
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean);
+    }
+
+    if (rawValue !== null && rawValue !== undefined && rawValue !== "") {
+      return [String(rawValue)];
+    }
+
+    return [];
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const controllerRef = useRef(null);
+
+const handleReadValues = async () => {
+  const serial =
+    localStorage.getItem("selectedSerialNumber") ||
+    localStorage.getItem("selectedDeviceId") ||
+    deviceId;
+
+  if (!serial) {
+    alert("No serial/device selected");
+    return;
+  }
+
+  if (selectedItems.size === 0) {
+    alert("Please select at least one checkbox");
+    return;
+  }
+
+  const parameters = Array.from(selectedItems).map((i) => {
+    const item = CHARGE_VALUE_OPTIONS[i];
+    return {
+      obis_code: "0.0.19.20.0.255",
+      attribute_index: String(item.index),
+    };
+  });
+
+  const payload = {
+    serial_number: serial,
+    action: "read_obis",
+    parameters,
+  };
+
+  try {
+    setReadLoading(true);
+
+    if (controllerRef.current) {
+      controllerRef.current.abort();
+    }
+
+    controllerRef.current = new AbortController();
+
+    const response = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: controllerRef.current.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    let buffer = "";
+    const nextReadValues = {};
+    const nextFormValues = {};
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const chunks = buffer.split("\n\n");
+      buffer = chunks.pop();
+
+      for (const chunk of chunks) {
+        if (!chunk.startsWith("data:")) continue;
+
+        try {
+          const msg = JSON.parse(chunk.replace(/^data:\s*/, ""));
+
+          const matched = CHARGE_VALUE_OPTIONS.find(
+            (x) => String(x.index) === String(msg.attribute_index)
+          );
+
+          if (!matched) continue;
+
+          if (matched.field === "charge_configuration") {
+            const arrayValue = normalizeChargeConfig(msg.value);
+            nextReadValues[matched.field] = arrayValue.join(", ");
+            nextFormValues[matched.field] = arrayValue;
+          } else {
+            const displayValue =
+              msg.value === null || msg.value === undefined
+                ? ""
+                : typeof msg.value === "object"
+                ? JSON.stringify(msg.value)
+                : String(msg.value);
+
+            nextReadValues[matched.field] = displayValue;
+            nextFormValues[matched.field] = msg.value;
+          }
+
+          setReadValues((prev) => ({
+            ...prev,
+            ...nextReadValues,
+          }));
+
+          setValueFormData((prev) => ({
+            ...prev,
+            ...nextFormValues,
+            device_id: serial,
+          }));
+        } catch (err) {
+          console.error("Chunk parse error:", err);
+        }
+      }
+    }
+  } catch (error) {
+    if (error.name === "AbortError") {
+      console.log("Request was aborted");
+    } else {
+      console.error("Read Error:", error);
+      alert("Failed to read charge values");
+    }
+  } finally {
+    setReadLoading(false);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const valueHandleSubmit = async (e) => {
+    e.preventDefault();
+
+    const formattedData = {
+      ...valueFormData,
+      total_amount_paid: parseFloat(valueFormData.total_amount_paid) || 0,
+      period: parseFloat(valueFormData.period) || 0,
+      last_collection_amount:
+        parseFloat(valueFormData.last_collection_amount) || 0,
+      total_amount_remaining:
+        parseFloat(valueFormData.total_amount_remaining) || 0,
+      proportion: parseFloat(valueFormData.proportion) || 0,
+      charge_configuration: Array.isArray(valueFormData.charge_configuration)
+        ? valueFormData.charge_configuration
+        : [],
+    };
+
+    try {
+      await axios.post(`${BASE_URL}/api/payment-charge-value/`, [formattedData]);
+      alert("Data sent successfully!");
+    } catch (error) {
+      console.error("Error sending data:", error.response?.data || error);
+      alert("Failed to submit charge value data");
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    const parsedValue = ["commodityScale", "priceScale"].includes(name)
+      ? parseFloat(value) || 0
+      : value;
+
+    if (name.startsWith("tariff")) {
+      setFormData((prev) => ({
+        ...prev,
+        tariffs: {
+          ...prev.tariffs,
+          [name]: value,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: parsedValue,
+      }));
+    }
+  };
+
+  const handleSubmit = async (e, unit_type) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    const formattedData = [
+      {
+        device: deviceId,
+        unit_type: unit_type,
+        commodity_scale: formData.commodityScale,
+        price_scale: formData.priceScale,
+        class_id: formData.classId,
+        logical_name: formData.logicalName,
+        attribute_id: formData.attributeId,
+        unit_charge_activation_time: formData.unitChargeActivationTime,
+        tariff_1: parseFloat(formData.tariffs.tariff1) || 0.0,
+        tariff_2: parseFloat(formData.tariffs.tariff2) || 0.0,
+        tariff_3: parseFloat(formData.tariffs.tariff3) || 0.0,
+        tariff_4: parseFloat(formData.tariffs.tariff4) || 0.0,
+      },
+    ];
+
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/api/unit-charges/`,
+        formattedData,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (response.status === 201) {
+        setMessage("✅ Data successfully submitted!");
+        setFormData({
+          device: "",
+          unitType: "active",
+          commodityScale: 0,
+          priceScale: 0,
+          classId: "",
+          logicalName: "",
+          attributeId: "",
+          unitChargeActivationTime: "",
+          tariffs: {
+            tariff1: "",
+            tariff2: "",
+            tariff3: "",
+            tariff4: "",
+          },
+        });
+      }
+    } catch (error) {
+      if (error.response) {
+        setMessage(
+          `❌ Error: ${error.response.data.detail || "Invalid data submission."}`
+        );
+      } else {
+        setMessage("❌ Error submitting data. Please try again.");
+      }
+      console.error("Error:", error);
+    }
+
+    setLoading(false);
+  };
+
+  const getFieldValue = (field) =>
+    readValues[field] ?? valueFormData[field] ?? "";
+
+  const renderValueField = (field, label, type, idx) => {
+    let displayValue = getFieldValue(field);
+
+    // Add % for proportion field
+  if (
+    field === "proportion" &&
+    displayValue !== "" &&
+    displayValue !== null &&
+    displayValue !== undefined
+  ) {
+    displayValue = `${displayValue}%`;
+  }
+
+    return (
+      <div className="security-form" key={field}>
+        <label >
+          <input
+            type="checkbox"
+            checked={selectedItems.has(idx)}
+            onChange={() => handleReadCheckbox(idx)}
+          />
+          <span>{label}:</span>
+           <input
+          type={type}
+          value={displayValue}
+          readOnly
+          onChange={(e) => valueHandleChange(field, e.target.value)}
+        />
+        </label>
+
+       
+      </div>
+    );
+  };
+
+
+
+ const getChargeTypeDisplay = (value) => {
+  // Empty before meter read
+  if (value === "" || value === null || value === undefined) {
+    return "";
+  }
+
+  switch (Number(value)) {
+    case 0:
+      return "0 (Consumption Based Collection)";
+    case 1:
+      return "1 (Time Based Collection)";
+    case 2:
+      return "2 (Payment Event Based Collection)";
+    default:
+      return value;
+  }
+};
+
+const renderChargeTypeField = () => {
+  const rawValue = getFieldValue("charge_type");
+  const displayValue = getChargeTypeDisplay(rawValue);
+
+  return (
+    <div className="security-form" key="charge_type">
+      <label>
+        <input
+          type="checkbox"
+          checked={selectedItems.has(1)}
+          onChange={() => handleReadCheckbox(1)}
+        />
+        <span>Charge Type:</span>
+
+        <input
+          type="text"
+          value={displayValue}
+          readOnly
+        />
+      </label>
+    </div>
+  );
+};
+
+
+
+
+
+
+
+  const renderChargeConfigurationField = () => {
+    let displayValue =
+      readValues.charge_configuration ??
+      (Array.isArray(valueFormData.charge_configuration)
+        ? valueFormData.charge_configuration.join(", ")
+        : "");
+    
+    displayValue=parseInt(displayValue)
+    return (
+      <div className="security-form">
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedItems.has(4)}
+            onChange={() => handleReadCheckbox(4)}
+          />
+          <span>Charge Configuration:</span>
+         
+          <label>
+            <input
+              type="checkbox"
+              value="continuous"
+               checked={displayValue === 2 || displayValue === 3}
+              
+            />
+            Continuous collection
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              value="percentage_based"
+              checked={displayValue === 1 || displayValue === 3}
+            />
+             Percentage collection
+          </label>
+        
+    
+        </label>
+          </div>
+
+       
+
+        
+    );
+  };
+
+
+  const getPriorityDisplay = (value) => {
+  // Empty before meter read
+  if (value === "" || value === null || value === undefined) {
+    return "";
+  }
+
+  switch (Number(value)) {
+    case 1:
+      return "1 (Highest Priority)";
+    case 0:
+      return "0 (Not Activated)";
+    case 255:
+      return "255 (Lowest Priority)";
+    default:
+      return value;
+  }
+};
+
+const renderPriorityField = () => {
+  const rawValue = getFieldValue("priority");
+  const displayValue = getPriorityDisplay(rawValue);
+
+  return (
+    <div className="security-form" key="priority">
+      <label>
+        <input
+          type="checkbox"
+          checked={selectedItems.has(2)}
+          onChange={() => handleReadCheckbox(2)}
+        />
+        <span>Priority:</span>
+        <input
+          type="text"
+          value={displayValue}
+          readOnly
+        />
+      </label>
+    </div>
+  );
+};
+
+
+
+
+const formatPeriod = (seconds) => {
+  // Empty before meter read
+  if (seconds === "" || seconds === null || seconds === undefined) {
+    return "";
+  }
+
+  const totalSeconds = Number(seconds);
+
+  const hrs = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+
+  return `${hrs}h:${mins}m:${secs}s`;
+};
+
+const renderPeriodField = () => {
+  const rawValue = getFieldValue("period");
+  const displayValue = formatPeriod(rawValue);
+
+  return (
+    <div className="security-form" key="period">
+      <label>
+        <input
+          type="checkbox"
+          checked={selectedItems.has(3)}
+          onChange={() => handleReadCheckbox(3)}
+        />
+        <span>Period:</span>
+
+        <input
+          type="text"
+          value={displayValue}
+          readOnly
+        />
+      </label>
+    </div>
+  );
+};
+
+
+
+
+
+const formatLastCollectionTime = (value) => {
+  if (!value) return "";
+
+  // If value comes as a JSON string
+  let data = value;
+  if (typeof value === "string") {
+    try {
+      data = JSON.parse(value);
+    } catch (error) {
+      return value;
+    }
+  }
+
+  const datePart = data?.Date || "";
+  const timePart = data?.Time || "";
+
+  // Remove extra text like "(Deviation: Z)"
+  const cleanTime = timePart.split(" ")[0];
+
+  // Remove weekday text like "Saturday,"
+  const cleanDate = datePart.includes(",")
+    ? datePart.split(",")[1].trim()
+    : datePart;
+
+  if (!cleanDate && !cleanTime) return "";
+
+  return `${cleanDate} ${cleanTime}`.trim();
+};
+
+const renderLastCollectionTimeField = () => {
+  const rawValue = getFieldValue("last_collection_time");
+  const displayValue = formatLastCollectionTime(rawValue);
+
+  return (
+    <div className="security-form" key="last_collection_time">
+      <label>
+        <input
+          type="checkbox"
+          checked={selectedItems.has(4)}
+          onChange={() => handleReadCheckbox(4)}
+        />
+        <span>Last Collection Time:</span>
+
+        <input
+          type="text"
+          value={displayValue}
+          readOnly
+        />
+      </label>
+    </div>
+  );
+};
+
+  const renderContent = () => {
+    switch (currentPage) {
+      case "value":
+        return (
+          <form onSubmit={valueHandleSubmit}>
+            <div className="security-form">
+              <button
+                type="button"
+                className="scheduler-add-button"
+                onClick={handleReadValues}
+                disabled={readLoading}
+                style={{ marginLeft: "60%" }}
+              >
+                {readLoading ? "Reading..." : "Read"}
+              </button>
+            </div>
+
+            <div className="security-form">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                />
+                Select All
+              </label>
+            </div>
+
+            {renderValueField("total_amount_paid", "Total Amount Paid", "number", 0)}
+            
+            {renderChargeTypeField()}
+            {renderPriorityField()}
+            {renderPeriodField()}
+            {renderChargeConfigurationField()}
+             {renderLastCollectionTimeField()}
+            {renderValueField(
+              "last_collection_amount",
+              "Last Collection Amount",
+              "number",
+              6
+            )}
+            {renderValueField(
+              "total_amount_remaining",
+              "Total Amount Remaining",
+              "number",
+              7
+            )}
+            {renderValueField("proportion", "Proportion", "text", 8)}
+
+           
+          </form>
+        );
+
+        case "unitChargeActive":
+  return renderUnitChargeSection("active");
+
+case "unitChargePassive":
+  return renderUnitChargeSection("passive");
+
+        
+
+    
+
+      default:
+        return <p>Please select an option above.</p>;
+    }
+  };
+
+  return (
+    <div>
+      <div className="controlsGroup_tabs" ref={containerRef}>
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            ref={(el) => (buttonRefs.current[tab.key] = el)}
+            className={`tou_button ${currentPage === tab.key ? "activeButton" : ""}`}
+            onClick={() => setCurrentPage(tab.key)}
+            type="button"
+          >
+            {tab.label}
+          </button>
+        ))}
+        <div ref={underlineRef} className="underline" />
+      </div>
+
+      <div>{renderContent()}</div>
+    </div>
+  );
+};
+
+
+
+
 
 
 
@@ -2710,7 +5273,7 @@ const TokenGateway = () => {
 
 
 
-const PaymentInfoTable=()=> {
+const PaymentInfoTable1=()=> {
   const [selected, setSelected] = useState({});
   const [paymentData, setPaymentData] = useState(
  [
@@ -2808,6 +5371,292 @@ const PaymentInfoTable=()=> {
     </div>
   );
 }
+
+
+
+
+
+const PaymentInfoTable = () => {
+  const [apiData, setApiData] = useState([]);
+
+  const [deviceId, setDeviceId] = useState(() =>
+    localStorage.getItem("selectedDeviceId")
+  );
+
+  const [rows, setRows] = useState([
+    {
+      checked: false,
+      no: 1,
+      name: "STS Ti",
+      code: "1,0-68:128.0.1.255",
+      value: "",
+      unit: "",
+    },
+    {
+      checked: false,
+      no: 2,
+      name: "STS KEN",
+      code: "1,0-68:128.0.2.255",
+      value: "",
+      unit: "",
+    },
+    {
+      checked: false,
+      no: 3,
+      name: "STS KRN",
+      code: "1,0-68:128.0.3.255",
+      value: "",
+      unit: "",
+    },
+    {
+      checked: false,
+      no: 4,
+      name: "STS KT",
+      code: "1,0-68:128.0.4.255",
+      value: "",
+      unit: "",
+    },
+    {
+      checked: false,
+      no: 5,
+      name: "STS SGC",
+      code: "1,0-68:128.0.8.255",
+      value: "",
+      unit: "",
+    },
+    {
+      checked: false,
+      no: 6,
+      name: "STS EA",
+      code: "1,0-68:128.0.11.255",
+      value: "",
+      unit: "",
+    },
+    {
+      checked: false,
+      no: 7,
+      name: "Manufacture TID",
+      code: "1,0-68:128.0.9.255",
+      value: "",
+      unit: "",
+    },
+    {
+      checked: false,
+      no: 8,
+      name: "Residual Credit",
+      code: "3,0-0:19.130.0.255",
+      value: "",
+      unit: "",
+    },
+    {
+      checked: false,
+      no: 9,
+      name: "Energy used",
+      code: "3,1-0:15.9.0.255",
+      value: "",
+      unit: "GHC",
+    },
+    {
+      checked: false,
+      no: 10,
+      name: "Currency used",
+      code: "3,0-0:19.133.0.255",
+      value: "",
+      unit: "KWh",
+    },
+    {
+      checked: false,
+      no: 11,
+      name: "Cumulative purchase credit",
+      code: "3,1-65:1.140.2.255",
+      value: "",
+      unit: "GHC",
+    },
+    {
+      checked: false,
+      no: 12,
+      name: "Cumulative consume Credit",
+      code: "3,1-0:96.51.5.255",
+      value: "",
+      unit: "GHC",
+    },
+    {
+      checked: false,
+      no: 13,
+      name: "Max Credit limit",
+      code: "3,0-0:19.50.1.255",
+      value: "",
+      unit: "GHC",
+    },
+    {
+      checked: false,
+      no: 14,
+      name: "Non-resident monthly rent price",
+      code: "1,0-0:19.14.12.255",
+      value: "",
+      unit: "",
+    },
+    {
+      checked: false,
+      no: 15,
+      name: "Monthly rent mode",
+      code: "1,0-0:96.14.13.255",
+      value: "",
+      unit: "",
+    },
+  ]);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("selectedDeviceId");
+    setDeviceId(storedId);
+  }, []);
+
+  const handleCheckboxChange = (index) => {
+    setRows((prevRows) =>
+      prevRows.map((row, i) =>
+        i === index ? { ...row, checked: !row.checked } : row
+      )
+    );
+  };
+
+  const handleSelectAll1 = () => {
+    const allSelected = rows.every((row) => row.checked);
+
+    setRows((prevRows) =>
+      prevRows.map((row) => ({
+        ...row,
+        checked: !allSelected,
+      }))
+    );
+  };
+
+  const handleSelectAll = (e) => {
+  const isChecked = e.target.checked;
+
+  setRows(prevRows =>
+    prevRows.map(row => ({
+      ...row,
+      checked: isChecked
+    }))
+  );
+};
+  const handleSendSelected = async () => {
+    const selectedItems = rows.filter((row) => row.checked);
+
+    if (selectedItems.length === 0) {
+      alert("Please select at least one item");
+      return;
+    }
+
+    if (!deviceId) {
+      alert("Device ID not found");
+      return;
+    }
+
+    try {
+      const payload = {
+        device_id: deviceId,
+        action: "read_obis",
+        serial_number: localStorage.getItem("serial_number") || "",
+        payment_data: selectedItems.map((item) => ({
+          name: item.name,
+          code: item.code,
+          value: item.value || "",
+          unit: item.unit || "",
+        })),
+      };
+
+      console.log("Payment Payload:", payload);
+
+      const response = await axios.post(
+        `${BASE_URL}/api/payment-information/`,
+        payload
+      );
+
+      console.log("Payment Response:", response.data);
+
+      setApiData(response.data.data || []);
+    } catch (error) {
+      console.error("Payment API Error:", error);
+
+      if (error.response) {
+        console.log("Backend Error:", error.response.data);
+      }
+    }
+  };
+
+  const getValueByCode = (code) => {
+    const found = apiData.find((item) => item.code === code);
+    return found ? found.value : "";
+  };
+
+  return (
+    <div className="tou_container">
+      <div style={{ marginBottom: "15px" }}>
+       
+
+        <button
+          className="scheduler-add-button"
+          onClick={handleSendSelected}
+        >
+           Read
+        </button>
+      </div>
+
+      <table className="tableTariff1">
+        <thead>
+          <tr>
+           <th>
+  <input
+    type="checkbox"
+    checked={rows.length > 0 && rows.every(row => row.checked)}
+    onChange={handleSelectAll}
+  />
+  {" "}
+</th>
+            <th>No</th>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Value</th>
+            <th>Unit</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {rows.map((item, index) => (
+            <tr key={item.no}>
+              <td>
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={() => handleCheckboxChange(index)}
+                />
+              </td>
+
+              <td>{item.no}</td>
+
+              <td>{item.name}</td>
+
+              <td>{item.code}</td>
+
+              <td>{getValueByCode(item.code)}</td>
+
+              <td>{item.unit}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+
+
+
+
+
+
+
 
 
 

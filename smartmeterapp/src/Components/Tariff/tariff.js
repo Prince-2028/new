@@ -7,7 +7,7 @@ import SpecialDaysForm from "../TariffSpecialdays/specialday"; // Importing Spec
 
 
 
-const TariffParameter = () => {
+const TariffParameter1 = () => {
   // Mock data directly in the component
 const [data, setData] = useState([
   {
@@ -117,6 +117,161 @@ const [data, setData] = useState([
 
 
 
+const TariffParameter = () => {
+  const [apiData, setApiData] = useState([]);
+
+  const [deviceId, setDeviceId] = useState(() =>
+    localStorage.getItem("selectedDeviceId")
+  );
+
+  const [rows, setRows] = useState([
+    {
+      checked: false,
+      no: 1,
+      name: "Currently active rate",
+      code: "(1,0-0:96.14.0.255)",
+      value: "",
+      unit: "kWh",
+    },
+    {
+      checked: false,
+      no: 2,
+      name: "Active time of passive step tariff",
+      code: "(1,0-128:96.2.8.2.255)",
+      value: "",
+      unit: "hours",
+    },
+    {
+      checked: false,
+      no: 3,
+      name: "Currently active price",
+      code: "(3,0-0:96.14.1.255)",
+      value: "",
+      unit: "Currency",
+    },
+    {
+      checked: false,
+      no: 4,
+      name: "Currently active step",
+      code: "(1,0-1:96.14.0.255)",
+      value: "",
+      unit: "",
+    },
+  ]);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("selectedDeviceId");
+    setDeviceId(storedId);
+  }, []);
+
+  const handleCheckboxChange = (index) => {
+    setRows((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? { ...item, checked: !item.checked }
+          : item
+      )
+    );
+  };
+
+  const handleGetValues = async () => {
+    const selectedItems = rows.filter((item) => item.checked);
+
+    if (!selectedItems.length) {
+      alert("Please select at least one item");
+      return;
+    }
+
+    try {
+      const payload = {
+        device_id: deviceId,
+        action: "read_obis",
+        serial_number: localStorage.getItem("serial_number"),
+        parameters: selectedItems.map((item) => ({
+          obis_code: item.code,
+          name: item.name,
+        })),
+      };
+
+      console.log("Payload:", payload);
+
+      const response = await axios.post(
+        `${BASE_URL}/api/tariff-parameters/`,
+        payload
+      );
+
+      console.log("Response:", response.data);
+
+      setApiData(response.data.data || []);
+    } catch (error) {
+      console.error("Error fetching tariff parameters:", error);
+    }
+  };
+
+  const getValue = (name) => {
+    if (!apiData.length) return "";
+
+    const item = apiData.find(
+      (data) => data.name === name
+    );
+
+    return item ? item.value : "";
+  };
+
+  return (
+    <div className="tou_container">
+
+      <button
+        className="scheduler-add-button"
+        onClick={handleGetValues}
+        style={{ marginBottom: "10px" }}
+      >
+        Read 
+      </button>
+
+      <table className="tableTariff1">
+        <thead>
+          <tr>
+            <th>Checked</th>
+            <th>No</th>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Value</th>
+            <th>Unit</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {rows.map((item, index) => (
+            <tr key={index}>
+              <td>
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={() =>
+                    handleCheckboxChange(index)
+                  }
+                />
+              </td>
+
+              <td>{item.no}</td>
+
+              <td>{item.name}</td>
+
+              <td>{item.code}</td>
+
+              <td>
+                {getValue(item.name) || item.value}
+              </td>
+
+              <td>{item.unit}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 
 
@@ -140,13 +295,42 @@ const CalendarManager = () => {
 
 
 // when editing a single profile row inside modal
-const [editingProfileIndex, setEditingProfileIndex] = useState(null);
+//const [editingProfileIndex, setEditingProfileIndex] = useState(null);
 
 // Edit modal state
 const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 const [editingCalendarId, setEditingCalendarId] = useState(null);
 const [editingDayId, setEditingDayId] = useState(null);
 const [editProfiles, setEditProfiles] = useState([]); // [{ start_time: "00:00", script_selector: "T1" }, ...]
+
+const [editingSeasonId, setEditingSeasonId] = useState(null);
+
+
+const [editingProfileIndex, setEditingProfileIndex] = useState(null);
+
+const updateSeason = () => {
+  if (selectItem !== 'null') {
+
+    const selectedSeason = data.seasons.find(
+      (season) => season.calendar_id === selectItem
+    );
+
+    if (selectedSeason) {
+
+      setSeasonStart(selectedSeason.season_start);
+      setWeekName(selectedSeason.week_name);
+
+      setEditingSeasonId(selectedSeason.calendar_id);
+
+      setIsOpenSeason(true);
+      setUpdateItem(true);
+    }
+
+  } else {
+    alert("Please select a season before updating.");
+  }
+};
+
 
 // Open the edit modal and load selected row's data
 const openEditModal = () => {
@@ -549,9 +733,28 @@ function handleDeleteSelected() {
       );
   
       console.log('Week data saved successfully:', response.data);
-      setIsOpenWeek(false); // Close the week modal
-      // Optionally, you can fetch updated week data after saving
-      fetchCalendars();
+
+      alert('Week saved successfully.');
+
+setWeekName('');
+
+setDays({
+  Monday: 'Day1',
+  Tuesday: 'Day1',
+  Wednesday: 'Day1',
+  Thursday: 'Day1',
+  Friday: 'Day1',
+  Saturday: 'Day1',
+  Sunday: 'Day1',
+});
+
+setSelectItem('null');
+setUpdateItem(false);
+
+setIsOpenWeek(false);
+
+fetchCalendars();
+     
     } catch (error) {
       // Improved error handling
       if (error.response) {
@@ -605,10 +808,24 @@ function handleDeleteSelected() {
             payload
         );
 
-        console.log('Season data saved successfully:', response.data);
-        setIsOpenSeason(false); // Close the season modal
-        // Optionally, you can fetch updated season data after saving
-        fetchCalendars(); // Fetch updated data from the server
+        if (response.status === 201 || response.status === 200) {
+
+  console.log('Season data saved successfully:', response.data);
+
+  alert('Season saved successfully.');
+
+  setWeekName('');
+  setSeasonStart('00:00');
+
+  setSelectItem('null');
+  setUpdateItem(false);
+
+  setIsOpenSeason(false);
+
+  fetchCalendars();
+}
+
+       
     } catch (error) {
         // Improved error handling
         if (error.response) {
@@ -870,6 +1087,13 @@ function handleDeleteSelected() {
         <button  className="scheduler-delete-button" onClick={DeleteItem}> 
             Delete Season
             </button>
+
+             <button
+  className="scheduler-add-button"
+  onClick={updateSeason}
+>
+  Edit Season
+</button>
             </div>
       </div>
         );
@@ -947,6 +1171,43 @@ function handleDeleteSelected() {
   
         // Optionally refetch data to reflect the update
         fetchCalendars();
+
+         // Clear form fields
+  setCalendarName('00000000');
+  setWeekName('');
+  setSeasonStart('00:00');
+
+  setDays({
+    Monday: 'Day1',
+    Tuesday: 'Day1',
+    Wednesday: 'Day1',
+    Thursday: 'Day1',
+    Friday: 'Day1',
+    Saturday: 'Day1',
+    Sunday: 'Day1',
+  });
+
+  setProfiles([]);
+
+  setNewProfile({
+    dayId: '',
+    startTime: '00:00',
+    scriptSelector: 'T1',
+  });
+
+  setSelectItem('null');
+  setUpdateItem(false);
+
+  // Close popups
+  setPopupVisible(false);
+  setIsOpenSeason(false);
+  setIsOpenWeek(false);
+
+  alert('Calendar updated successfully.');
+       
+
+
+
       }
     } catch (error) {
       // Improved error handling
@@ -1358,7 +1619,7 @@ function handleDeleteSelected() {
     <div className="tou_modal" onClick={closePopupOutside}>
     <div className="tou_modal-content"> 
       <div> 
-            <form onSubmit={handleSaveSeason}>
+           
                 <div className="form-group">
                     <label htmlFor="seasonStart">Season Start:</label>
                     <input
@@ -1381,10 +1642,13 @@ function handleDeleteSelected() {
                     />
                 </div>
                 <div className="form-buttons">
-                    <button type="submit" className="save-button">Save</button>
+                   {updateItem ? 
+                    <button onClick={updateCalendar}>Update</button>:
+                    <button  onClick={handleSaveSeason} className="save-button">Save</button>}
+                   
                     <button type="button" className="cancel-button" >Cancel</button>
                 </div>
-            </form>
+            
             </div>
             </div> 
             </div>
@@ -1464,9 +1728,10 @@ const ThresholdActionTable = () => {
 
       try {
         const response = await axios.post(`${BASE_URL}/api/tariff/threshold-actions/`, newThreshold);
-        setThresholds([...thresholds, { id: response.data.id, value: parseFloat(threshold) }]);
+        //setThresholds([...thresholds, { id: response.data.id, value: parseFloat(threshold) }]);
         setThreshold(0); // Reset threshold input after adding
         setOpenAddThresholds(false);
+        await fetchData();
       } catch (error) {
         console.error('Error adding threshold:', error);
       }
@@ -1482,10 +1747,11 @@ const ThresholdActionTable = () => {
 
       try {
         const response = await axios.post(`${BASE_URL}/api/tariff/threshold-actions/`, newAction);
-        setActions([...actions, { id: response.data.id, action_up: actionUp, action_down: actionDown }]);
+       // setActions([...actions, { id: response.data.id, action_up: actionUp, action_down: actionDown }]);
         setActionUp('step1'); // Reset action input after adding
         setActionDown('step1');
         setOpenAddAction(false);
+        await fetchData();
       } catch (error) {
         console.error('Error adding action:', error);
       }
@@ -1752,9 +2018,10 @@ const PassiveThresholdActionTable = () => {
 
       try {
         const response = await axios.post(`${BASE_URL}/api/tariff/threshold-actions/`, newThreshold);
-        setThresholds([...thresholds, { id: response.data.id, value: parseFloat(threshold) }]);
+        //setThresholds([...thresholds, { id: response.data.id, value: parseFloat(threshold) }]);
         setThreshold(0); // Reset threshold input after adding
         setOpenAddThresholds(false);
+        await fetchData();
       } catch (error) {
         console.error('Error adding threshold:', error);
       }
@@ -1770,10 +2037,11 @@ const PassiveThresholdActionTable = () => {
 
       try {
         const response = await axios.post(`${BASE_URL}/api/tariff/threshold-actions/`, newAction);
-        setActions([...actions, { id: response.data.id, action_up: actionUp, action_down: actionDown }]);
+        //setActions([...actions, { id: response.data.id, action_up: actionUp, action_down: actionDown }]);
         setActionUp('step1'); // Reset action input after adding
         setActionDown('step1');
         setOpenAddAction(false);
+        await fetchData();
       } catch (error) {
         console.error('Error adding action:', error);
       }

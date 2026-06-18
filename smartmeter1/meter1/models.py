@@ -2443,7 +2443,7 @@ class MonthlyBilling(models.Model):
     value = models.IntegerField(default=100)
 
     class Meta:
-        unique_together = ("device", "code")
+        unique_together = ("device","name","code")
         indexes = [
             models.Index(fields=["device", "code"]),
         ]

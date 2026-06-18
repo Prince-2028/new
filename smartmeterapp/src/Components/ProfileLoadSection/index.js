@@ -1066,6 +1066,7 @@ const InstantaneousReadSnapshotDashboard = () => {
       </div>
 
       {/* Buttons */}
+      
       <div className="button-group">
         <button className="save" onClick={handleSave}>
           Save

@@ -107,6 +107,8 @@ class OBISStreamingMixin:
                 # result = execute_dlms_action(dlms_config, action_details={"action": "read_obis", "parameters": parameters})
                 result = execute_dlms_action(dlms_config, action_details={"action": "read_obis", "parameters": parameters, "serial_number": serial_number}) #SUMIT
 
+                
+
                 if result.get("status") == "success" or result.get("successful_reads", 0) > 0:
                     # Stream each result from the batch response
                     for index, obis_result in enumerate(result.get("results", [])):
@@ -114,7 +116,21 @@ class OBISStreamingMixin:
                         attribute_index = obis_result.get('attribute_index')
                         
                         if obis_result.get("status") == "success":
-                            live_value = obis_result.get('value')
+                            live_value = obis_result.get('value') 
+
+                            print("live_value",live_value)
+
+                           
+
+                     
+
+                           
+
+                            
+
+                            
+
+                           
                             
                             # Store value permanently in database
                             db_record, value_field_name = get_db_record_for_obis(device, obis_code, attribute_index)

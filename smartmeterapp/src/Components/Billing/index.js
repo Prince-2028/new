@@ -306,6 +306,344 @@ import './index.css'
 
 
 
+const DisplayParameters1 = () => {
+  const [deviceId, setDeviceId] = useState(() =>
+    localStorage.getItem("selectedDeviceId")
+  );
+
+  const [checkboxData, setCheckboxData] = useState([
+    {
+      name: "Auto display scroll interval",
+      code: "(3,1-0:35.5.0.255)",
+      value: "",
+      unit: "s",
+      checked: false,
+    },
+    {
+      name: "Manual display interval",
+      code: "(3,1-0:35.5.0.256)",
+      value: "",
+      unit: "s",
+      checked: false,
+    },
+  ]);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("selectedDeviceId");
+    setDeviceId(storedId);
+  }, []);
+
+  const handleChangeDisplayConfigure = (index) => {
+    setCheckboxData((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? { ...item, checked: !item.checked }
+          : item
+      )
+    );
+  };
+
+  const handleSelectAll = (e) => {
+    const isChecked = e.target.checked;
+
+    setCheckboxData((prev) =>
+      prev.map((item) => ({
+        ...item,
+        checked: isChecked,
+      }))
+    );
+  };
+
+  const handleSave = async () => {
+    const selectedItems = checkboxData.filter(
+      (item) => item.checked
+    );
+
+    if (selectedItems.length === 0) {
+      alert("Please select at least one item");
+      return;
+    }
+
+    try {
+      const payload = {
+        device_id: deviceId,
+        display_data: selectedItems.map((item) => ({
+          name: item.name,
+          code: item.code,
+          unit: item.unit,
+        })),
+      };
+
+      console.log("Display Payload:", payload);
+
+      const response = await axios.post(
+        `${BASE_URL}/api/display-parameters/`,
+        payload
+      );
+
+      console.log("Display Response:", response.data);
+
+      const apiData = response.data.data || [];
+
+      setCheckboxData((prev) =>
+        prev.map((row) => {
+          const found = apiData.find(
+            (item) => item.code === row.code
+          );
+
+          return found
+            ? {
+                ...row,
+                value: found.value,
+              }
+            : row;
+        })
+      );
+    } catch (error) {
+      console.error("Error saving data", error);
+
+      if (error.response) {
+        console.log(
+          "Backend Error:",
+          error.response.data
+        );
+      }
+    }
+  };
+
+  return (
+    <div>
+      <table className="tableTariff1">
+        <thead>
+          <tr>
+            <th>
+              <input
+                type="checkbox"
+                checked={
+                  checkboxData.length > 0 &&
+                  checkboxData.every(
+                    (item) => item.checked
+                  )
+                }
+                onChange={handleSelectAll}
+              />
+            </th>
+
+            <th>No</th>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Value</th>
+            <th>Unit</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {checkboxData.map((item, index) => (
+            <tr key={index}>
+              <td>
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={() =>
+                    handleChangeDisplayConfigure(index)
+                  }
+                />
+              </td>
+
+              <td>{index + 1}</td>
+
+              <td>{item.name}</td>
+
+              <td>{item.code}</td>
+
+              <td>{item.value}</td>
+
+              <td>{item.unit}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <button
+        style={{ marginLeft: "40%" }}
+        className="scheduler-add-button"
+        onClick={handleSave}
+      >
+        Get Values
+      </button>
+    </div>
+  );
+};
+
+const DisplayParameters = () => {
+  const [deviceId, setDeviceId] = useState(() =>
+    localStorage.getItem("selectedDeviceId")
+  );
+
+  const [checkboxData, setCheckboxData] = useState([
+    {
+      name: "Sub- interval time for max",
+      code: "(5,1-0:1.4.0.255)",
+      value: "",
+      unit: "s",
+      checked: false,
+    },
+    {
+      name: "Sub- interval number for max",
+      code: "(5,1-0:1.4.0.255)",
+      value: "",
+      unit: "s",
+      checked: false,
+    },
+  ]);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("selectedDeviceId");
+    setDeviceId(storedId);
+  }, []);
+
+  const handleChangeDisplayConfigure = (index) => {
+    setCheckboxData((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? { ...item, checked: !item.checked }
+          : item
+      )
+    );
+  };
+
+  const handleSelectAll = (e) => {
+    const isChecked = e.target.checked;
+
+    setCheckboxData((prev) =>
+      prev.map((item) => ({
+        ...item,
+        checked: isChecked,
+      }))
+    );
+  };
+
+  const handleSave = async () => {
+    const selectedItems = checkboxData.filter(
+      (item) => item.checked
+    );
+
+    if (selectedItems.length === 0) {
+      alert("Please select at least one item");
+      return;
+    }
+
+    try {
+      const payload = {
+        device_id: deviceId,
+        display_data: selectedItems.map((item) => ({
+          name: item.name,
+          code: item.code,
+          unit: item.unit,
+        })),
+      };
+
+      console.log("Display Payload:", payload);
+
+      const response = await axios.post(
+        `${BASE_URL}/api/display-parameters/`,
+        payload
+      );
+
+      console.log("Display Response:", response.data);
+
+      const apiData = response.data.data || [];
+
+      setCheckboxData((prev) =>
+        prev.map((row) => {
+          const found = apiData.find(
+            (item) => item.code === row.code
+          );
+
+          return found
+            ? {
+                ...row,
+                value: found.value,
+              }
+            : row;
+        })
+      );
+    } catch (error) {
+      console.error("Error saving data", error);
+
+      if (error.response) {
+        console.log(
+          "Backend Error:",
+          error.response.data
+        );
+      }
+    }
+  };
+
+  return (
+    <div>
+      <table className="tableTariff1">
+        <thead>
+          <tr>
+            <th>
+              <input
+                type="checkbox"
+                checked={
+                  checkboxData.length > 0 &&
+                  checkboxData.every(
+                    (item) => item.checked
+                  )
+                }
+                onChange={handleSelectAll}
+              />
+            </th>
+
+            <th>No</th>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Value</th>
+            <th>Unit</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {checkboxData.map((item, index) => (
+            <tr key={index}>
+              <td>
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={() =>
+                    handleChangeDisplayConfigure(index)
+                  }
+                />
+              </td>
+
+              <td>{index + 1}</td>
+
+              <td>{item.name}</td>
+
+              <td>{item.code}</td>
+
+              <td>{item.value}</td>
+
+              <td>{item.unit}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <button
+        style={{ marginLeft: "40%" }}
+        className="scheduler-add-button"
+        onClick={handleSave}
+      >
+        Get Values
+      </button>
+    </div>
+  );
+};
+
 
 
 const MonthlyBillingCaptureObjects1 = () => {
@@ -743,7 +1081,7 @@ const MonthlyBillingCaptureObjects1 = () => {
 };
 
 
-
+1
 
 
 /**
@@ -1764,17 +2102,7 @@ const Billing = () => {
  
 
   
-    const [checkboxData, setCheckboxData] = useState([
-      { device_id: 1, name: "Sub-interval time for max", code: "{ 5,1-0:1.4.0.255 }", attribute: 8, checked: false },
-      { device_id: 1, name: "Sub-interval number for max", code: "{ 5,1-0:1.4.0.255 }", attribute: 9, checked: false }
-    ]);
-
-   const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-      
-       useEffect(() => {
-         const storedId = localStorage.getItem('selectedDeviceId');
-         setDeviceId(storedId);
-       }, []);
+   
  
 
  
@@ -1785,27 +2113,7 @@ const Billing = () => {
 
 
 
-  // Handle checkbox change
-  const handleChangeDemandConfigure = (index) => {
-    const newData = [...checkboxData];
-    newData[index].checked = !newData[index].checked;
-    setCheckboxData(newData);
-  };
-
-  // Handle save and send data using axios
-  const handleSave = () => {
-
-    console.log(checkboxData)
-    
-    
-    axios.post(`${BASE_URL}/api/demand-configure/`, checkboxData)
-      .then((response) => {
-        console.log("Data saved successfully", response);
-      })
-      .catch((error) => {
-        console.error("Error saving data", error);
-      });
-  };
+ 
 
 
 
@@ -1821,38 +2129,7 @@ const Billing = () => {
     switch (activePage) {
       case 'demand':
       return (
-          <div>
-      
-        <table className='tableTariff1'>
-          <thead>
-            <tr>
-              <th>Checked</th>
-              <th>No</th>
-              <th>Name</th>
-              <th>Code</th>
-              <th>Attribute</th>
-            </tr>
-          </thead>
-          <tbody>
-            {checkboxData.map((item, index) => (
-              <tr key={index}>
-                <td>
-                  <input
-                    type="checkbox"
-                    checked={item.checked}
-                    onChange={() => handleChangeDemandConfigure(index)}
-                  />
-                </td>
-                <td>{item.device_id}</td>
-                <td>{item.name}</td>
-                <td>{item.code}</td>
-                <td>{item.attribute}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <button style={{marginLeft:"40%"}} className="scheduler-add-button" onClick={handleSave}>Save</button>
-      </div>
+         <DisplayParameters/>
       )
       
       case 'monthly':

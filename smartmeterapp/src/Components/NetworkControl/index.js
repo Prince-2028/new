@@ -1676,7 +1676,7 @@ const IPv4Setup = () => {
 
 
 
-const TcpUdpSetup = () => {
+const TcpUdpSetup1 = () => {
   const [apiData, setApiData] = useState(null);
 
 
@@ -1783,7 +1783,7 @@ const TcpUdpSetup = () => {
 
 
 
-const ModuleInformation = () => {
+const ModuleInformation1 = () => {
   const [data, setData] = useState([
     {
       checked: false,
@@ -1870,6 +1870,220 @@ const getValue = (name) => {
 };
 
 
+
+const TcpUdpSetup = () => {
+  const [apiData, setApiData] = useState(null);
+  const [deviceId, setDeviceId] = useState(() => localStorage.getItem("selectedDeviceId"));
+
+  const [rows, setRows] = useState([
+    { checked: false, no: 1, name: "TCP UDP port", code: "{41,0-0.25.0.0.255}", attribute: 2, value: "" },
+    { checked: false, no: 2, name: "Ip reference", code: "{41,0-0.25.0.0.255}", attribute: 3, value: "" },
+    { checked: false, no: 3, name: "Mss", code: "{41,0-0.25.0.0.255}", attribute: 4, value: "" },
+    { checked: false, no: 4, name: "Maximum number of simultane", code: "{41,0-0.25.0.0.255}", attribute: 5, value: "" },
+    { checked: false, no: 5, name: "Inactivity time out", code: "{41,0-0.25.0.0.255}", attribute: 6, value: "" },
+  ]);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("selectedDeviceId");
+    setDeviceId(storedId);
+  }, []);
+
+  const handleCheckboxChange = (index) => {
+    setRows((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, checked: !item.checked } : item
+      )
+    );
+  };
+
+  const handleSendClick = async () => {
+  const selectedItems = rows.filter((item) => item.checked);
+
+  if (!selectedItems.length) {
+    alert("Please select at least one item");
+    return;
+  }
+
+  try {
+    const payload = {
+      device_id: deviceId,
+      action: "read_obis",
+      serial_number: localStorage.getItem("serial_number"), // or hardcode if needed
+      parameters: selectedItems.map((item) => ({
+        obis_code: item.code.replace(/[{}]/g, ""), // removes { }
+        name: item.name,
+        attribute_index: String(item.attribute),
+      })),
+    };
+
+    const response = await axios.post(
+      `${BASE_URL}/api/create_update_tcpudpsetup/`,
+      payload
+    );
+
+    setApiData(response.data.data);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+  const getValue = (name) => {
+    if (!apiData) return "";
+    const item = apiData.find((data) => data.name === name);
+    return item ? item.value : "";
+  };
+
+  return (
+    <div>
+      <button onClick={handleSendClick}>Send Selected</button>
+
+      <table className="meter-info-table">
+        <thead>
+          <tr>
+            <th>Checked</th>
+            <th>No</th>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Attribute</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((item, index) => (
+            <tr key={index}>
+              <td>
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={() => handleCheckboxChange(index)}
+                />
+              </td>
+              <td>{item.no}</td>
+              <td>{item.name}</td>
+              <td>{item.code}</td>
+              <td>{item.attribute}</td>
+              <td>{getValue(item.name) || item.value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+
+const ModuleInformation = () => {
+  const [deviceId, setDeviceId] = useState(() =>
+    localStorage.getItem("selectedDeviceId")
+  );
+
+  const [apiData, setApiData] = useState([]);
+
+  const [data, setData] = useState([
+    {
+      checked: false,
+      no: 1,
+      name: "Module firmware identifier (Version)",
+      code: "{1,1-2.0.2.0.255}",
+      value: "",
+    },
+  ]);
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("selectedDeviceId");
+    setDeviceId(storedId);
+  }, []);
+
+  const handleCheckboxChange = (index) => {
+    setData((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, checked: !item.checked } : item
+      )
+    );
+  };
+
+  const handleSendClick = async () => {
+    const selectedItems = data.filter((item) => item.checked);
+
+    if (!selectedItems.length) {
+      alert("Please select at least one item");
+      return;
+    }
+
+    try {
+      const payload = {
+        device_id: deviceId,
+        action: "read_obis",
+        serial_number: localStorage.getItem("serial_number"),
+        parameters: selectedItems.map((item) => ({
+          obis_code: item.code.replace(/[{}]/g, ""),
+          name: item.name,
+        })),
+      };
+
+      const response = await axios.post(
+        `${BASE_URL}/api/create_modules/`,
+        payload
+      );
+
+      setApiData(response.data.data);
+
+      console.log(response.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const getValue = (name) => {
+    if (!apiData) return "";
+
+    const item = apiData.find((row) => row.name === name);
+
+    return item ? item.value : "";
+  };
+
+  return (
+    <div className="module-info">
+      <button onClick={handleSendClick}>
+        Send Selected
+      </button>
+
+      <table className="meter-info-table">
+        <thead>
+          <tr>
+            <th>Checked</th>
+            <th>No</th>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {data.map((item, index) => (
+            <tr key={index}>
+              <td>
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={() => handleCheckboxChange(index)}
+                />
+              </td>
+
+              <td>{item.no}</td>
+              <td>{item.name}</td>
+              <td>{item.code}</td>
+
+              <td>
+                {getValue(item.name) || item.value}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 
 

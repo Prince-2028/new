@@ -829,6 +829,16 @@ function Diagnose2() {
 
 
 
+
+
+
+
+
+
+
+
+
+
 function Diagnose() {
   const [selectedPage, setSelectedPage] = useState("stateOfInternalControl");
   const [serialNumber, setSerialNumber] = useState(() =>
@@ -1027,7 +1037,7 @@ function Diagnose() {
     }
   };
 
-  const readTamperIndicateStatus = async () => {
+  const readTamperIndicateStatus1 = async () => {
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
@@ -1061,6 +1071,145 @@ function Diagnose() {
       alert("Failed to read Tamper Indicate Status.");
     }
   };
+
+
+
+
+  
+const readTamperIndicateStatus = async () => {
+  console.log("====================================");
+  console.log("Starting readTamperIndicateStatus");
+  console.log("====================================");
+
+  const payload = {
+    serial_number: serialNumber,
+    action: "read_obis",
+    parameters: [
+      {
+        obis_code: "0.0.96.5.3.255",
+        attribute_index: "2",
+      },
+    ],
+  };
+
+  console.log("Payload:");
+  console.log(payload);
+
+  try {
+    const resp = await axios.post(
+      `${BASE_URL}/api/create-tamper-indicate-status/`,
+      payload
+    );
+
+    console.log("====================================");
+    console.log("FULL API RESPONSE");
+    console.log("====================================");
+    console.log(resp);
+    
+    
+
+    const cleanData = resp.data.replace(/^data:\s*/, "").trim();
+
+const parsedData = JSON.parse(cleanData);
+
+const returned = parsedData.value || [];
+   
+
+    console.log("Step 1 - Raw returned value:");
+    console.log(returned);
+    console.log("Type:", typeof returned);
+    console.log("Is Array:", Array.isArray(returned));
+
+    // Convert string response to array if needed
+    if (typeof returned === "string") {
+      console.log("Response is string, converting...");
+
+      try {
+        returned = JSON.parse(returned);
+        console.log("After JSON.parse:", returned);
+      } catch (err) {
+        returned = [returned];
+        console.log("Converted to array:", returned);
+      }
+    }
+
+    console.log("Step 2 - Final returned array:");
+    console.log(returned);
+
+    const mapping = {
+      top_cover_open: "TopCoverOpen",
+      terminal_cover_open: "TerminalCoverOpen",
+      module_cover_open: "ModuleCoverOpen",
+      strong_magnetic_disturbance: "StrongMagneticDisturbance",
+      sim_card_removed_exception: "SimCardRemovedException",
+    };
+
+    console.log("====================================");
+    console.log("CHECKING MAPPINGS");
+    console.log("====================================");
+
+    Object.entries(mapping).forEach(([key, value]) => {
+      console.log(
+        key,
+        "=>",
+        value,
+        "Result:",
+        returned.includes(value)
+      );
+    });
+
+    const newState = Object.keys(
+      pageStates.tamperIndicateStatus
+    ).reduce((acc, key) => {
+      const expectedValue = mapping[key];
+
+      const exists = returned.some(
+        (item) =>
+          String(item).trim().toLowerCase() ===
+          String(expectedValue).trim().toLowerCase()
+      );
+
+      console.log("----------------");
+      console.log("State Key:", key);
+      console.log("Expected:", expectedValue);
+      console.log("Exists:", exists);
+
+      acc[key] = exists;
+
+      return acc;
+    }, {});
+
+    console.log("====================================");
+    console.log("FINAL STATE");
+    console.log("====================================");
+    console.log(newState);
+
+    setPageStates((prev) => ({
+      ...prev,
+      tamperIndicateStatus: newState,
+    }));
+
+    console.log("State Updated Successfully");
+  } catch (error) {
+    console.log("====================================");
+    console.log("API ERROR");
+    console.log("====================================");
+
+    console.error(error);
+
+    if (error.response) {
+      console.log("Response Data:");
+      console.log(error.response.data);
+    }
+
+    alert("Failed to read Tamper Indicate Status.");
+  }
+};
+
+
+
+
+
 
   // Renders checkboxes & “Read” button for the selected page
   const renderPage = (pageKey, config) => {

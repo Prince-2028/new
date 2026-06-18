@@ -1793,11 +1793,13 @@ class MeterDetailAPIView(OBISStreamingMixin, APIView):
 
     # --- Main POST Handler ---
     def post(self, request, format=None):
+
         # Extract common parameters
         action = request.data.get('action', 'read_obis') # Default to reading details if action missing
         serial_number = request.data.get('serial_number')
         parameters = request.data.get('parameters', {})
         print(f"MeterDetailAPIView received action '{action}' for SN '{serial_number}'")
+        print("serial_number------@#$@#$@#$-------------", serial_number)
 
         if not serial_number:
             return Response({"error": "serial_number is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -1881,7 +1883,7 @@ class MeterDetailAPIView(OBISStreamingMixin, APIView):
                 else:
                     # Single write - existing logic
                     logger.info(f"Executing single write_obis via helper.")
-                    result = execute_dlms_action(dlms_config, action_details={"action": action, "parameters": parameters})
+                    result = execute_dlms_action(dlms_config, action_details={"action": action, "parameters": parameters, "serial_number": serial_number})
                     
                     if result.get("status") == "error":
                         return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -2109,7 +2111,8 @@ class TimeSettingsAPIView(OBISStreamingMixin, APIView):
                 # --- Handle Write, Execute Method, or Image Transfer Combined ---
                 # Directly call the main helper, DO NOT update/clear DB 'value'
                 logger.info(f"Executing DLMS action '{action}' via helper.")
-                result = execute_dlms_action(dlms_config, action_details={"action": action, "parameters": parameters})
+                result = execute_dlms_action(dlms_config, action_details={"action": action, "parameters": parameters, "serial_number": serial_number}) #sumit add serial_number here
+                print("Result from execute_dlms_action-------------------------------------------------------------:", result)
 
                 # Return the result from the helper
                 if result.get("status") == "error":
@@ -2256,7 +2259,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class TariffParameterAPIView(APIView):
+class TariffParameterAPIView2(APIView):
     def post(self, request, format=None):   
         try:
             # Retrieve the relevant data from the request
@@ -2298,6 +2301,90 @@ class TariffParameterAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         
+
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class TariffParameterAPIView(APIView):
+
+    def get_random_value(self, name):
+        # Optional: replace with your own logic if you want generated values
+        if name == "Currently active rate":
+            return "100"
+        elif name == "Active time of passive step tariff":
+            return "200"
+        elif name == "Currently active price":
+            return "300"
+        elif name == "Currently active step":
+            return "400"
+        return "0"
+
+    def post(self, request):
+        print("*******testing***********8")
+
+        device_id = request.data.get("device_id")
+        action = request.data.get("action")
+        serial_number = request.data.get("serial_number")
+        parameters = request.data.get("parameters", [])
+
+        print(device_id) 
+        print("*******testing***********8")
+
+        if not device_id:
+            return Response(
+                {"error": "device_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            device = Device.objects.get(id=device_id)
+        except Device.DoesNotExist:
+            return Response(
+                {"error": "Device not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        response_data = []
+
+        for item in parameters:
+            name = item.get("name")
+            code = item.get("obis_code")
+            unit = item.get("unit", "")
+
+            if not name or not code:
+                continue
+
+            value = item.get("value")
+            if value in [None, ""]:
+                value = self.get_random_value(name)
+
+            obj, created = TariffParameter.objects.update_or_create(
+                device=device,
+                name=name,
+                defaults={
+                    "code": code,
+                    "value": value,
+                    "unit": unit,
+                }
+            )
+
+            response_data.append({
+                "name": obj.name,
+                "code": obj.code,
+                "value": obj.value,
+                "unit": obj.unit,
+            })
+
+        return Response(
+            {
+                "device_id": device_id,
+                "action": action,
+                "serial_number": serial_number,
+                "data": response_data
+            },
+            status=status.HTTP_200_OK
+        )
+
 
 
 
@@ -2807,7 +2894,8 @@ class CreateTOUCalendarAPIView(APIView):
 
             # Check if any calendars exist
             if not calendars.exists():
-                return Response({"error": "No matching TOU Calendar found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {"calendars": []},status=status.HTTP_200_OK)
 
             # Prepare response based on entity_type
             calendar_data = []
@@ -3166,7 +3254,8 @@ class PushSetupItemView(APIView):
 
         # If no items found, return an empty list
         if not push_setup_items.exists():
-            return Response({'message': 'No PushSetupItems found for this device.'}, status=status.HTTP_404_NOT_FOUND)
+            #return Response({'message': 'No PushSetupItems found for this device.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': 'PushSetupItems retrieved successfully.','data': []}, status=status.HTTP_200_OK)
 
         # Prepare the response data
         response_data = []
@@ -4053,7 +4142,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 import json
 
-class CreateOrUpdateTcpUdpSetup(APIView):
+class CreateOrUpdateTcpUdpSetup1(APIView):
 
     def update_value(self, device_id, name, value):
         """
@@ -4163,6 +4252,67 @@ class CreateOrUpdateTcpUdpSetup(APIView):
         return responses
 
 
+@method_decorator(csrf_exempt, name='dispatch')
+class CreateOrUpdateTcpUdpSetup(APIView):
+
+
+    def get_random_value(self, attribute):
+        if attribute == 2:
+            return "100"
+        elif attribute == 3:
+            return "200"
+        elif attribute == 4:
+            return "300"
+        elif attribute == 5:
+            return "400"
+        elif attribute == 6:
+            return "500"
+        return "0"
+
+    def post(self, request):
+        device_id = request.data.get("device_id")
+        action = request.data.get("action")
+        serial_number = request.data.get("serial_number")
+        parameters = request.data.get("parameters", [])
+
+        if not device_id:
+            return Response(
+                {"error": "device_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        response_data = []
+
+        for item in parameters:
+            obj, created = TcpUdpSetup.objects.update_or_create(
+                device_id=device_id,
+                name=item.get("name"),
+                defaults={
+                    "code": item.get("obis_code"),
+                    "attribute": item.get("attribute_index"),
+                    "value": self.get_random_value(
+                        int(item.get("attribute_index", 0))
+                    )
+                }
+            )
+
+            response_data.append({
+                "name": obj.name,
+                "code": obj.code,
+                "attribute": obj.attribute,
+                "value": obj.value
+            })
+
+        return Response(
+            {
+                "device_id": device_id,
+                "action": action,
+                "serial_number": serial_number,
+                "data": response_data
+            },
+            status=status.HTTP_200_OK
+        )
+
 
 
 
@@ -4255,107 +4405,100 @@ class ModuleInformationView1(APIView):
 
 
 
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 from datetime import datetime
 import random
 import string
-
+@method_decorator(csrf_exempt, name='dispatch')
 class ModuleInformationView(APIView):
+
     def create_or_update(self, device_id, name, code, value):
-        """
-        Method to either update an existing record or create a new one
-        based on device_id and name.
-        """
-        try:
-            # Try to find the existing module information for the device and name
-            module = ModuleInformation.objects.get(device_id=device_id, name=name)
-            # If found, update the fields
-            module.code = code
-            module.value = value
-            module.save()
-            return {"message": f"Module '{name}' updated successfully!"}
-        except ModuleInformation.DoesNotExist:
-            # If not found, create a new one
-            ModuleInformation.objects.create(
+        obj, created = ModuleInformation.objects.update_or_create(
+            device_id=device_id,
+            name=name,
+            defaults={
+                "code": code,
+                "value": value,
+            }
+        )
+
+        return {
+            "name": obj.name,
+            "code": obj.code,
+            "value": obj.value,
+            "message": f"'{name}' {'created' if created else 'updated'} successfully!"
+        }
+
+    def generate_new_firmware_value(self):
+        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        random_suffix = ''.join(
+            random.choices(
+                string.ascii_uppercase + string.digits,
+                k=4
+            )
+        )
+        return f"v{timestamp}-{random_suffix}"
+
+    def post(self, request):
+        device_id = request.data.get("device_id")
+        action = request.data.get("action")
+        serial_number = request.data.get("serial_number")
+        parameters = request.data.get("parameters", [])
+
+        if not device_id:
+            return Response(
+                {"error": "device_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not parameters:
+            return Response(
+                {"error": "parameters cannot be empty"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        response_data = []
+
+        for item in parameters:
+            name = item.get("name")
+            code = item.get("obis_code")
+
+            if not name or not code:
+                continue
+
+            value = self.generate_new_firmware_value()
+
+            result = self.create_or_update(
                 device_id=device_id,
                 name=name,
                 code=code,
-                value=value,
+                value=value
             )
-            return {"message": f"Module '{name}' created successfully!"}
 
-    def generate_new_firmware_value(self):
-        """
-        Generates a new firmware version value. You can replace this with any
-        logic to generate a unique value every time.
-        For now, we are generating a random version string based on the current timestamp.
-        """
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")  # Example: 20241119152030
-        random_suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))  # Example: 1A2B
-        new_value = f"v{timestamp}-{random_suffix}"
-        return new_value
+            response_data.append(result)
 
-    def get(self, request, device_id=None):
-        """
-        Retrieves the module information for a specific device_id,
-        but specifically updates or returns the module firmware identifier.
-        """
-        if not device_id:
-            return Response({"error": "device_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {
+                "device_id": device_id,
+                "action": action,
+                "serial_number": serial_number,
+                "data": response_data
+            },
+            status=status.HTTP_200_OK
+        )
 
-        # Try to find the specific "Module firmware identifier (Version)" module
-        try:
-            # This should return only the "Module firmware identifier (Version)" module
-            module = ModuleInformation.objects.get(device_id=device_id, name="Module firmware identifier (Version)")
 
-            # Generate a new value for the firmware identifier (dynamically)
-            new_value = self.generate_new_firmware_value()  # Generate dynamic value
-            module.value = new_value
-            module.save()
 
-            data = [
-                {
-                    "name": module.name,
-                    "code": module.code,
-                    "value": module.value,
-                }
-            ]
 
-            return Response(data, status=status.HTTP_200_OK)
 
-        except ModuleInformation.DoesNotExist:
-            return Response({"message": "Module 'Module firmware identifier (Version)' not found for this device."}, status=status.HTTP_404_NOT_FOUND)
 
-    def post(self, request):
-        """
-        Processes a list of module data to create or update entries.
-        Expects a list of dictionaries in the 'data' field of the request body.
-        """
-        # Expecting a list of dictionaries in the 'data' field of the request body
-        data_list = request.data.get('data', [])
 
-        if not data_list:
-            return Response({"error": "Data list cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Initialize a list to store responses for each item in the list
-        responses = []
-
-        # Iterate through each item in the list
-        for item in data_list:
-            device_id = item.get('device_id')
-            name = item.get('name')
-            code = item.get('code')
-            value = item.get('value')
-
-            if not device_id or not name or not code or not value:
-                responses.append({"error": f"All fields for '{name}' are required."})
-                continue
-
-            # Call the create_or_update method
-            response_message = self.create_or_update(device_id, name, code, value)
-            responses.append(response_message)
-
-        return Response(responses, status=status.HTTP_200_OK)
-
+from datetime import datetime
+import random
+import string
 
 
 from .models import GprsSetup
@@ -4536,9 +4679,9 @@ class PPPSetupView(APIView):
             return Response(ppp_setups_data, status=status.HTTP_200_OK)
         else:
             return Response(
-                {"message": "No data found for the given type and device_id."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        [],
+        status=status.HTTP_200_OK
+    )
 
     def delete(self, request, id):
         ppp = get_object_or_404(PPPSetup, id=id)
@@ -4726,7 +4869,12 @@ class StateOfInternalControlView(APIView):
             data = request.data  # No need for json.loads(request.body) since request.data handles it
             
             # Extract device_id from the request body
-            device_id = data.get('device_id')
+            #device_id = data.get('device_id')
+            data = request.data
+            print("data",data)
+            serial_number = data.get('serial_number')
+            device = Device.objects.get(serial_number=serial_number)
+            device_id = device.id
             
             # Check if the device exists
             try:
@@ -4780,7 +4928,15 @@ class InternalOperatingStatusView(APIView):
     def post(self, request):
         try:
             data = request.data
-            device_id = data.get('device_id')
+            #device_id = data.get('device_id')
+
+
+            
+            print("data",data)
+            serial_number = data.get('serial_number')
+            device = Device.objects.get(serial_number=serial_number)
+            device_id = device.id
+
 
             try:
                 device = Device.objects.get(id=device_id)
@@ -4834,7 +4990,12 @@ class PowerQualityStatusView(APIView):
     def post(self, request):
         try:
             data = request.data
-            device_id = data.get('device_id')
+            
+            print("data",data)
+            serial_number = data.get('serial_number')
+            device = Device.objects.get(serial_number=serial_number)
+            device_id = device.id
+            #device_id = data.get('device_id')
 
             # Check if the device exists
             try:
@@ -9396,7 +9557,7 @@ class TokenGatewayView(APIView):
 
 from .models import Device, PaymentInformation
 
-class PaymentInformationView(APIView):
+class PaymentInformationView1(APIView):
 
     def post(self, request):
         try:
@@ -9486,6 +9647,65 @@ class PaymentInformationView(APIView):
 
         except Exception as e:
             return JsonResponse({"error": "An unexpected error occurred."}, status=500)
+
+
+
+
+class PaymentInformationView(APIView):
+
+    def post(self, request):
+        try:
+            data = request.data
+
+            device_id = data.get("device_id")
+            payment_data = data.get("payment_data", [])
+
+            if not device_id:
+                raise ValidationError("device_id is required")
+
+            device = get_object_or_404(Device, id=device_id)
+
+            response_data = []
+
+            for item in payment_data:
+
+                name = item.get("name")
+                code = item.get("code")
+                unit = item.get("unit", "")
+
+                # Generate random value every request
+                value = random.randint(100, 9999)
+
+                payment_info, created = PaymentInformation.objects.update_or_create(
+                    
+                    code=code,
+                    defaults={
+                       "device": device,
+                        "name": name,
+                        "value": value,
+                        "unit": unit
+                    }
+                )
+
+                response_data.append({
+                    "id": payment_info.id,
+                    "name": payment_info.name,
+                    "code": payment_info.code,
+                    "value": payment_info.value,
+                    "unit": payment_info.unit,
+                })
+
+            return JsonResponse({
+                "data": response_data
+            }, status=200)
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+
+            return JsonResponse({
+                "error": str(e)
+            }, status=500)
 
 
 from django.utils.dateparse import parse_time
@@ -10473,7 +10693,7 @@ from .models import DisplayParameter, Device
 
 class DisplayParameterListCreateUpdateView(APIView):
 
-    def post(self, request):
+    def post1(self, request):
         try:
             data = json.loads(request.body)
 
@@ -10540,6 +10760,69 @@ class DisplayParameterListCreateUpdateView(APIView):
             return JsonResponse({"error": str(e)}, status=500)
 
 
+    
+    def post(self, request):
+        try:
+            data = request.data
+
+            device_id = data.get("device_id")
+            display_data = data.get("display_data", data.get("parameters", []))
+
+            if not device_id:
+                raise ValidationError("device_id is required")
+
+            if not isinstance(display_data, list):
+                raise ValidationError("display_data must be a list")
+
+            device = get_object_or_404(Device, id=device_id)
+
+            response_data = []
+
+            for item in display_data:
+                name = item.get("name")
+                code = item.get("code")
+                unit = item.get("unit", "")
+
+                if not name or not code:
+                    continue
+
+                # Generate random value every request
+                value = random.randint(100, 9999)
+
+                display_param, created = DisplayParameter.objects.update_or_create(
+                    code=code,
+                    defaults={
+                        "device": device,
+                        "name": name,
+                        "value": value,
+                        "unit": unit,
+                    }
+                )
+
+                response_data.append({
+                    "id": display_param.id,
+                    "name": display_param.name,
+                    "code": display_param.code,
+                    "value": display_param.value,
+                    "unit": display_param.unit,
+                })
+
+            return JsonResponse({
+                "data": response_data
+            }, status=200)
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+
+            return JsonResponse({
+                "error": str(e)
+            }, status=500)
+
+    
+    
+    
+    
     def get(self, request, device_id):
         try:
             device = get_object_or_404(Device, id=device_id)
@@ -12011,6 +12294,9 @@ class EventLogAPIView1(APIView):
         from_date_raw = payload.get("from_date")
         to_date_raw = payload.get("to_date")
         stream = bool(payload.get("stream", True))
+
+        print("@#$@#$@#$@#$@#$@$#$@#$#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        print("serial_number", serial_number, "log_type", log_type, "mode", mode, "from_entry", from_entry, "to_entry", to_entry, "from_date_raw", from_date_raw, "to_date_raw", to_date_raw, "stream", stream)
 
         if not serial_number:
             return Response({"error": "serial_number is required"}, status=400)

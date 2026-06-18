@@ -1,3 +1,4 @@
+from http import client
 import logging
 import time
 import serial
@@ -835,7 +836,7 @@ def get_meter_ic(media, client_addr=16, server_addr=1, interface=InterfaceType.H
         return None
 
 
-def execute_dlms_action(config, action_details):
+def execute_dlms_action( config, action_details): 
     """
     Connects to a meter using provided config, performs an action, and returns results.
     Aligned with the user's original working DLMSClient initialization.
@@ -851,10 +852,6 @@ def execute_dlms_action(config, action_details):
         action = action_details.get('action')
         parameters = action_details.get('parameters', {})
         serial_number = action_details.get('serial_number') #sumit
-       
-
-        print(serial_number,"serial_number") 
-        
 
         logger.info(f"Starting DLMS Action: '{action}' | Config Port: '{config.get('port')}'")
         logger.debug(f"Full Config: {config}")
@@ -1096,7 +1093,7 @@ def execute_dlms_action(config, action_details):
             logger.info("Connection established. Reading Association View...")
             reader.getAssociationView()   # Get object list
             logger.info(f"Association View retrieved. Found {len(client.objects)} objects.")
-            
+            print(f"Association View retrieved. Found {len(client.objects)} objects.------------------------------------------------------------------")
             # Store a DEEP COPY of the objects to avoid reference issues
             try:
                 _association_view_store[connection_key] = copy.deepcopy(client.objects)
@@ -1106,7 +1103,7 @@ def execute_dlms_action(config, action_details):
                 _association_view_store[connection_key] = client.objects
             
             reader.close()      #1111111111111111111111111  
-
+            print("Connection closed after storing association view. Ready for action execution-------------------------------------------------------------------------.")
             if interface == InterfaceType.WRAPPER:
                 time.sleep(2.5)
         else:
@@ -1179,9 +1176,54 @@ def execute_dlms_action(config, action_details):
                     try:
                         logger.info(f"Reading OBIS: {obis_code}, Attribute: {attr}")
                         value = reader.read(target_obj, attr)
-                        if obis_code in ["0.0.96.5.0.255", "0.0.96.5.1.255", "0.0.96.5.2.255", "0.0.96.5.3.255", "0.0.96.4.0.255", "0.0.96.4.1.255", "0.0.96.4.2.255","0.0.97.97.0.255", "0.0.97.97.1.255", "0.0.97.98.0.255", "0.0.97.98.1.255",  "0.0.97.98.10.255",  "0.0.97.98.11.255",  "0.0.97.98.20.255",  "0.0.97.98.21.255"]: # Special case for OBIS
+
+
+                        from gurux_dlms.objects.GXUnitCharge import GXUnitCharge
+
+                        
+
+
+                        
+
+
+                        if obis_code in ["0.0.96.5.0.255", "0.0.96.5.1.255", "0.0.96.5.2.255", "0.0.96.5.3.255", "0.0.96.4.0.255", "0.0.96.4.1.255", "0.0.96.4.2.255","0.0.97.97.0.255", "0.0.97.97.1.255", "0.0.97.98.0.255", "0.0.97。98.1.255",  "0.0.97。98。10。255",  "0。0。97。98。11。255",  "0。0。97。98。20。255",  "0。0。97。98。21。255"]: # Special case for OBIS
                             value_serializable = _convert_read_value(value, obis_code)
+                        elif isinstance(value, GXUnitCharge):
+                            result = {
+                                "chargePerUnitScaling": {},
+                                "commodity": {},
+                                "chargeTables": []
+                            }
+
+                            if value.chargePerUnitScaling:
+                                result["chargePerUnitScaling"] = {
+                                    "commodityScale": getattr(value.chargePerUnitScaling, "commodityScale", None),
+                                    "priceScale": getattr(value.chargePerUnitScaling, "priceScale", None)
+                                }
+
+                            if value.commodity:
+                                result["commodity"] = {
+                                    "classId": getattr(value.commodity.target, "objectType", None),
+                                    "logicalName": getattr(value.commodity.target, "logicalName", None),
+                                    "attributeIndex": getattr(value.commodity, "index", None)
+                                }
+
+                            for row in value.chargeTables:
+                                raw_index = getattr(row, "index", None)
+
+                                if isinstance(raw_index, (bytearray, bytes)):
+                                    index = int.from_bytes(raw_index, byteorder="big")
+                                else:
+                                    index = raw_index
+
+                                result["chargeTables"].append({
+                                    "index": index,
+                                    "chargePerUnit": getattr(row, "chargePerUnit", None)
+                                })
+
+                            value_serializable=result
                         else:
+                            print("%%%%%%%%%%%%%%%%%%%%%%%%%",value)
                             value_serializable = _convert_read_value(value)
 
                         logger.info(f"Read successful: {obis_code} Attr {attr} = {value_serializable}")
@@ -1229,14 +1271,13 @@ def execute_dlms_action(config, action_details):
             }
 
         elif action == "write_obis":
-          #  media.open()  # Ensure media is open
-          #  reader.initializeConnection()
-            
+            print("  ...................write testing by............. vvs")
+            media.open()  # Ensure media is open
+            reader.initializeConnection()
             # Handle both single write and batch writes
             if isinstance(parameters, list):
                 # Batch write processing
                 results = []
-                
                 for index, write_item in enumerate(parameters):
                     if not isinstance(write_item, dict):
                         error_result = {
@@ -1252,7 +1293,7 @@ def execute_dlms_action(config, action_details):
                     attr_str = write_item.get('attribute_index')
                     value_to_write_str = write_item.get('value')
                     data_type_str = write_item.get('data_type')  # Optional
-                    
+                    print(f"Values writing: {obis} {attr_str} {value_to_write_str} with data type {data_type_str}--------------------------------------------------")
                     if not obis or attr_str is None or value_to_write_str is None:
                         error_result = {
                             "status": "error",
@@ -1294,10 +1335,11 @@ def execute_dlms_action(config, action_details):
                         # Read current value first (required for write operations)
                         reader.read(target_obj, attr)
                         
+                        
                         # Check access rights
                         access_rights = get_access_rights(target_obj, attr)
                         can_write = access_rights in ["Write Only", "Read & Write", "Write (Auth)", "Read/Write (Auth)"]
-                        
+                        print(f"  Access Mode: {access_rights}","can_write",can_write,"------------------------------------------------------------------")
                         if not can_write:
                             error_result = {
                                 "status": "error",
@@ -1365,7 +1407,7 @@ def execute_dlms_action(config, action_details):
                 # Return consolidated batch results
                 successful_writes = [r for r in results if r["status"] == "success"]
                 failed_writes = [r for r in results if r["status"] == "error"]
-                
+                print("Batch write results----------------------------------------------------------------------------------:", results)
                 result = {
                     "status": "success" if successful_writes else "error",
                     "action": "write_obis",
@@ -1377,12 +1419,13 @@ def execute_dlms_action(config, action_details):
                 }
                 
             else:
+                print("$$ 1376 else write parameters----------------------------------------------------------------------------------:", parameters)
                 # Single write (existing logic)
                 obis = parameters.get('obis_code')
                 attr_str = parameters.get('attribute_index')
                 value_to_write_str = parameters.get('value')
                 data_type_str = None
-                print(f"Values writing: {obis} {attr_str} {value_to_write_str}")
+                print(f" $$ 1382 Values writing----------------------------------------------------------------------------: {obis} {attr_str} {value_to_write_str}")
                 if not obis or attr_str is None:  #or value_to_write_str is None
                     print(f"Values writing: {obis} {attr_str} {value_to_write_str}")
                     raise ValueError("Missing params for write.")
@@ -1391,22 +1434,79 @@ def execute_dlms_action(config, action_details):
                 except:
                     raise ValueError("Invalid 'attribute_index'.")
 
-                target_obj = client.objects.findByLN(ObjectType.NONE, obis)
+                # target_obj = client.objects.findByLN(ObjectType.NONE, obis)
                 
-                reader.read(target_obj, attr)
+                # #sumit added------------------------------------------------------------------
+                # if not reader.media.isOpen():
+                #     print("Opening serial port...")
+                #     reader.media.open()
 
+                # print("Media open:", reader.media.isOpen())     
+                # #sumit added till here ------------------------------------------------------------------                               
+                # reader.read(target_obj, attr)
+                # if not target_obj:
+                #     raise ValueError(f"Object '{obis}' not found. Cannot proceed.")
+
+                # access_rights = get_access_rights(target_obj, attr)
+                # can_write = access_rights in ["Write Only", "Read & Write",
+                #                             "Write (Auth)", "Read/Write (Auth)"]
+        
+                # print(f"  Access Mode: {access_rights}")
+                # if not can_write:
+                #     logger.warning(f"  ERROR: Attribute {attr} is not writable.")
+                #     return {"status": "error", "message": f"Access denied for writing {obis} attr {attr}. Access: {access_rights}"}
+                
+#------------------------------------------------------------sumit addes-------------------------
+                print("Media open:", reader.media.isOpen())
+                # Find object
+                target_obj = client.objects.findByLN(ObjectType.NONE, obis)
                 if not target_obj:
                     raise ValueError(f"Object '{obis}' not found. Cannot proceed.")
+                
+                # Open serial port if needed
+                if not reader.media.isOpen():
+                    print("Opening serial port...")
+                    reader.media.open()
+
+                print("Media open:", reader.media.isOpen())
 
                 access_rights = get_access_rights(target_obj, attr)
-                can_write = access_rights in ["Write Only", "Read & Write",
-                                            "Write (Auth)", "Read/Write (Auth)"]
-        
-                print(f"  Access Mode: {access_rights}")
+
+                can_write = access_rights in [
+                    "Write Only",
+                    "Read & Write",
+                    "Write (Auth)",
+                    "Read/Write (Auth)"
+                ]
+
+                print(f"Access Mode: {access_rights}")
+                print(f"Can Write: {can_write}")
+
+                # Stop if not writable
                 if not can_write:
-                    logger.warning(f"  ERROR: Attribute {attr} is not writable.")
-                    return {"status": "error", "message": f"Access denied for writing {obis} attr {attr}. Access: {access_rights}"}
-                
+                    logger.warning(f"ERROR: Attribute {attr} is not writable.")
+
+                    return {
+                        "status": "error",
+                        "message": f"Access denied for writing {obis} attr {attr}. Access: {access_rights}"
+                    }
+
+
+                # Keep read, but don't fail whole flow if read is denied
+                try:
+                    print(f"Attempting read for {obis} attr {attr}")
+                    reader.read(target_obj, attr)
+                    print("Read successful.")
+
+                except Exception as read_error:
+                    print(f"Read failed but continuing write flow: {read_error}")
+                    logger.warning(f"Read failed for {obis} attr {attr}: {read_error}")
+
+                print("Proceeding to write operation...")
+
+#------------------------------------sumit added until here-------------------------
+
+
                 # 2. Determine Data Type
                 data_type = None
                 if data_type_str:
@@ -1423,6 +1523,7 @@ def execute_dlms_action(config, action_details):
 
                 # 4. Update Local Object Value using setValue
                 try:
+                    print("$$ 1480------------------------------------------------------Attempting setValue--------------------------------------------------")
                     logger.info(f"Attempting target_obj.setValue for {obis} attr {attr}")
                     logger.debug(f"Value to set: {converted_value}, Type: {type(converted_value)}")
                     logger.debug(f"Target DataType enum: {DataType(data_type).name} ({DataType(data_type).value})")
@@ -1434,8 +1535,10 @@ def execute_dlms_action(config, action_details):
                     target_obj.setValue(client.settings, e_args)
                     # =======================
                     logger.info(f"Local object value potentially updated via setValue for {obis} attr {attr}.")
+                    print("$$ 1492------------------------------------------------------setValue called. Note: This updates the local object value in the client, but the actual write to the meter happens with reader.write(). Check meter logs/state for actual write result.")
 
                 except Exception as e_setval:
+                     print("------------------------------------------------------Error during setValue--------------------------------------------------")
                      logger.error(f"CRITICAL: Failed during target_obj.setValue for {obis}: {e_setval}", exc_info=True)
                      raise RuntimeError(f"Failed setting local value before write: {e_setval}") from e_setval
 
@@ -1443,10 +1546,10 @@ def execute_dlms_action(config, action_details):
                 logger.info(f"Sending WRITE request using reader.write(target_obj, attr)")
                 reader.write(target_obj, attr) # <<< Using the object and index
                 logger.info(f"Write request sent successfully for {obis} attr {attr}.") # Note: Success here just means sent, check meter logs/state
-
                 result = {"status": "success", "action": "write", "obis_code": obis,
                           "attribute_index": attr, "written_value": value_to_write_str,
                           "message": "Write successful (command sent)."}
+                print("$$1506 result after write operation----------------------------------------------------------------------------------:", result)
 
         elif action == "read_profile":
   
