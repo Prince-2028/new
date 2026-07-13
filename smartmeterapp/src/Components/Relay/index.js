@@ -1,4 +1,4 @@
-import React, { useState,useEffect,useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
 import ProgressModal from '../ProgressModal';
@@ -7,8 +7,8 @@ import LoadControlNew from './LoadControlNew';
 import './index.css'
 
 const monthNames = [
-  "Every Month", "January","February","March","April","May","June",
-  "July","August","September","October","November","December"
+  "Every Month", "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
 ];
 const LoadControlComponent = () => {
   const serialNumber = localStorage.getItem('selectedSerialNumber');
@@ -672,38 +672,38 @@ const LoadControlComponent = () => {
                   <option>Special Year</option>
                 </select>
                 {yearType === "Special Year" && (
-                  <input type="number" value={specialYear} onChange={(e)=>setSpecialYear(e.target.value)}
+                  <input type="number" value={specialYear} onChange={(e) => setSpecialYear(e.target.value)}
                     placeholder="Year (e.g. 2026)" className="lc-input" />
                 )}
               </div>
 
               <div className="modal-row">
                 <label className="lc-label">Month</label>
-                <select value={month} onChange={(e)=>setMonth(e.target.value)} className="lc-select">
+                <select value={month} onChange={(e) => setMonth(e.target.value)} className="lc-select">
                   {monthNames.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
 
               <div className="modal-row">
                 <label className="lc-label">Day</label>
-                <select value={day} onChange={(e)=>setDay(e.target.value)} className="lc-select">
-                  {Array.from({length:31}, (_,i)=>String(i+1)).map(d => <option key={d} value={d}>{d}</option>)}
+                <select value={day} onChange={(e) => setDay(e.target.value)} className="lc-select">
+                  {Array.from({ length: 31 }, (_, i) => String(i + 1)).map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
 
               <div className="modal-row time-row">
                 <label className="lc-label">Time (hh:mm:ss)</label>
                 <div className="time-selects">
-                  <select value={hour} onChange={(e)=>setHour(e.target.value)} className="lc-select small">
-                    {Array.from({length:24}, (_,i)=>String(i).padStart(2,"0")).map(h=><option key={h} value={h}>{h}</option>)}
+                  <select value={hour} onChange={(e) => setHour(e.target.value)} className="lc-select small">
+                    {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(h => <option key={h} value={h}>{h}</option>)}
                   </select>
                   <span>:</span>
-                  <select value={minute} onChange={(e)=>setMinute(e.target.value)} className="lc-select small">
-                    {Array.from({length:60}, (_,i)=>String(i).padStart(2,"0")).map(m=><option key={m} value={m}>{m}</option>)}
+                  <select value={minute} onChange={(e) => setMinute(e.target.value)} className="lc-select small">
+                    {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0")).map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
                   <span>:</span>
-                  <select value={second} onChange={(e)=>setSecond(e.target.value)} className="lc-select small">
-                    {Array.from({length:60}, (_,i)=>String(i).padStart(2,"0")).map(s=><option key={s} value={s}>{s}</option>)}
+                  <select value={second} onChange={(e) => setSecond(e.target.value)} className="lc-select small">
+                    {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0")).map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
               </div>
@@ -711,7 +711,7 @@ const LoadControlComponent = () => {
 
             <footer className="modal-footer">
               <button className="btn-primary" onClick={handleSaveTime}>Save</button>
-              <button className="btn-ghost" onClick={()=>setShowTimePopup(false)}>Cancel</button>
+              <button className="btn-ghost" onClick={() => setShowTimePopup(false)}>Cancel</button>
             </footer>
           </div>
         </div>
@@ -731,17 +731,17 @@ const LoadControlComponent = () => {
 
 const DisconnectControl = () => {
   const serialNumber = localStorage.getItem('selectedSerialNumber');
-  
+
   // Checkbox selections
   const [selected, setSelected] = useState(new Set());
-  
+
   // Dropdown values
   const [relaySelect, setRelaySelect] = useState("Disconnect control (Main relay)");
   const [outputState, setOutputState] = useState("0");
   const [controlState, setControlState] = useState("0");
   const [controlMode, setControlMode] = useState("0");
   const [method, setMethod] = useState("2");
-  
+
   // Results display
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -862,15 +862,15 @@ const DisconnectControl = () => {
       console.log("Response.data type:", typeof response.data);
 
       let actualData = response.data;
-      
+
       // Check if it's a string (SSE format with multiple "data:" lines)
       if (typeof actualData === 'string') {
         console.log("Response is string (SSE format), parsing multiple data lines");
-        
+
         // Split by newlines and parse each "data:" line
         const lines = actualData.split('\n');
         const parsedResults = [];
-        
+
         for (const line of lines) {
           if (line.trim().startsWith('data:')) {
             try {
@@ -884,9 +884,9 @@ const DisconnectControl = () => {
             }
           }
         }
-        
+
         console.log("Parsed SSE results:", parsedResults);
-        
+
         if (parsedResults.length > 0) {
           // Process the parsed results - UPDATE DROPDOWNS ONLY, NO RESULTS TABLE
           parsedResults.forEach(item => {
@@ -896,12 +896,12 @@ const DisconnectControl = () => {
             if (typeof value === 'boolean') {
               value = value ? 1 : 0;
             }
-            
+
             if (attrIdx === 2) setOutputState(String(value));
             if (attrIdx === 3) setControlState(String(value));
             if (attrIdx === 4) setControlMode(String(value));
           });
-          
+
           console.log("Updated dropdown values from read");
           setLoading(false);
           setShowProgressModal(false);
@@ -924,11 +924,11 @@ const DisconnectControl = () => {
 
       if (actualData && actualData.status === "success") {
         console.log("Status is success");
-        
+
         if (actualData.results && Array.isArray(actualData.results) && actualData.results.length > 0) {
           // Multiple results - UPDATE DROPDOWNS ONLY, NO RESULTS TABLE
           console.log("Processing multiple results:", actualData.results);
-          
+
           // Update dropdown values
           actualData.results.forEach(item => {
             const attrIdx = parseInt(item.attribute_index);
@@ -937,7 +937,7 @@ const DisconnectControl = () => {
             if (typeof value === 'boolean') {
               value = value ? 1 : 0;
             }
-            
+
             if (attrIdx === 2) setOutputState(String(value));
             if (attrIdx === 3) setControlState(String(value));
             if (attrIdx === 4) setControlMode(String(value));
@@ -945,7 +945,7 @@ const DisconnectControl = () => {
         } else if (actualData.attribute_index && actualData.value !== undefined) {
           // Single result - UPDATE DROPDOWN ONLY, NO RESULTS TABLE
           console.log("Processing single result");
-          
+
           // Update dropdown value
           const attrIdx = parseInt(actualData.attribute_index);
           // Handle boolean values
@@ -953,7 +953,7 @@ const DisconnectControl = () => {
           if (typeof value === 'boolean') {
             value = value ? 1 : 0;
           }
-          
+
           if (attrIdx === 2) setOutputState(String(value));
           if (attrIdx === 3) setControlState(String(value));
           if (attrIdx === 4) setControlMode(String(value));
@@ -999,7 +999,7 @@ const DisconnectControl = () => {
     // Process selected items
     for (const idx of selected) {
       const attr = ATTRIBUTES.find(a => a.index === idx);
-      
+
       // Skip read-only attributes (Output State, Control State)
       if (!attr || !attr.writable) {
         continue;
@@ -1092,16 +1092,16 @@ const DisconnectControl = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h3 style={{ margin: 0 }}>Disconnect Control (Class 70)</h3>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button 
-            className="lc-btn" 
+          <button
+            className="lc-btn"
             onClick={handleRead}
             disabled={loading}
             style={{ minWidth: '100px' }}
           >
             {loading ? 'Reading...' : 'Read'}
           </button>
-          <button 
-            className="lc-btn" 
+          <button
+            className="lc-btn"
             onClick={handleWrite}
             disabled={loading}
             style={{ minWidth: '100px' }}
@@ -1217,10 +1217,10 @@ const DisconnectControl = () => {
 
       {/* Error message */}
       {error && (
-        <div style={{ 
-          padding: '10px', 
-          backgroundColor: '#ffebee', 
-          color: '#c62828', 
+        <div style={{
+          padding: '10px',
+          backgroundColor: '#ffebee',
+          color: '#c62828',
           borderRadius: '4px',
           marginTop: '10px'
         }}>
@@ -1229,7 +1229,7 @@ const DisconnectControl = () => {
       )}
 
       {/* Results display - Removed completely, only alert messages for write operations */}
-      
+
       <ProgressModal
         isOpen={showProgressModal}
         onClose={() => setShowProgressModal(false)}
@@ -1242,7 +1242,7 @@ const DisconnectControl = () => {
 
 
 
-const LoadControlRelated = () => {
+const LoadControlRelated1 = () => {
   // Fixed data (only "value" will be updated from the backend)
   const [items, setItems] = useState([
     {
@@ -1254,19 +1254,17 @@ const LoadControlRelated = () => {
     }
   ]);
   const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
+
   useEffect(() => {
     const storedId = localStorage.getItem('selectedDeviceId');
     setDeviceId(storedId);
   }, []);
-  
+
 
 
   const handleGetData = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/load-control-related/${deviceId}/`);
-      console.log("hello", response.data);
-
+      const response = await axios.get(`${BASE_URL}/meter1/api/getmeterinfo/`);
       // ✅ Make sure to define updatedItems before using it
       const updatedItems = items.map((item) => {
         const newValue = response.data.find((data) => data.code === item.code)?.value || "";
@@ -1281,10 +1279,10 @@ const LoadControlRelated = () => {
   };
 
   return (
-    <div  className="load-control-container">
-    
+    <div className="load-control-container">
+
       <button onClick={handleGetData}>Get Data</button>
-   
+
       <table className='meter-info-table' border="1">
         <thead>
           <tr>
@@ -1309,10 +1307,109 @@ const LoadControlRelated = () => {
           ))}
         </tbody>
       </table>
-      </div>
-    
+    </div>
+
   );
 };
+
+const LoadControlRelated = () => {
+  const [items, setItems] = useState([
+    {
+      id: 1,
+      checked: true,
+      name: "Overload Switch Off Count",
+      code: "0.0.96.50.12.255",
+      codes:"{1,0-0:96.50.12.255}",
+      value: "",
+    },
+  ]);
+
+  const [deviceId, setDeviceId] = useState(() =>
+    localStorage.getItem("selectedDeviceId")
+  );
+
+  useEffect(() => {
+    const storedId = localStorage.getItem("selectedDeviceId");
+    setDeviceId(storedId);
+  }, []);
+
+  const handleGetData = async () => {
+    try {
+      const payload = {
+        device_id: Number(deviceId),
+        action: "read_obis",
+        serial_number: "Avc",
+        parameters: [
+          {
+            obis_code: "0.0.96.50.12.255",
+            attribute_index: 2,
+          },
+        ],
+      };
+
+      console.log("Payload:", payload);
+
+      const response = await axios.post(
+        `${BASE_URL}/api/getmeterinfo/`,
+        payload
+      );
+
+      let responseData = response.data;
+
+      if (typeof responseData === "string") {
+        responseData = responseData.replace("data: ", "");
+        responseData = JSON.parse(responseData);
+      }
+
+      console.log(responseData);
+
+      const apiValue = responseData.value;
+
+      setItems((prev) =>
+        prev.map((item) => ({
+          ...item,
+          value: apiValue,
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      alert("Failed to fetch data.");
+    }
+  };
+
+  return (
+    <div className="load-control-container">
+      <button onClick={handleGetData}>Get Data</button>
+
+      <table className="meter-info-table" border="1">
+        <thead>
+          <tr>
+            <th>Checked</th>
+            <th>No</th>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.id}>
+              <td>
+                <input type="checkbox" checked={item.checked} readOnly />
+              </td>
+              <td>{item.id}</td>
+              <td>{item.name}</td>
+              <td>{item.codes}</td>
+              <td>{item.value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 
 
 
@@ -1334,7 +1431,7 @@ const StatusOfRelay1Configuration = ({ deviceId }) => {
   ]);
 
 
- 
+
   // Fetch data from API
   const handleGetData = async () => {
     try {
@@ -1351,7 +1448,7 @@ const StatusOfRelay1Configuration = ({ deviceId }) => {
       );
     } catch (error) {
       console.error("Error fetching data:", error);
-      
+
     }
   };
 
@@ -1368,7 +1465,7 @@ const StatusOfRelay1Configuration = ({ deviceId }) => {
       status_of_control_signals: statusValue,
       ...checkboxes.reduce((acc, item) => ({ ...acc, [item.key]: item.checked }), {})
     };
-  
+
     try {
       await axios.post(`${BASE_URL}/api/relay1-status/`, requestData);
       alert("Data sent successfully!");
@@ -1377,7 +1474,7 @@ const StatusOfRelay1Configuration = ({ deviceId }) => {
       alert("Failed to send data.");
     }
   };
-  
+
   // Handle checkbox change
   const handleCheckboxChange = (index) => {
     setCheckboxes(prevCheckboxes =>
@@ -1389,10 +1486,10 @@ const StatusOfRelay1Configuration = ({ deviceId }) => {
 
   return (
     <div>
-      
+
 
       {/* Table for Status of Relay 1 */}
-      <table style={{margin:'0.5%'}} className='meter-info-table' border="1">
+      <table style={{ margin: '0.5%' }} className='meter-info-table' border="1">
         <thead>
           <tr>
             <th>Checked</th>
@@ -1414,34 +1511,34 @@ const StatusOfRelay1Configuration = ({ deviceId }) => {
       </table>
 
       {/* Buttons to Get & Send Data */}
-     
+
       <button onClick={handleSendData}>Send Data</button>
 
       {/* Checkboxes for additional status options */}
-      
-        
 
-         <div className="options-grid1">
-          
-            {checkboxes.map((item, index) => (
-               <div key={item.id}>
-              <label className="option-label">
-                <input
-              type="checkbox"
-              checked={item.checked}
-              onChange={() => handleCheckboxChange(index)}
-               className="option-checkbox"
-            />
-                <span className="option-text">{item.name}</span>
-              </label>
-               </div>
-            ))}
-           
+
+
+      <div className="options-grid1">
+
+        {checkboxes.map((item, index) => (
+          <div key={item.id}>
+            <label className="option-label">
+              <input
+                type="checkbox"
+                checked={item.checked}
+                onChange={() => handleCheckboxChange(index)}
+                className="option-checkbox"
+              />
+              <span className="option-text">{item.name}</span>
+            </label>
           </div>
+        ))}
+
+      </div>
 
 
-        
-      
+
+
     </div>
   );
 };
@@ -1469,7 +1566,7 @@ const StatusOfRelay2Configuration = ({ deviceId }) => {
   const handleGetData = async () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/relay2-status/${deviceId}`);
-      
+
       setStatusValue(response.data.status_of_control_signals === true); // Ensure boolean
 
       // Update checkboxes based on API response
@@ -1481,7 +1578,7 @@ const StatusOfRelay2Configuration = ({ deviceId }) => {
       );
     } catch (error) {
       console.error("Error fetching data:", error);
-      
+
     }
   };
 
@@ -1519,10 +1616,10 @@ const StatusOfRelay2Configuration = ({ deviceId }) => {
 
   return (
     <div>
-   
+
 
       {/* Table for Status of Relay 2 */}
-      <table style={{margin:'0.5%'}} className='meter-info-table' border="1">
+      <table style={{ margin: '0.5%' }} className='meter-info-table' border="1">
         <thead>
           <tr>
             <th>Checked</th>
@@ -1544,29 +1641,29 @@ const StatusOfRelay2Configuration = ({ deviceId }) => {
       </table>
 
       {/* Buttons to Get & Send Data */}
-     
+
       <button onClick={handleSendData}>Send Data</button>
 
-        <div className="options-grid1">
-          
-            {checkboxes.map((item, index) => (
-               <div key={item.id}>
-              <label className="option-label">
-                <input
-              type="checkbox"
-              checked={item.checked}
-              onChange={() => handleCheckboxChange(index)}
-               className="option-checkbox"
-            />
-                <span className="option-text">{item.name}</span>
-              </label>
-               </div>
-            ))}
-           
+      <div className="options-grid1">
+
+        {checkboxes.map((item, index) => (
+          <div key={item.id}>
+            <label className="option-label">
+              <input
+                type="checkbox"
+                checked={item.checked}
+                onChange={() => handleCheckboxChange(index)}
+                className="option-checkbox"
+              />
+              <span className="option-text">{item.name}</span>
+            </label>
           </div>
+        ))}
+
+      </div>
 
       {/* Checkboxes for additional status options */}
-    
+
     </div>
   );
 };
@@ -1592,11 +1689,11 @@ const BeepControlFilter = ({ deviceId }) => {
   const handleGetData = async () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/beep-control/${deviceId}`);
-  
+
       console.log("API Response:", response.data);
-  
+
       setStatusValue(response.data.beep_control_filter); // Map correct key
-  
+
       const apiData = {
         step_1_close: response.data.step_1,
         step_2_close: response.data.step_2,
@@ -1610,7 +1707,7 @@ const BeepControlFilter = ({ deviceId }) => {
         step_10_close: response.data.step_10,
         disable_buzzer: response.data.disenable_buzzer_alarm, // Correct key mapping
       };
-  
+
       setCheckboxes(prevCheckboxes =>
         prevCheckboxes.map(item => ({
           ...item,
@@ -1619,10 +1716,10 @@ const BeepControlFilter = ({ deviceId }) => {
       );
     } catch (error) {
       console.error("Error fetching data:", error);
-      
+
     }
   };
-  
+
 
   useEffect(() => {
     if (deviceId) {
@@ -1658,10 +1755,10 @@ const BeepControlFilter = ({ deviceId }) => {
 
   return (
     <div>
-    
+
 
       {/* Table for Beep Control Filter */}
-      <table style={{margin:'0.5%'}} className='meter-info-table'  border="1">
+      <table style={{ margin: '0.5%' }} className='meter-info-table' border="1">
         <thead>
           <tr>
             <th>Checked</th>
@@ -1683,27 +1780,27 @@ const BeepControlFilter = ({ deviceId }) => {
       </table>
 
       {/* Buttons to Get & Send Data */}
-     
+
       <button onClick={handleSendData}>Send Data</button>
 
       {/* Checkboxes for additional Beep Control options */}
-    <div className="options-grid1">
-          
-            {checkboxes.map((item, index) => (
-               <div key={item.id}>
-              <label className="option-label">
-                <input
-              type="checkbox"
-              checked={item.checked}
-              onChange={() => handleCheckboxChange(index)}
-               className="option-checkbox"
-            />
-                <span className="option-text">{item.name}</span>
-              </label>
-               </div>
-            ))}
-           
+      <div className="options-grid1">
+
+        {checkboxes.map((item, index) => (
+          <div key={item.id}>
+            <label className="option-label">
+              <input
+                type="checkbox"
+                checked={item.checked}
+                onChange={() => handleCheckboxChange(index)}
+                className="option-checkbox"
+              />
+              <span className="option-text">{item.name}</span>
+            </label>
           </div>
+        ))}
+
+      </div>
     </div>
   );
 };
@@ -1713,29 +1810,29 @@ const BeepControlFilter = ({ deviceId }) => {
 
 const ControlConfiguration = () => {
   const [activeComponent, setActiveComponent] = useState("relay1");
- 
+
 
   const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
+
   useEffect(() => {
     const storedId = localStorage.getItem('selectedDeviceId');
     setDeviceId(storedId);
   }, []);
 
   const containerRef = useRef(null);
-const underlineRef = useRef(null);
-const buttonRefs = useRef({});
+  const underlineRef = useRef(null);
+  const buttonRefs = useRef({});
 
 
-const relayTabs = [
-  { key: "relay1", label: "Status of Relay 1" },
-  { key: "relay2", label: "Status of Relay 2" },
-  { key: "beep", label: "Beep Control Filter" },
-];
+  const relayTabs = [
+    { key: "relay1", label: "Status of Relay 1" },
+    { key: "relay2", label: "Status of Relay 2" },
+    { key: "beep", label: "Beep Control Filter" },
+  ];
 
 
 
- const movingTimeout = useRef(null);
+  const movingTimeout = useRef(null);
 
   const moveUnderlineTo = (key) => {
     const btn = buttonRefs.current[key];
@@ -1770,45 +1867,44 @@ const relayTabs = [
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeComponent]);
   // Function to toggle between different credit types
- 
+
 
   return (
     <div className="load-control-container">
-    
+
 
       {/* Buttons to display respective components */}
       <div
-  style={{ marginLeft: "2%" }}
-  className="controlsGroup_tabs"
-  ref={containerRef}
-  role="tablist"
-  aria-label="Relay Controls"
->
-  {relayTabs.map((tab) => (
-    <button
-      key={tab.key}
-      ref={(el) => (buttonRefs.current[tab.key] = el)}
-      className={`tou_button ${
-        activeComponent === tab.key ? "activeButton" : ""
-      }`}
-      onClick={() => setActiveComponent(tab.key)}
-      type="button"
-      role="tab"
-      aria-pressed={activeComponent === tab.key}
-    >
-      {tab.label}
-    </button>
-  ))}
+        style={{ marginLeft: "2%" }}
+        className="controlsGroup_tabs"
+        ref={containerRef}
+        role="tablist"
+        aria-label="Relay Controls"
+      >
+        {relayTabs.map((tab) => (
+          <button
+            key={tab.key}
+            ref={(el) => (buttonRefs.current[tab.key] = el)}
+            className={`tou_button ${activeComponent === tab.key ? "activeButton" : ""
+              }`}
+            onClick={() => setActiveComponent(tab.key)}
+            type="button"
+            role="tab"
+            aria-pressed={activeComponent === tab.key}
+          >
+            {tab.label}
+          </button>
+        ))}
 
-  <div ref={underlineRef} className="underline" aria-hidden="true" />
-</div>
+        <div ref={underlineRef} className="underline" aria-hidden="true" />
+      </div>
 
       {/* Conditional Rendering of Components */}
-      
-        {activeComponent === "relay1" && <StatusOfRelay1Configuration deviceId={deviceId} />}
-        {activeComponent === "relay2" && <StatusOfRelay2Configuration deviceId={deviceId} />}
-        {activeComponent === "beep" && <BeepControlFilter  deviceId={deviceId}  />}
-    
+
+      {activeComponent === "relay1" && <StatusOfRelay1Configuration deviceId={deviceId} />}
+      {activeComponent === "relay2" && <StatusOfRelay2Configuration deviceId={deviceId} />}
+      {activeComponent === "beep" && <BeepControlFilter deviceId={deviceId} />}
+
     </div>
   );
 };
@@ -1822,62 +1918,58 @@ const Relay = () => {
 
   return (
     <div className="relay-container">
-    
+
 
       {/* Buttons to display respective components */}
-        <div
-  className="view-toggle"
-  role="tablist"
-  aria-label="Control sections"
->
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activeComponent === "loadControl"}
-    className={`view-btn ${
-      activeComponent === "loadControl" ? "active" : ""
-    }`}
-    onClick={() => setActiveComponent("loadControl")}
-  >
-    Load Control
-  </button>
+      <div
+        className="view-toggle"
+        role="tablist"
+        aria-label="Control sections"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activeComponent === "loadControl"}
+          className={`view-btn ${activeComponent === "loadControl" ? "active" : ""
+            }`}
+          onClick={() => setActiveComponent("loadControl")}
+        >
+          Load Control
+        </button>
 
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activeComponent === "disconnect"}
-    className={`view-btn ${
-      activeComponent === "disconnect" ? "active" : ""
-    }`}
-    onClick={() => setActiveComponent("disconnect")}
-  >
-    Disconnect Control
-  </button>
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activeComponent === "disconnect"}
+          className={`view-btn ${activeComponent === "disconnect" ? "active" : ""
+            }`}
+          onClick={() => setActiveComponent("disconnect")}
+        >
+          Disconnect Control
+        </button>
 
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activeComponent === "loadRelated"}
-    className={`view-btn ${
-      activeComponent === "loadRelated" ? "active" : ""
-    }`}
-    onClick={() => setActiveComponent("loadRelated")}
-  >
-    Load Control Related
-  </button>
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activeComponent === "loadRelated"}
+          className={`view-btn ${activeComponent === "loadRelated" ? "active" : ""
+            }`}
+          onClick={() => setActiveComponent("loadRelated")}
+        >
+          Load Control Related
+        </button>
 
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activeComponent === "controlConfig"}
-    className={`view-btn ${
-      activeComponent === "controlConfig" ? "active" : ""
-    }`}
-    onClick={() => setActiveComponent("controlConfig")}
-  >
-    Control Configuration
-  </button>
-</div>
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activeComponent === "controlConfig"}
+          className={`view-btn ${activeComponent === "controlConfig" ? "active" : ""
+            }`}
+          onClick={() => setActiveComponent("controlConfig")}
+        >
+          Control Configuration
+        </button>
+      </div>
 
       {/* Conditional Rendering of Components */}
       <div className="component-display">

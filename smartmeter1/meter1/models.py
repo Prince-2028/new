@@ -2175,6 +2175,50 @@ from django.db import models
 
 
 
+class DailyBillingReading(models.Model):
+    device = models.ForeignKey(
+        Device,
+        on_delete=models.CASCADE,
+        related_name='daily_readings'
+    )
+    entry_no = models.PositiveIntegerField()
+    reading_datetime = models.DateTimeField()
+    active_import = models.CharField(max_length=64, blank=True, null=True)
+    active_export = models.CharField(max_length=64, blank=True, null=True)
+    reactive_import = models.CharField(max_length=64, blank=True, null=True)
+    reactive_export = models.CharField(max_length=64, blank=True, null=True)
+    residual = models.CharField(max_length=64, blank=True, null=True)
+    energy_used = models.CharField(max_length=64, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['entry_no']
+        unique_together = ('device', 'entry_no')
+
+    def __str__(self):
+        return f"{self.device.serial_number} - daily entry {self.entry_no}"
+    
+
+
+from django.db import models
+from .models import Device
+
+class MonthlyRentCredit(models.Model):
+    device = models.OneToOneField(
+        Device,
+        on_delete=models.CASCADE,
+        related_name="monthly_rent_credit"
+    )
+
+   
+    preset_credit_amount = models.CharField(max_length=50, blank=True, null=True)
+    period = models.CharField(max_length=50, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+
+
 class EnergyReading(models.Model):
     ENERGY_TYPE_CHOICES = [
     ("active", "Active"),
@@ -2429,7 +2473,58 @@ class PowerQualityReading(models.Model):
         return f"{self.device.serial_number} - entry {self.entry_no} - {self.reading_datetime.isoformat()}"
 
 
+class InstantaneousReadSnapshot(models.Model):
+    device = models.ForeignKey(
+        Device,
+        on_delete=models.CASCADE,
+        related_name="instantaneous_read_snapshots"
+    )
 
+    entry_no = models.PositiveIntegerField(verbose_name="Entry No")
+
+    reading_datetime = models.DateTimeField(
+        verbose_name="Reading Timestamp"
+    )
+
+    disconnect_control_state = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+
+    instantaneous_voltage_l1 = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True
+    )
+
+    instantaneous_current_l1 = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "meter1_instantaneousreadsnapshot"
+        ordering = ["entry_no"]
+        unique_together = ("device", "entry_no")
+        indexes = [
+            models.Index(fields=["device", "entry_no"]),
+            models.Index(fields=["device", "reading_datetime"]),
+        ]
+        verbose_name = "Instantaneous Read Snapshot"
+        verbose_name_plural = "Instantaneous Read Snapshots"
+
+    def __str__(self):
+        return (
+            f"{self.device.serial_number} - "
+            f"Entry {self.entry_no} - "
+            f"{self.reading_datetime}"
+        )
 
 class MonthlyBilling(models.Model):
     device = models.ForeignKey(
@@ -2451,8 +2546,6 @@ class MonthlyBilling(models.Model):
     def __str__(self):
         return f"{self.device_id} - {self.name} ({self.code})"
     
-
-
 
 class DailyBilling(models.Model):
     device = models.ForeignKey(

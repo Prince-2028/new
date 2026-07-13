@@ -1,222 +1,222 @@
 
-import React, { useState, useEffect, useRef,useMemo} from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
 
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
 import './index.css'
 
-  const manualCategories = [
-    {
-      name: 'Payment',
-      items: [
-        { name: 'Residual credit', code: '3,0-0:19.130.0.255'},
-        { name: 'Energy used', code: '3,1-0:15.9.0.255'},
-        { name: 'Currency used', code: '3,0-0:19.133.0.255' },
-        { name: 'Cumulative purchase credit', code: '3,1-65:1.140.2.255' },
-        { name: 'Last purchase credit', code: '3,1-65:1.1.140.10.255' },
-      ],
-    },
-    {
-      name: 'Active Energy register',
-      
-        items: [
-          { "name": "Active energy import (+A)", "code": "3,1-0:1.8.0.255" },
-          { "name": "Active energy import (+A) rate 1", "code": "3,1-0:1.8.1.255" },
-          { "name": "Active energy import (+A) rate 2", "code": "3,1-0:1.8.2.255" },
-          { "name": "Active energy import (+A) rate 3", "code": "3,1-0:1.8.3.255" },
-          { "name": "Active energy import (+A) rate 4", "code": "3,1-0:1.8.4.255" },
-          { "name": "Active energy export (-A)", "code": "3,1-0:2.8.0.255" },
-          { "name": "Active energy export (-A) rate 1", "code": "3,1-0:2.8.1.255" },
-          { "name": "Active energy export (-A) rate 2", "code": "3,1-0:2.8.2.255" },
-          { "name": "Active energy export (-A) rate 3", "code": "3,1-0:2.8.3.255" },
-          { "name": "Active energy export (-A) rate 4", "code": "3,1-0:2.8.4.255" },
-          { "name": "Active energy Combined total (|+A| + |-A|)", "code": "3,1-0:15.8.0.255" },
-          { "name": "Active energy Combined total (|+A| + |-A|) rate 1", "code": "3,1-0:15.8.1.255" },
-          { "name": "Active energy Combined total (|+A| + |-A|) rate 2", "code": "3,1-0:15.8.2.255" },
-          { "name": "Active energy Combined total (|+A| + |-A|) rate 3", "code": "3,1-0:15.8.3.255" },
-          { "name": "Active energy Combined total (|+A| + |-A|) rate 4", "code": "3,1-0:15.8.4.255" },
-          { "name": "Active energy Combined total (|+A| - |-A|)", "code": "3,1-0:16.8.0.255" },
-          { "name": "Active energy Combined total (|+A| - |-A|) rate 1", "code": "3,1-0:16.8.1.255" },
-          { "name": "Active energy Combined total (|+A| - |-A|) rate 2", "code": "3,1-0:16.8.2.255" },
-          { "name": "Active energy Combined total (|+A| - |-A|) rate 3", "code": "3,1-0:16.8.3.255" },
-          { "name": "Active energy Combined total (|+A| - |-A|) rate 4", "code": "3,1-0:16.8.4.255" }
-        ]    
-        },
+const manualCategories = [
+  {
+    name: 'Payment',
+    items: [
+      { name: 'Residual credit', code: '3,0-0:19.130.0.255' },
+      { name: 'Energy used', code: '3,1-0:15.9.0.255' },
+      { name: 'Currency used', code: '3,0-0:19.133.0.255' },
+      { name: 'Cumulative purchase credit', code: '3,1-65:1.140.2.255' },
+      { name: 'Last purchase credit', code: '3,1-65:1.1.140.10.255' },
+    ],
+  },
+  {
+    name: 'Active Energy register',
+
+    items: [
+      { "name": "Active energy import (+A)", "code": "3,1-0:1.8.0.255" },
+      { "name": "Active energy import (+A) rate 1", "code": "3,1-0:1.8.1.255" },
+      { "name": "Active energy import (+A) rate 2", "code": "3,1-0:1.8.2.255" },
+      { "name": "Active energy import (+A) rate 3", "code": "3,1-0:1.8.3.255" },
+      { "name": "Active energy import (+A) rate 4", "code": "3,1-0:1.8.4.255" },
+      { "name": "Active energy export (-A)", "code": "3,1-0:2.8.0.255" },
+      { "name": "Active energy export (-A) rate 1", "code": "3,1-0:2.8.1.255" },
+      { "name": "Active energy export (-A) rate 2", "code": "3,1-0:2.8.2.255" },
+      { "name": "Active energy export (-A) rate 3", "code": "3,1-0:2.8.3.255" },
+      { "name": "Active energy export (-A) rate 4", "code": "3,1-0:2.8.4.255" },
+      { "name": "Active energy Combined total (|+A| + |-A|)", "code": "3,1-0:15.8.0.255" },
+      { "name": "Active energy Combined total (|+A| + |-A|) rate 1", "code": "3,1-0:15.8.1.255" },
+      { "name": "Active energy Combined total (|+A| + |-A|) rate 2", "code": "3,1-0:15.8.2.255" },
+      { "name": "Active energy Combined total (|+A| + |-A|) rate 3", "code": "3,1-0:15.8.3.255" },
+      { "name": "Active energy Combined total (|+A| + |-A|) rate 4", "code": "3,1-0:15.8.4.255" },
+      { "name": "Active energy Combined total (|+A| - |-A|)", "code": "3,1-0:16.8.0.255" },
+      { "name": "Active energy Combined total (|+A| - |-A|) rate 1", "code": "3,1-0:16.8.1.255" },
+      { "name": "Active energy Combined total (|+A| - |-A|) rate 2", "code": "3,1-0:16.8.2.255" },
+      { "name": "Active energy Combined total (|+A| - |-A|) rate 3", "code": "3,1-0:16.8.3.255" },
+      { "name": "Active energy Combined total (|+A| - |-A|) rate 4", "code": "3,1-0:16.8.4.255" }
+    ]
+  },
 
 
-        {
-          name: "Reactive Energy Register",
-          items: [
-            { "name": "Reactive energy import (+R)", "code": "3,1-0:3.8.0.255" },
-            { "name": "Reactive energy import (+R) rate 1", "code": "3,1-0:3.8.1.255" },
-            { "name": "Reactive energy import (+R) rate 2", "code": "3,1-0:3.8.2.255" },
-            { "name": "Reactive energy import (+R) rate 3", "code": "3,1-0:3.8.3.255" },
-            { "name": "Reactive energy import (+R) rate 4", "code": "3,1-0:3.8.4.255" },
-            { "name": "Reactive energy export (-R)", "code": "3,1-0:4.8.0.255" },
-            { "name": "Reactive energy export (-R) rate 1", "code": "3,1-0:4.8.1.255" },
-            { "name": "Reactive energy export (-R) rate 2", "code": "3,1-0:4.8.4.255" },
-            { "name": "Reactive energy export (-R) rate 3", "code": "3,1-0:4.8.3.255" },
-            { "name": "Reactive energy QI (+Ri)", "code": "3,1-0:5.8.0.255" },
-            { "name": "Reactive energy QI (+Ri) rate 1", "code": "3,1-0:5.8.1.255" },
-            { "name": "Reactive energy QI (+Ri) rate 2", "code": "3,1-0:5.8.2.255" },
-            { "name": "Reactive energy QI (+Ri) rate 3", "code": "3,1-0:5.8.3.255" },
-            { "name": "Reactive energy QI (+Ri) rate 4", "code": "3,1-0:5.8.4.255" },
-            { "name": "Reactive energy QII (+Rc)", "code": "3,1-0:6.8.0.255" },
-            { "name": "Reactive energy QII (+Rc) rate 1", "code": "3,1-0:6.8.1.255" },
-            { "name": "Reactive energy QII (+Rc) rate 2", "code": "3,1-0:6.8.2.255" },
-            { "name": "Reactive energy QII (+Rc) rate 3", "code": "3,1-0:6.8.3.255" },
-            { "name": "Reactive energy QII (+Rc) rate 4", "code": "3,1-0:5.6.4.255" },
-            { "name": "Reactive energy QIII (-Ri)", "code": "3,1-0:7.8.0.255" },
-            { "name": "Reactive energy QIII (-Ri) rate 1", "code": "3,1-0:7.8.1.255" },
-            { "name": "Reactive energy QIII (-Ri) rate 2", "code": "3,1-0:7.8.2.255" },
-            { "name": "Reactive energy QIII (-Ri) rate 3", "code": "3,1-0:7.8.3.255" },
-            { "name": "Reactive energy QIII (-Ri) rate 4", "code": "3,1-0:7.8.4.255" },
-            { "name": "Reactive energy QIV (-Rc)", "code": "3,1-0:8.8.0.255" },
-            { "name": "Reactive energy QIV (-Rc) rate 1", "code": "3,1-0:8.8.1.255" },
-            { "name": "Reactive energy QIV (-Rc) rate 2", "code": "3,1-0:8.8.2.255" },
-            { "name": "Reactive energy QIV (-Rc) rate 3", "code": "3,1-0:8.8.3.255" },
-            { "name": "Reactive energy QIV (-Rc) rate 4", "code": "3,1-8:5.6.4.255" }
-          ]
-        },
+  {
+    name: "Reactive Energy Register",
+    items: [
+      { "name": "Reactive energy import (+R)", "code": "3,1-0:3.8.0.255" },
+      { "name": "Reactive energy import (+R) rate 1", "code": "3,1-0:3.8.1.255" },
+      { "name": "Reactive energy import (+R) rate 2", "code": "3,1-0:3.8.2.255" },
+      { "name": "Reactive energy import (+R) rate 3", "code": "3,1-0:3.8.3.255" },
+      { "name": "Reactive energy import (+R) rate 4", "code": "3,1-0:3.8.4.255" },
+      { "name": "Reactive energy export (-R)", "code": "3,1-0:4.8.0.255" },
+      { "name": "Reactive energy export (-R) rate 1", "code": "3,1-0:4.8.1.255" },
+      { "name": "Reactive energy export (-R) rate 2", "code": "3,1-0:4.8.4.255" },
+      { "name": "Reactive energy export (-R) rate 3", "code": "3,1-0:4.8.3.255" },
+      { "name": "Reactive energy QI (+Ri)", "code": "3,1-0:5.8.0.255" },
+      { "name": "Reactive energy QI (+Ri) rate 1", "code": "3,1-0:5.8.1.255" },
+      { "name": "Reactive energy QI (+Ri) rate 2", "code": "3,1-0:5.8.2.255" },
+      { "name": "Reactive energy QI (+Ri) rate 3", "code": "3,1-0:5.8.3.255" },
+      { "name": "Reactive energy QI (+Ri) rate 4", "code": "3,1-0:5.8.4.255" },
+      { "name": "Reactive energy QII (+Rc)", "code": "3,1-0:6.8.0.255" },
+      { "name": "Reactive energy QII (+Rc) rate 1", "code": "3,1-0:6.8.1.255" },
+      { "name": "Reactive energy QII (+Rc) rate 2", "code": "3,1-0:6.8.2.255" },
+      { "name": "Reactive energy QII (+Rc) rate 3", "code": "3,1-0:6.8.3.255" },
+      { "name": "Reactive energy QII (+Rc) rate 4", "code": "3,1-0:5.6.4.255" },
+      { "name": "Reactive energy QIII (-Ri)", "code": "3,1-0:7.8.0.255" },
+      { "name": "Reactive energy QIII (-Ri) rate 1", "code": "3,1-0:7.8.1.255" },
+      { "name": "Reactive energy QIII (-Ri) rate 2", "code": "3,1-0:7.8.2.255" },
+      { "name": "Reactive energy QIII (-Ri) rate 3", "code": "3,1-0:7.8.3.255" },
+      { "name": "Reactive energy QIII (-Ri) rate 4", "code": "3,1-0:7.8.4.255" },
+      { "name": "Reactive energy QIV (-Rc)", "code": "3,1-0:8.8.0.255" },
+      { "name": "Reactive energy QIV (-Rc) rate 1", "code": "3,1-0:8.8.1.255" },
+      { "name": "Reactive energy QIV (-Rc) rate 2", "code": "3,1-0:8.8.2.255" },
+      { "name": "Reactive energy QIV (-Rc) rate 3", "code": "3,1-0:8.8.3.255" },
+      { "name": "Reactive energy QIV (-Rc) rate 4", "code": "3,1-8:5.6.4.255" }
+    ]
+  },
 
-        {
-          name: "Apparent Energy Register",
-          items: [
-            { "name": "Apparent energy import (+VA)", "code": "3,1-0:9.8.0.255" },
-            { "name": "Apparent energy import (+VA) rate 1", "code": "3,1-0:9.8.1.255" },
-            { "name": "Apparent energy import (+VA) rate 2", "code": "3,1-0:9.8.2.255" },
-            { "name": "Apparent energy import (+VA) rate 3", "code": "3,1-0:9.8.3.255" },
-            { "name": "Apparent energy import (+VA) rate 4", "code": "3,1-0:9.8.4.255" },
-            { "name": "Apparent energy export (-VA)", "code": "3,1-0:10.8.0.255" },
-            { "name": "Apparent energy export (-VA) rate 1", "code": "3,1-0:10.8.1.255" },
-            { "name": "Apparent energy export (-VA) rate 2", "code": "3,1-0:10.8.2.255" },
-            { "name": "Apparent energy export (-VA) rate 3", "code": "3,1-0:10.8.3.255" },
-            { "name": "Apparent energy export (-VA) rate 4", "code": "3,1-0:10.8.4.255" }
-          ]
-        },
+  {
+    name: "Apparent Energy Register",
+    items: [
+      { "name": "Apparent energy import (+VA)", "code": "3,1-0:9.8.0.255" },
+      { "name": "Apparent energy import (+VA) rate 1", "code": "3,1-0:9.8.1.255" },
+      { "name": "Apparent energy import (+VA) rate 2", "code": "3,1-0:9.8.2.255" },
+      { "name": "Apparent energy import (+VA) rate 3", "code": "3,1-0:9.8.3.255" },
+      { "name": "Apparent energy import (+VA) rate 4", "code": "3,1-0:9.8.4.255" },
+      { "name": "Apparent energy export (-VA)", "code": "3,1-0:10.8.0.255" },
+      { "name": "Apparent energy export (-VA) rate 1", "code": "3,1-0:10.8.1.255" },
+      { "name": "Apparent energy export (-VA) rate 2", "code": "3,1-0:10.8.2.255" },
+      { "name": "Apparent energy export (-VA) rate 3", "code": "3,1-0:10.8.3.255" },
+      { "name": "Apparent energy export (-VA) rate 4", "code": "3,1-0:10.8.4.255" }
+    ]
+  },
 
-        {
-          "name": "Active Maximum Demand Register",
-          items: [
-            { "name": "Maximum Demand Register - Active import (+A)", "code": "4,1-0:1.6.0.255" },
-            { "name": "Capture time - Maximum Demand Register - Active import (+A)", "code": "4,1-0:1.6.0.255" },
-            { "name": "Maximum Demand Register - Active import (+A) - rate 1", "code": "4,1-0:1.6.1.255" },
-            { "name": "Capture time - Maximum Demand Register - Active import (+A) - rate 1", "code": "4,1-0:1.6.1.255" },
-            { "name": "Maximum Demand Register - Active import (+A) - rate 2", "code": "4,1-0:1.6.2.255" },
-            { "name": "Capture time - Maximum Demand Register - Active import (+A) - rate 2", "code": "4,1-0:1.6.2.255" },
-            { "name": "Maximum Demand Register - Active import (+A) - rate 3", "code": "4,1-0:1.6.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Active import (+A) - rate 3", "code": "4,1-0:1.6.3.255" },
-            { "name": "Maximum Demand Register - Active import (+A) - rate 4", "code": "4,1-0:1.6.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Active import (+A) - rate 4", "code": "4,1-0:1.6.3.255" },
-            { "name": "Maximum Demand Register - Active export (-A)", "code": "4,1-0:2.6.0.255" },
-            { "name": "Capture time - Maximum Demand Register - Active export (-A)", "code": "4,1-0:2.6.0.255" },
-            { "name": "Maximum Demand Register - Active export (-A) - rate 1", "code": "4,1-0:2.6.1.255" },
-            { "name": "Capture time - Maximum Demand Register - Active export (-A) - rate 1", "code": "4,1-0:2.6.1.255" },
-            { "name": "Maximum Demand Register - Active export (-A) - rate 2", "code": "4,1-0:2.6.2.255" },
-            { "name": "Capture time - Maximum Demand Register - Active export (-A) - rate 2", "code": "4,1-0:2.6.2.255" },
-            { "name": "Maximum Demand Register - Active export (-A) - rate 3", "code": "4,1-0:2.6.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Active export (-A) - rate 3", "code": "4,1-0:2.6.3.255" },
-            { "name": "Maximum Demand Register - Active export (-A) - rate 4", "code": "4,1-0:2.6.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Active export (-A) - rate 4", "code": "4,1-0:2.6.3.255" },
-            { "name": "Maximum Demand Register - Active (|+A| + |-A|)", "code": "4,1-0:15.6.0.255" },
-            { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|)", "code": "4,1-0:15.6.0.255" },
-            { "name": "Maximum Demand Register - Active (|+A| + |-A|) - rate 1", "code": "4,1-0:15.6.1.255" },
-            { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 1", "code": "4,1-0:15.6.1.255" },
-            { "name": "Maximum Demand Register - Active (|+A| + |-A|) - rate 2", "code": "4,1-0:15.6.2.255" },
-            { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 2", "code": "4,1-0:15.6.2.255" },
-            { "name": "Maximum Demand Register - Active (|+A| + |-A|) - rate 3", "code": "4,1-0:15.6.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 3", "code": "4,1-0:15.6.3.255" },
-            { "name": "Maximum Demand Register - Active (|+A| + |-A|) - rate 4", "code": "4,1-0:15.6.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 4", "code": "4,1-0:15.6.3.255" },
-            { "name": "Cumulative Maximum Demand Register - Active (|+A| + |-A|)", "code": "4,1-0:15.2.0.255" },
-            { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|)", "code": "4,1-0:15.2.0.255" },
-            { "name": "Cumulative Maximum Demand Register - Active (|+A| + |-A|) - rate 1", "code": "4,1-0:15.2.1.255" },
-            { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 1", "code": "4,1-0:15.2.1.255" },
-            { "name": "Cumulative Maximum Demand Register - Active (|+A| + |-A|) - rate 2", "code": "4,1-0:15.2.2.255" },
-            { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 2", "code": "4,1-0:15.2.2.255" },
-            { "name": "Cumulative Maximum Demand Register - Active (|+A| + |-A|) - rate 3", "code": "4,1-0:15.2.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 3", "code": "4,1-0:15.2.3.255" },
-            { "name": "Cumulative Maximum Demand Register - Active (|+A| + |-A|) - rate 4", "code": "4,1-0:15.2.4.255" },
-            { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 4", "code": "4,1-0:15.2.4.255" },
-            { "name": "Cumulative Maximum Demand Register - Active import (+A)", "code": "4,1-0:1.2.0.255" },
-            { "name": "Capture time - Maximum Demand Register - Active import (+A)", "code": "4,1-0:1.2.0.255" },
-            { "name": "Cumulative Maximum Demand Register - Active import - rate 1 (+A)", "code": "4,1-0:1.2.1.255" },
-            { "name": "Capture time - Maximum Demand Register - Active import - rate 1 (+A)", "code": "4,1-0:1.2.1.255" },
-            { "name": "Cumulative Maximum Demand Register - Active import - rate 2 (+A)", "code": "4,1-0:1.2.2.255" },
-            { "name": "Capture time - Maximum Demand Register - Active import - rate 2 (+A)", "code": "4,1-0:1.2.2.255" },
-            { "name": "Cumulative Maximum Demand Register - Active import - rate 3 (+A)", "code": "4,1-0:1.2.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Active import - rate 3 (+A)", "code": "4,1-0:1.2.3.255" },
-            { "name": "Cumulative Maximum Demand Register - Active import - rate 4 (+A)", "code": "4,1-0:1.2.4.255" },
-            { "name": "Capture time - Maximum Demand Register - Active import - rate 4 (+A)", "code": "4,1-0:1.2.4.255" },
-            { "name": "Cumulative Maximum Demand Register - Active export (-A)", "code": "4,1-0:2.2.0.255" },
-            { "name": "Capture time - Maximum Demand Register - Active export (-A)", "code": "4,1-0:2.2.0.255" },
-            { "name": "Cumulative Maximum Demand Register - Active export - rate 1 (-A)", "code": "4,1-0:2.2.1.255" },
-            { "name": "Capture time - Maximum Demand Register - Active export - rate 1 (-A)", "code": "4,1-0:2.2.1.255" },
-            { "name": "Cumulative Maximum Demand Register - Active export - rate 2 (-A)", "code": "4,1-0:2.2.2.255" },
-            { "name": "Capture time - Maximum Demand Register - Active export - rate 2 (-A)", "code": "4,1-0:2.2.2.255" },
-            { "name": "Cumulative Maximum Demand Register - Active export - rate 3 (-A)", "code": "4,1-0:2.2.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Active export - rate 3 (-A)", "code": "4,1-0:2.2.3.255" },
-            { "name": "Cumulative Maximum Demand Register - Active export - rate 4 (-A)", "code": "4,1-0:2.2.4.255" },
-            { "name": "Capture time - Maximum Demand Register - Active export - rate 4 (-A)", "code": "4,1-0:2.2.4.255" }
-          ]
-        }
-        ,
-        {
-          name: "Reactive Maximum Demand Register",
-          items: [
-            { "name": "Maximum Demand Register - Reactive import (+R)", "code": "4,1-0:3.6.0.255" },
-            { "name": "Capture time - Maximum Demand Register - Reactive import (+R)", "code": "4,1-0:3.6.0.255" },
-            { "name": "Maximum Demand Register - Reactive import (+R) - rate 1", "code": "4,1-0:3.6.1.255" },
-            { "name": "Capture time - Maximum Demand Register - Reactive import (+R) - rate 1", "code": "4,1-0:3.6.1.255" },
-            { "name": "Maximum Demand Register - Reactive import (+R) - rate 2", "code": "4,1-0:3.6.2.255" },
-            { "name": "Capture time - Maximum Demand Register - Reactive import (+R) - rate 2", "code": "4,1-0:3.6.2.255" },
-            { "name": "Maximum Demand Register - Reactive import (+R) - rate 3", "code": "4,1-0:3.6.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Reactive import (+R) - rate 3", "code": "4,1-0:3.6.3.255" },
-            { "name": "Maximum Demand Register - Reactive import (+R) - rate 4", "code": "4,1-0:3.6.4.255" },
-            { "name": "Capture time - Maximum Demand Register - Reactive import (+R) - rate 4", "code": "4,1-0:3.6.4.255" },
-            { "name": "Maximum Demand Register - Reactive export (-R)", "code": "4,1-0:4.6.0.255" },
-            { "name": "Capture time - Maximum Demand Register - Reactive export (-R)", "code": "4,1-0:4.6.0.255" },
-            { "name": "Maximum Demand Register - Reactive export (-R) - rate 1", "code": "4,1-0:4.6.1.255" },
-            { "name": "Capture time - Maximum Demand Register - Reactive export (-R) - rate 1", "code": "4,1-0:4.6.1.255" },
-            { "name": "Maximum Demand Register - Reactive export (-R) - rate 2", "code": "4,1-0:4.6.2.255" },
-            { "name": "Capture time - Maximum Demand Register - Reactive export (-R) - rate 2", "code": "4,1-0:4.6.2.255" },
-            { "name": "Maximum Demand Register - Reactive export (-R) - rate 3", "code": "4,1-0:4.6.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Reactive export (-R) - rate 3", "code": "4,1-0:4.6.3.255" },
-            { "name": "Maximum Demand Register - Reactive export (-R) - rate 4", "code": "4,1-0:4.6.4.255" },
-            { "name": "Capture time - Maximum Demand Register - Reactive export (-R) - rate 4", "code": "4,1-0:4.6.4.255" }
-          ]
-        }
-        ,
-        {
-          name: "Apparent Maximum Demand Register",
-          items: [
-            { "name": "Maximum Demand Register - Apparent import (+VA)", "code": "4,1-0:6.0.255" },
-            { "name": "Capture time - Maximum Demand Register - Apparent import (+VA)", "code": "4,1-0:9.6.0.255" },
-            { "name": "Maximum Demand Register - Apparent import (+VA) - rate 1", "code": "4,1-0:9.6.1.255" },
-            { "name": "Capture time - Maximum Demand Register - Apparent import (+VA) - rate 1", "code": "4,1-0:9.6.1.255" },
-            { "name": "Maximum Demand Register - Apparent import (+VA) - rate 2", "code": "4,1-0:9.6.2.255" },
-            { "name": "Capture time - Maximum Demand Register - Apparent import (+VA) - rate 2", "code": "4,1-0:9.6.2.255" },
-            { "name": "Maximum Demand Register - Apparent import (+VA) - rate 3", "code": "4,1-0:9.6.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Apparent import (+VA) - rate 3", "code": "4,1-0:9.6.3.255" },
-            { "name": "Maximum Demand Register - Apparent import (+VA) - rate 4", "code": "4,1-0:9.6.4.255" },
-            { "name": "Capture time - Maximum Demand Register - Apparent import (+VA) - rate 4", "code": "4,1-0:9.6.4.255" },
-            { "name": "Maximum Demand Register - Apparent export (-VA)", "code": "4,1-0:10.6.0.255" },
-            { "name": "Capture time - Maximum Demand Register - Apparent export (-VA)", "code": "4,1-0:10.6.0.255" },
-            { "name": "Maximum Demand Register - Apparent export (-VA) - rate 1", "code": "4,1-0:10.6.1.255" },
-            { "name": "Capture time - Maximum Demand Register - Apparent export (-VA) - rate 1", "code": "4,1-0:10.6.1.255" },
-            { "name": "Maximum Demand Register - Apparent export (-VA) - rate 2", "code": "4,1-0:10.6.2.255" },
-            { "name": "Capture time - Maximum Demand Register - Apparent export (-VA) - rate 2", "code": "4,1-0:10.6.2.255" },
-            { "name": "Maximum Demand Register - Apparent export (-VA) - rate 3", "code": "4,1-0:10.6.3.255" },
-            { "name": "Capture time - Maximum Demand Register - Apparent export (-VA) - rate 3", "code": "4,1-0:10.6.3.255" },
-            { "name": "Maximum Demand Register - Apparent export (-VA) - rate 4", "code": "4,1-0:10.6.4.255" },
-            { "name": "Capture time - Maximum Demand Register - Apparent export (-VA) - rate 4", "code": "4,1-0:10.6.4.255" }
-          ]
-        },
-        
-       
-  ];
- 
-  const Dailycategories = [
+  {
+    "name": "Active Maximum Demand Register",
+    items: [
+      { "name": "Maximum Demand Register - Active import (+A)", "code": "4,1-0:1.6.0.255" },
+      { "name": "Capture time - Maximum Demand Register - Active import (+A)", "code": "4,1-0:1.6.0.255" },
+      { "name": "Maximum Demand Register - Active import (+A) - rate 1", "code": "4,1-0:1.6.1.255" },
+      { "name": "Capture time - Maximum Demand Register - Active import (+A) - rate 1", "code": "4,1-0:1.6.1.255" },
+      { "name": "Maximum Demand Register - Active import (+A) - rate 2", "code": "4,1-0:1.6.2.255" },
+      { "name": "Capture time - Maximum Demand Register - Active import (+A) - rate 2", "code": "4,1-0:1.6.2.255" },
+      { "name": "Maximum Demand Register - Active import (+A) - rate 3", "code": "4,1-0:1.6.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Active import (+A) - rate 3", "code": "4,1-0:1.6.3.255" },
+      { "name": "Maximum Demand Register - Active import (+A) - rate 4", "code": "4,1-0:1.6.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Active import (+A) - rate 4", "code": "4,1-0:1.6.3.255" },
+      { "name": "Maximum Demand Register - Active export (-A)", "code": "4,1-0:2.6.0.255" },
+      { "name": "Capture time - Maximum Demand Register - Active export (-A)", "code": "4,1-0:2.6.0.255" },
+      { "name": "Maximum Demand Register - Active export (-A) - rate 1", "code": "4,1-0:2.6.1.255" },
+      { "name": "Capture time - Maximum Demand Register - Active export (-A) - rate 1", "code": "4,1-0:2.6.1.255" },
+      { "name": "Maximum Demand Register - Active export (-A) - rate 2", "code": "4,1-0:2.6.2.255" },
+      { "name": "Capture time - Maximum Demand Register - Active export (-A) - rate 2", "code": "4,1-0:2.6.2.255" },
+      { "name": "Maximum Demand Register - Active export (-A) - rate 3", "code": "4,1-0:2.6.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Active export (-A) - rate 3", "code": "4,1-0:2.6.3.255" },
+      { "name": "Maximum Demand Register - Active export (-A) - rate 4", "code": "4,1-0:2.6.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Active export (-A) - rate 4", "code": "4,1-0:2.6.3.255" },
+      { "name": "Maximum Demand Register - Active (|+A| + |-A|)", "code": "4,1-0:15.6.0.255" },
+      { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|)", "code": "4,1-0:15.6.0.255" },
+      { "name": "Maximum Demand Register - Active (|+A| + |-A|) - rate 1", "code": "4,1-0:15.6.1.255" },
+      { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 1", "code": "4,1-0:15.6.1.255" },
+      { "name": "Maximum Demand Register - Active (|+A| + |-A|) - rate 2", "code": "4,1-0:15.6.2.255" },
+      { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 2", "code": "4,1-0:15.6.2.255" },
+      { "name": "Maximum Demand Register - Active (|+A| + |-A|) - rate 3", "code": "4,1-0:15.6.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 3", "code": "4,1-0:15.6.3.255" },
+      { "name": "Maximum Demand Register - Active (|+A| + |-A|) - rate 4", "code": "4,1-0:15.6.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 4", "code": "4,1-0:15.6.3.255" },
+      { "name": "Cumulative Maximum Demand Register - Active (|+A| + |-A|)", "code": "4,1-0:15.2.0.255" },
+      { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|)", "code": "4,1-0:15.2.0.255" },
+      { "name": "Cumulative Maximum Demand Register - Active (|+A| + |-A|) - rate 1", "code": "4,1-0:15.2.1.255" },
+      { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 1", "code": "4,1-0:15.2.1.255" },
+      { "name": "Cumulative Maximum Demand Register - Active (|+A| + |-A|) - rate 2", "code": "4,1-0:15.2.2.255" },
+      { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 2", "code": "4,1-0:15.2.2.255" },
+      { "name": "Cumulative Maximum Demand Register - Active (|+A| + |-A|) - rate 3", "code": "4,1-0:15.2.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 3", "code": "4,1-0:15.2.3.255" },
+      { "name": "Cumulative Maximum Demand Register - Active (|+A| + |-A|) - rate 4", "code": "4,1-0:15.2.4.255" },
+      { "name": "Capture time - Maximum Demand Register - Active (|+A| + |-A|) - rate 4", "code": "4,1-0:15.2.4.255" },
+      { "name": "Cumulative Maximum Demand Register - Active import (+A)", "code": "4,1-0:1.2.0.255" },
+      { "name": "Capture time - Maximum Demand Register - Active import (+A)", "code": "4,1-0:1.2.0.255" },
+      { "name": "Cumulative Maximum Demand Register - Active import - rate 1 (+A)", "code": "4,1-0:1.2.1.255" },
+      { "name": "Capture time - Maximum Demand Register - Active import - rate 1 (+A)", "code": "4,1-0:1.2.1.255" },
+      { "name": "Cumulative Maximum Demand Register - Active import - rate 2 (+A)", "code": "4,1-0:1.2.2.255" },
+      { "name": "Capture time - Maximum Demand Register - Active import - rate 2 (+A)", "code": "4,1-0:1.2.2.255" },
+      { "name": "Cumulative Maximum Demand Register - Active import - rate 3 (+A)", "code": "4,1-0:1.2.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Active import - rate 3 (+A)", "code": "4,1-0:1.2.3.255" },
+      { "name": "Cumulative Maximum Demand Register - Active import - rate 4 (+A)", "code": "4,1-0:1.2.4.255" },
+      { "name": "Capture time - Maximum Demand Register - Active import - rate 4 (+A)", "code": "4,1-0:1.2.4.255" },
+      { "name": "Cumulative Maximum Demand Register - Active export (-A)", "code": "4,1-0:2.2.0.255" },
+      { "name": "Capture time - Maximum Demand Register - Active export (-A)", "code": "4,1-0:2.2.0.255" },
+      { "name": "Cumulative Maximum Demand Register - Active export - rate 1 (-A)", "code": "4,1-0:2.2.1.255" },
+      { "name": "Capture time - Maximum Demand Register - Active export - rate 1 (-A)", "code": "4,1-0:2.2.1.255" },
+      { "name": "Cumulative Maximum Demand Register - Active export - rate 2 (-A)", "code": "4,1-0:2.2.2.255" },
+      { "name": "Capture time - Maximum Demand Register - Active export - rate 2 (-A)", "code": "4,1-0:2.2.2.255" },
+      { "name": "Cumulative Maximum Demand Register - Active export - rate 3 (-A)", "code": "4,1-0:2.2.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Active export - rate 3 (-A)", "code": "4,1-0:2.2.3.255" },
+      { "name": "Cumulative Maximum Demand Register - Active export - rate 4 (-A)", "code": "4,1-0:2.2.4.255" },
+      { "name": "Capture time - Maximum Demand Register - Active export - rate 4 (-A)", "code": "4,1-0:2.2.4.255" }
+    ]
+  }
+  ,
+  {
+    name: "Reactive Maximum Demand Register",
+    items: [
+      { "name": "Maximum Demand Register - Reactive import (+R)", "code": "4,1-0:3.6.0.255" },
+      { "name": "Capture time - Maximum Demand Register - Reactive import (+R)", "code": "4,1-0:3.6.0.255" },
+      { "name": "Maximum Demand Register - Reactive import (+R) - rate 1", "code": "4,1-0:3.6.1.255" },
+      { "name": "Capture time - Maximum Demand Register - Reactive import (+R) - rate 1", "code": "4,1-0:3.6.1.255" },
+      { "name": "Maximum Demand Register - Reactive import (+R) - rate 2", "code": "4,1-0:3.6.2.255" },
+      { "name": "Capture time - Maximum Demand Register - Reactive import (+R) - rate 2", "code": "4,1-0:3.6.2.255" },
+      { "name": "Maximum Demand Register - Reactive import (+R) - rate 3", "code": "4,1-0:3.6.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Reactive import (+R) - rate 3", "code": "4,1-0:3.6.3.255" },
+      { "name": "Maximum Demand Register - Reactive import (+R) - rate 4", "code": "4,1-0:3.6.4.255" },
+      { "name": "Capture time - Maximum Demand Register - Reactive import (+R) - rate 4", "code": "4,1-0:3.6.4.255" },
+      { "name": "Maximum Demand Register - Reactive export (-R)", "code": "4,1-0:4.6.0.255" },
+      { "name": "Capture time - Maximum Demand Register - Reactive export (-R)", "code": "4,1-0:4.6.0.255" },
+      { "name": "Maximum Demand Register - Reactive export (-R) - rate 1", "code": "4,1-0:4.6.1.255" },
+      { "name": "Capture time - Maximum Demand Register - Reactive export (-R) - rate 1", "code": "4,1-0:4.6.1.255" },
+      { "name": "Maximum Demand Register - Reactive export (-R) - rate 2", "code": "4,1-0:4.6.2.255" },
+      { "name": "Capture time - Maximum Demand Register - Reactive export (-R) - rate 2", "code": "4,1-0:4.6.2.255" },
+      { "name": "Maximum Demand Register - Reactive export (-R) - rate 3", "code": "4,1-0:4.6.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Reactive export (-R) - rate 3", "code": "4,1-0:4.6.3.255" },
+      { "name": "Maximum Demand Register - Reactive export (-R) - rate 4", "code": "4,1-0:4.6.4.255" },
+      { "name": "Capture time - Maximum Demand Register - Reactive export (-R) - rate 4", "code": "4,1-0:4.6.4.255" }
+    ]
+  }
+  ,
+  {
+    name: "Apparent Maximum Demand Register",
+    items: [
+      { "name": "Maximum Demand Register - Apparent import (+VA)", "code": "4,1-0:6.0.255" },
+      { "name": "Capture time - Maximum Demand Register - Apparent import (+VA)", "code": "4,1-0:9.6.0.255" },
+      { "name": "Maximum Demand Register - Apparent import (+VA) - rate 1", "code": "4,1-0:9.6.1.255" },
+      { "name": "Capture time - Maximum Demand Register - Apparent import (+VA) - rate 1", "code": "4,1-0:9.6.1.255" },
+      { "name": "Maximum Demand Register - Apparent import (+VA) - rate 2", "code": "4,1-0:9.6.2.255" },
+      { "name": "Capture time - Maximum Demand Register - Apparent import (+VA) - rate 2", "code": "4,1-0:9.6.2.255" },
+      { "name": "Maximum Demand Register - Apparent import (+VA) - rate 3", "code": "4,1-0:9.6.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Apparent import (+VA) - rate 3", "code": "4,1-0:9.6.3.255" },
+      { "name": "Maximum Demand Register - Apparent import (+VA) - rate 4", "code": "4,1-0:9.6.4.255" },
+      { "name": "Capture time - Maximum Demand Register - Apparent import (+VA) - rate 4", "code": "4,1-0:9.6.4.255" },
+      { "name": "Maximum Demand Register - Apparent export (-VA)", "code": "4,1-0:10.6.0.255" },
+      { "name": "Capture time - Maximum Demand Register - Apparent export (-VA)", "code": "4,1-0:10.6.0.255" },
+      { "name": "Maximum Demand Register - Apparent export (-VA) - rate 1", "code": "4,1-0:10.6.1.255" },
+      { "name": "Capture time - Maximum Demand Register - Apparent export (-VA) - rate 1", "code": "4,1-0:10.6.1.255" },
+      { "name": "Maximum Demand Register - Apparent export (-VA) - rate 2", "code": "4,1-0:10.6.2.255" },
+      { "name": "Capture time - Maximum Demand Register - Apparent export (-VA) - rate 2", "code": "4,1-0:10.6.2.255" },
+      { "name": "Maximum Demand Register - Apparent export (-VA) - rate 3", "code": "4,1-0:10.6.3.255" },
+      { "name": "Capture time - Maximum Demand Register - Apparent export (-VA) - rate 3", "code": "4,1-0:10.6.3.255" },
+      { "name": "Maximum Demand Register - Apparent export (-VA) - rate 4", "code": "4,1-0:10.6.4.255" },
+      { "name": "Capture time - Maximum Demand Register - Apparent export (-VA) - rate 4", "code": "4,1-0:10.6.4.255" }
+    ]
+  },
+
+
+];
+
+const Dailycategories = [
   {
     name: 'Payment',
     items: [
@@ -393,9 +393,9 @@ const DisplayParameters1 = () => {
 
           return found
             ? {
-                ...row,
-                value: found.value,
-              }
+              ...row,
+              value: found.value,
+            }
             : row;
         })
       );
@@ -483,14 +483,18 @@ const DisplayParameters = () => {
   const [checkboxData, setCheckboxData] = useState([
     {
       name: "Sub- interval time for max",
-      code: "(5,1-0:1.4.0.255)",
-      value: "",
+      obis_code: "1.0.1.4.0.255",
+      codes: "(5,1-0:1.4.0.255)",
+      attribute_index: 8,
+      value: " ",
       unit: "s",
       checked: false,
     },
     {
       name: "Sub- interval number for max",
-      code: "(5,1-0:1.4.0.255)",
+      obis_code: "1.0.1.4.0.255",
+      codes: "(5,1-0:1.4.0.255)",
+      attribute_index: 9,
       value: "",
       unit: "s",
       checked: false,
@@ -523,10 +527,8 @@ const DisplayParameters = () => {
     );
   };
 
-  const handleSave = async () => {
-    const selectedItems = checkboxData.filter(
-      (item) => item.checked
-    );
+  const handleSave1 = async () => {
+    const selectedItems = checkboxData.filter((item) => item.checked);
 
     if (selectedItems.length === 0) {
       alert("Please select at least one item");
@@ -535,47 +537,120 @@ const DisplayParameters = () => {
 
     try {
       const payload = {
-        device_id: deviceId,
-        display_data: selectedItems.map((item) => ({
-          name: item.name,
-          code: item.code,
+        // device_id: Number(deviceId),
+        action: "read_obis",
+        serial_number: "Avc",
+        parameters: selectedItems.map((item) => ({
+          // name: item.name,
+          obis_code: item.obis_code,
+          attribute_index: Number(item.attribute_index),
           unit: item.unit,
         })),
       };
 
-      console.log("Display Payload:", payload);
+      console.log("Payload:", payload);
 
       const response = await axios.post(
-        `${BASE_URL}/api/display-parameters/`,
+        `${BASE_URL}/api/getmeterinfo/`,
         payload
       );
 
-      console.log("Display Response:", response.data);
+      console.log("Respossssssssssssssssnse:", response.data);
 
-      const apiData = response.data.data || [];
+      const apiData = response.data.data;
+      console.log(apiData.data.data.value);
 
       setCheckboxData((prev) =>
         prev.map((row) => {
           const found = apiData.find(
-            (item) => item.code === row.code
+            (item) => {
+              return item.obis_code === row.obis_code
+            }
           );
 
           return found
             ? {
-                ...row,
-                value: found.value,
-              }
+              ...row,
+              value: found.value,
+            }
             : row;
         })
       );
     } catch (error) {
-      console.error("Error saving data", error);
+      console.error(error);
 
       if (error.response) {
-        console.log(
-          "Backend Error:",
-          error.response.data
-        );
+        console.log("Backend Error:", error.response.data);
+      }
+    }
+
+  };
+
+
+  const handleSave = async () => {
+    const selectedItems = checkboxData.filter((item) => item.checked);
+
+    if (selectedItems.length === 0) {
+      alert("Please select at least one item");
+      return;
+    }
+
+    try {
+      const payload = {
+        action: "read_obis",
+        serial_number: "Avc",
+        parameters: selectedItems.map((item) => ({
+          obis_code: item.obis_code,
+          attribute_index: Number(item.attribute_index),
+          unit: item.unit,
+        })),
+      };
+
+      console.log("Payload:", payload);
+
+      const response = await axios.post(
+        `${BASE_URL}/api/getmeterinfo/`,
+        payload,
+        {
+          responseType: "text",
+        }
+      );
+
+      console.log("Response:", response.data);
+
+      // Split EventStream lines
+      const events = response.data
+        .split("\n")
+        .filter((line) => line.startsWith("data:"));
+
+      // Convert each event into JSON
+      const apiData = events.map((line) =>
+        JSON.parse(line.replace("data:", "").trim())
+      );
+
+      console.log("Parsed Events:", apiData);
+
+      setCheckboxData((prev) =>
+        prev.map((row) => {
+          const found = apiData.find(
+            (item) =>
+              item.obis_code === row.obis_code &&
+              Number(item.attribute_index) === Number(row.attribute_index)
+          );
+
+          return found
+            ? {
+              ...row,
+              value: found.value,
+            }
+            : row;
+        })
+      );
+    } catch (error) {
+      console.error(error);
+
+      if (error.response) {
+        console.log("Backend Error:", error.response.data);
       }
     }
   };
@@ -601,6 +676,7 @@ const DisplayParameters = () => {
             <th>No</th>
             <th>Name</th>
             <th>Code</th>
+            <th>Attribute Index</th>
             <th>Value</th>
             <th>Unit</th>
           </tr>
@@ -623,7 +699,9 @@ const DisplayParameters = () => {
 
               <td>{item.name}</td>
 
-              <td>{item.code}</td>
+              <td>{item.codes}</td>
+
+              <td>{item.attribute_index}</td>
 
               <td>{item.value}</td>
 
@@ -655,11 +733,11 @@ const MonthlyBillingCaptureObjects1 = () => {
   const [selectedRow, setSelectedRow] = useState(null);
   const rowRefs = useRef([]);
 
- 
+
 
   const [collapsedCategories, setCollapsedCategories] = useState(() => {
-  return new Set((manualCategories || []).map((c) => c.name));
-});
+    return new Set((manualCategories || []).map((c) => c.name));
+  });
 
   /* -------------------------
      Load device id on mount
@@ -951,9 +1029,9 @@ const MonthlyBillingCaptureObjects1 = () => {
                   </button>
 
                   {/* view on right */}
-                  
+
                 </div>
-                
+
               </div>
 
               {/* items list (hidden when collapsed) */}
@@ -1037,43 +1115,43 @@ const MonthlyBillingCaptureObjects1 = () => {
           <span className="tool-text">Last</span>
         </button>
       </div>
-      
+
       {/* RIGHT: saved table */}
-      <div className="sub_container_display_2" > 
-        <div className="display_table"> 
-        <table className='tableTariff1' >
-          <thead>
-            <tr>
-              <th  >Name</th>
-              <th >Code</th>
-             
-            </tr>
-          </thead>
-          <tbody>
-            {(addedItems || []).length === 0 ? (
+      <div className="sub_container_display_2" >
+        <div className="display_table">
+          <table className='tableTariff1' >
+            <thead>
               <tr>
-                <td colSpan={3} style={{ padding: 8 }}>No saved items</td>
+                <th  >Name</th>
+                <th >Code</th>
+
               </tr>
-            ) : (
-              (addedItems || []).map((item, idx) => (
-                <tr
-                  key={item.id || `${item.code}-${idx}`}
-                  ref={(el) => (rowRefs.current[idx] = el)}
-                  className={selectedRow === idx ? "selected-row" : ""}
-                  onClick={() => setSelectedRow(idx)}
-                  style={{
-                    background: selectedRow === idx ? "#eef" : "transparent",
-                    cursor: "pointer",
-                  }}
-                >
-                  <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{item.name}</td>
-                  <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{item.code}</td>
-                 
+            </thead>
+            <tbody>
+              {(addedItems || []).length === 0 ? (
+                <tr>
+                  <td colSpan={3} style={{ padding: 8 }}>No saved items</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                (addedItems || []).map((item, idx) => (
+                  <tr
+                    key={item.id || `${item.code}-${idx}`}
+                    ref={(el) => (rowRefs.current[idx] = el)}
+                    className={selectedRow === idx ? "selected-row" : ""}
+                    onClick={() => setSelectedRow(idx)}
+                    style={{
+                      background: selectedRow === idx ? "#eef" : "transparent",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{item.name}</td>
+                    <td style={{ padding: 8, borderBottom: "1px solid #f0f0f0" }}>{item.code}</td>
+
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -1081,7 +1159,7 @@ const MonthlyBillingCaptureObjects1 = () => {
 };
 
 
-1
+
 
 
 /**
@@ -1454,7 +1532,7 @@ const MonthlyBillingCaptureObjects = () => {
                     type="checkbox"
                     checked={allChecked}
                     onChange={(e) => handleCategoryToggle(cat, e.target.checked)}
-                    // Note: you can set indeterminate programmatically if desired
+                  // Note: you can set indeterminate programmatically if desired
                   />
                   <strong>{cat.name}</strong>
                 </div>
@@ -1468,7 +1546,7 @@ const MonthlyBillingCaptureObjects = () => {
                     {collapsedCategories.has(cat.name) ? "▸" : "◂"}
                   </button>
 
-                 
+
                 </div>
               </div>
 
@@ -1607,9 +1685,9 @@ const DailyBillingCaptureObjects = () => {
   }, []);
 
   // Button state helpers
-const hasSelected = selectedRow !== null;
-const atFirst = hasSelected && selectedRow === 0;
-const atLast = hasSelected && selectedRow === addedItems.length - 1;
+  const hasSelected = selectedRow !== null;
+  const atFirst = hasSelected && selectedRow === 0;
+  const atLast = hasSelected && selectedRow === addedItems.length - 1;
 
   /* -------------------------
      GET – fetch monthly billing
@@ -2008,45 +2086,45 @@ const atLast = hasSelected && selectedRow === addedItems.length - 1;
 
         {/* Navigation buttons */}
         {/* Navigation buttons */}
-<button
-  className="tool-btn"
-  onClick={handleFirst}
-  title="First"
-  disabled={!hasSelected || atFirst}
->
-  <span className="tool-icon">|◀</span>
-  <span className="tool-text">First</span>
-</button>
+        <button
+          className="tool-btn"
+          onClick={handleFirst}
+          title="First"
+          disabled={!hasSelected || atFirst}
+        >
+          <span className="tool-icon">|◀</span>
+          <span className="tool-text">First</span>
+        </button>
 
-<button
-  className="tool-btn"
-  onClick={handlePrevious}
-  title="Previous"
-  disabled={!hasSelected || atFirst}
->
-  <span className="tool-icon">◀</span>
-  <span className="tool-text">Previous</span>
-</button>
+        <button
+          className="tool-btn"
+          onClick={handlePrevious}
+          title="Previous"
+          disabled={!hasSelected || atFirst}
+        >
+          <span className="tool-icon">◀</span>
+          <span className="tool-text">Previous</span>
+        </button>
 
-<button
-  className="tool-btn"
-  onClick={handleNext}
-  title="Next"
-  disabled={!hasSelected || atLast}
->
-  <span className="tool-icon">▶</span>
-  <span className="tool-text">Next</span>
-</button>
+        <button
+          className="tool-btn"
+          onClick={handleNext}
+          title="Next"
+          disabled={!hasSelected || atLast}
+        >
+          <span className="tool-icon">▶</span>
+          <span className="tool-text">Next</span>
+        </button>
 
-<button
-  className="tool-btn"
-  onClick={handleLast}
-  title="Last"
-  disabled={!hasSelected || atLast}
->
-  <span className="tool-icon">▶|</span>
-  <span className="tool-text">Last</span>
-</button>
+        <button
+          className="tool-btn"
+          onClick={handleLast}
+          title="Last"
+          disabled={!hasSelected || atLast}
+        >
+          <span className="tool-icon">▶|</span>
+          <span className="tool-text">Last</span>
+        </button>
       </div>
 
       {/* RIGHT: saved table */}
@@ -2093,57 +2171,57 @@ const atLast = hasSelected && selectedRow === addedItems.length - 1;
 
 const Billing = () => {
   const [activePage, setActivePage] = useState('demand');
-  
+
 
   const handleButtonClick = (page) => {
     setActivePage(page);
   };
 
- 
-
-  
-   
- 
-
- 
-  
 
 
 
 
 
 
- 
 
 
 
 
-  
-  
 
 
-  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   const renderContent = () => {
     switch (activePage) {
       case 'demand':
-      return (
-         <DisplayParameters/>
-      )
-      
+        return (
+          <DisplayParameters />
+        )
+
       case 'monthly':
         return (
-         
 
-           <MonthlyBillingCaptureObjects/>
-          
+
+          <MonthlyBillingCaptureObjects />
+
         );
       case 'daily':
         return (
           <>
-          <DailyBillingCaptureObjects/>
-          
+            <DailyBillingCaptureObjects />
+
           </>
         );
       default:
@@ -2152,67 +2230,64 @@ const Billing = () => {
   };
 
 
-  
+
   return (
     <div>
-      
-     <div
-  className="view-toggle"
-  role="tablist"
-  aria-label="Billing configuration selection"
->
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activePage === "demand"}
-    className={`view-btn ${
-      activePage === "demand" ? "active" : ""
-    }`}
-    onClick={() => {
-      setActivePage("demand");
-      handleButtonClick("demand");
-    }}
-  >
-    Demand Configure
-  </button>
 
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activePage === "monthly"}
-    className={`view-btn ${
-      activePage === "monthly" ? "active" : ""
-    }`}
-    onClick={() => {
-      setActivePage("monthly");
-      handleButtonClick("monthly");
-    }}
-  >
-    Capture Object of Monthly Billing
-  </button>
+      <div
+        className="view-toggle"
+        role="tablist"
+        aria-label="Billing configuration selection"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activePage === "demand"}
+          className={`view-btn ${activePage === "demand" ? "active" : ""
+            }`}
+          onClick={() => {
+            setActivePage("demand");
+            handleButtonClick("demand");
+          }}
+        >
+          Demand Configure
+        </button>
 
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activePage === "daily"}
-    className={`view-btn ${
-      activePage === "daily" ? "active" : ""
-    }`}
-    onClick={() => {
-      setActivePage("daily");
-      handleButtonClick("daily");
-    }}
-  >
-    Capture Object of Daily Billing
-  </button>
-</div>
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activePage === "monthly"}
+          className={`view-btn ${activePage === "monthly" ? "active" : ""
+            }`}
+          onClick={() => {
+            setActivePage("monthly");
+            handleButtonClick("monthly");
+          }}
+        >
+          Capture Object of Monthly Billing
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activePage === "daily"}
+          className={`view-btn ${activePage === "daily" ? "active" : ""
+            }`}
+          onClick={() => {
+            setActivePage("daily");
+            handleButtonClick("daily");
+          }}
+        >
+          Capture Object of Daily Billing
+        </button>
+      </div>
 
 
-      
+
       <div className='load-control-container'>{renderContent()}</div>
 
-    
-      
+
+
     </div>
   );
 };

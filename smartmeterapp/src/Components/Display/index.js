@@ -1580,7 +1580,8 @@ const DisplayParameters = () => {
       checked: false,
       no: 1,
       name: "Auto display scroll interval",
-      code: "(3,1-0:35.5.0.255)",
+      codes: "(3,1-0:35.5.0.255)",
+      code: "1.0.35.5.0.255",
       value: "",
       unit: "s",
     },
@@ -1588,7 +1589,8 @@ const DisplayParameters = () => {
       checked: false,
       no: 2,
       name: "Manual display interval",
-      code: "(3,1-0:35.5.0.256)",
+      codes: "(3,1-0:36.6.0.255)",
+      code: "1.0.36.6.0.255",
       value: "",
       unit: "s",
     },
@@ -1635,7 +1637,7 @@ const DisplayParameters = () => {
       const payload = {
         device_id: deviceId,
         action: "read_obis",
-        serial_number: localStorage.getItem("serial_number") || "",
+        serial_number: localStorage.getItem("selectedSerialNumber") || "",
         parameters: selectedItems.map((item) => ({
           name: item.name,
           code: item.code,
@@ -1708,8 +1710,8 @@ const DisplayParameters = () => {
               </td>
               <td>{param.no}</td>
               <td>{param.name}</td>
-              <td>{param.code}</td>
-              <td>{getValueByCode(param.code) || param.value}</td>
+              <td>{param.codes}</td>
+              <td>{getValueByCode(param.code)}</td>
               <td>{param.unit}</td>
             </tr>
           ))}

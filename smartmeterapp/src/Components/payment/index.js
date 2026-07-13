@@ -1,4 +1,4 @@
-import React, { useState,useEffect,useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
 import './index.css'
@@ -8,9 +8,9 @@ const AccountDetails = () => {
 
 
   const [StatusformData, setStatusformData] = useState({
-    
+
     paymentMode: "EditValue is null", // Default value
-    accountStatus: "EditValue is null", 
+    accountStatus: "EditValue is null",
     currentCreditInUse: "",
     currentCreditStatus: [], // Store multiple selected statuses
     method: "Active account",
@@ -27,52 +27,52 @@ const AccountDetails = () => {
     }));
   };
 
-const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
-    useEffect(() => {
-      const storedId = localStorage.getItem('selectedDeviceId');
-      setDeviceId(storedId);
-    }, []);
+  const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
+
+  useEffect(() => {
+    const storedId = localStorage.getItem('selectedDeviceId');
+    setDeviceId(storedId);
+  }, []);
 
 
   const handleSubmit = async () => {
     //////////update code Bug0022**************
-    
+
     const requestData = [{
-    device_id: deviceId,
-    payment_mode: StatusformData.paymentMode,
-    account_status: StatusformData.accountStatus,
-    current_credit_in_use: StatusformData.currentCreditInUse,
-    current_credit_status: StatusformData.currentCreditStatus,
-    method: StatusformData.method,
-  }];
+      device_id: deviceId,
+      payment_mode: StatusformData.paymentMode,
+      account_status: StatusformData.accountStatus,
+      current_credit_in_use: StatusformData.currentCreditInUse,
+      current_credit_status: StatusformData.currentCreditStatus,
+      method: StatusformData.method,
+    }];
 
-  // Validate all fields
-  const formData = requestData[0];
+    // Validate all fields
+    const formData = requestData[0];
 
-  const missingFields = Object.entries(formData)
-    .filter(([key, value]) =>
-      value === "" ||
-      value === null ||
-      value === "EditValue is null" ||
-      value === undefined 
-      //(Array.isArray(value) && value.length === 0)
-    )
-    .map(([key]) => key.replace(/_/g, " "));
+    const missingFields = Object.entries(formData)
+      .filter(([key, value]) =>
+        value === "" ||
+        value === null ||
+        value === "EditValue is null" ||
+        value === undefined
+        //(Array.isArray(value) && value.length === 0)
+      )
+      .map(([key]) => key.replace(/_/g, " "));
 
-  if (missingFields.length > 0) {
-    alert(
-      `Please fill all required fields:\n\n${missingFields.join("\n")}`
-    );
-    return;
-  }
+    if (missingFields.length > 0) {
+      alert(
+        `Please fill all required fields:\n\n${missingFields.join("\n")}`
+      );
+      return;
+    }
 
-  console.log("Request Data:", requestData);
+    console.log("Request Data:", requestData);
 
-  ///////////////end update bug 0023 
-  
+    ///////////////end update bug 0023 
+
     console.log("Request Data", requestData); // Debug log
-  
+
     try {
       const response = await axios.post(`${BASE_URL}/api/account-details-status/`, requestData);
       alert("Data submitted successfully!");
@@ -88,7 +88,7 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
       }
     }
   };
-  
+
 
 
   const [valueFormData, setValueFormData] = useState({
@@ -132,80 +132,80 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
 
   const valueHandleSubmit = async (e) => {
     e.preventDefault();
-   
-  
-  const isEmpty = (val) =>
-    val === "" || val === null || val === undefined;
 
-  const isInvalidNumber = (val) =>
-    isEmpty(val) || Number.isNaN(Number(val));
 
-  const convertToUTC = (datetimeStr) => {
-    if (isEmpty(datetimeStr)) return null;
+    const isEmpty = (val) =>
+      val === "" || val === null || val === undefined;
 
-    const date = new Date(datetimeStr);
-    if (Number.isNaN(date.getTime())) return null;
+    const isInvalidNumber = (val) =>
+      isEmpty(val) || Number.isNaN(Number(val));
 
-    return new Date(
-      date.getTime() - date.getTimezoneOffset() * 60000
-    ).toISOString();
-  };
+    const convertToUTC = (datetimeStr) => {
+      if (isEmpty(datetimeStr)) return null;
 
-  const missingFields = [];
+      const date = new Date(datetimeStr);
+      if (Number.isNaN(date.getTime())) return null;
 
-  if (isInvalidNumber(valueFormData.availableCredit))
-    missingFields.push("available credit");
-  if (isInvalidNumber(valueFormData.amountToClear))
-    missingFields.push("amount to clear");
-  if (isInvalidNumber(valueFormData.clearanceThreshold))
-    missingFields.push("clearance threshold");
-  if (isInvalidNumber(valueFormData.aggregatedDebt))
-    missingFields.push("aggregated debt");
+      return new Date(
+        date.getTime() - date.getTimezoneOffset() * 60000
+      ).toISOString();
+    };
 
-  if (isEmpty(valueFormData.accountActivationTime))
-    missingFields.push("account activation time");
-  if (isEmpty(valueFormData.accountClosureTime))
-    missingFields.push("account closure time");
+    const missingFields = [];
 
-  if (!valueFormData.currency || isEmpty(valueFormData.currency.name))
-    missingFields.push("currency name");
-  if (!valueFormData.currency || isEmpty(valueFormData.currency.scale))
-    missingFields.push("currency scale");
-  if (!valueFormData.currency || isEmpty(valueFormData.currency.unit))
-    missingFields.push("currency unit name");
+    if (isInvalidNumber(valueFormData.availableCredit))
+      missingFields.push("available credit");
+    if (isInvalidNumber(valueFormData.amountToClear))
+      missingFields.push("amount to clear");
+    if (isInvalidNumber(valueFormData.clearanceThreshold))
+      missingFields.push("clearance threshold");
+    if (isInvalidNumber(valueFormData.aggregatedDebt))
+      missingFields.push("aggregated debt");
 
-  if (isInvalidNumber(valueFormData.lowCreditThreshold))
-    missingFields.push("low credit threshold");
-  if (isInvalidNumber(valueFormData.nextCreditAvailableThreshold))
-    missingFields.push("next credit available threshold");
-  if (isInvalidNumber(valueFormData.maxProvision))
-    missingFields.push("max provision");
-  if (isInvalidNumber(valueFormData.maxProvisionPeriod))
-    missingFields.push("max provision period");
+    if (isEmpty(valueFormData.accountActivationTime))
+      missingFields.push("account activation time");
+    if (isEmpty(valueFormData.accountClosureTime))
+      missingFields.push("account closure time");
 
-  if (!deviceId) {
-    missingFields.push("device id");
-  }
+    if (!valueFormData.currency || isEmpty(valueFormData.currency.name))
+      missingFields.push("currency name");
+    if (!valueFormData.currency || isEmpty(valueFormData.currency.scale))
+      missingFields.push("currency scale");
+    if (!valueFormData.currency || isEmpty(valueFormData.currency.unit))
+      missingFields.push("currency unit name");
 
-  const activationTime = convertToUTC(valueFormData.accountActivationTime);
-  const closureTime = convertToUTC(valueFormData.accountClosureTime);
+    if (isInvalidNumber(valueFormData.lowCreditThreshold))
+      missingFields.push("low credit threshold");
+    if (isInvalidNumber(valueFormData.nextCreditAvailableThreshold))
+      missingFields.push("next credit available threshold");
+    if (isInvalidNumber(valueFormData.maxProvision))
+      missingFields.push("max provision");
+    if (isInvalidNumber(valueFormData.maxProvisionPeriod))
+      missingFields.push("max provision period");
 
-  if (!activationTime) {
-    missingFields.push("valid account activation time");
-  }
+    if (!deviceId) {
+      missingFields.push("device id");
+    }
 
-  if (!closureTime) {
-    missingFields.push("valid account closure time");
-  }
+    const activationTime = convertToUTC(valueFormData.accountActivationTime);
+    const closureTime = convertToUTC(valueFormData.accountClosureTime);
 
-  if (missingFields.length > 0) {
-    alert(`Please fill the following details:\n\n${missingFields.join("\n")}`);
-    return;
-  }
-    
+    if (!activationTime) {
+      missingFields.push("valid account activation time");
+    }
+
+    if (!closureTime) {
+      missingFields.push("valid account closure time");
+    }
+
+    if (missingFields.length > 0) {
+      alert(`Please fill the following details:\n\n${missingFields.join("\n")}`);
+      return;
+    }
+
     // Convert the dates to UTC before sending
     const formattedData = {
-      device_id:deviceId,
+      device_id: deviceId,
       available_credit: parseFloat(valueFormData.availableCredit),
       amount_to_clear: parseFloat(valueFormData.amountToClear),
       clearance_threshold: parseFloat(valueFormData.clearanceThreshold),
@@ -220,10 +220,10 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
       max_provision: parseFloat(valueFormData.maxProvision),
       max_provision_period: parseInt(valueFormData.maxProvisionPeriod),
     };
-    
+
 
     console.log(formattedData)
-  
+
     try {
       const response = await axios.post(`${BASE_URL}/api/account-details-values/`, [formattedData]);
       console.log("Data sent successfully:", response.data);
@@ -233,8 +233,8 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
       alert("Failed to submit data!");
     }
   };
-  
- 
+
+
 
 
   const [creditReferences, setCreditReferences] = useState([]);
@@ -248,57 +248,57 @@ const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDev
 
   // Add a new credit reference to the list
   const handleAddReference = () => {
-   
+
     CreditReferenceListHandleSubmit()
   };
 
 
 
   // Submit all credit references to the backend
-const CreditReferenceListHandleSubmit = async () => {
-  console.log("creditReferences", newReference);
+  const CreditReferenceListHandleSubmit = async () => {
+    console.log("creditReferences", newReference);
 
-  // Format data to match the backend expectations
-  const formattedData = [{
+    // Format data to match the backend expectations
+    const formattedData = [{
       device_id: deviceId, // You can dynamically set the device_id as needed
       credit_reference: newReference,
-  }];
+    }];
 
-  try {
+    try {
       // Send the formatted data to the backend
       const response = await axios.post(`${BASE_URL}/api/credit-reference/`, formattedData);
-      
+
       // Handle successful response
       console.log("Credit references saved successfully:", response.data);
       alert("Credit references saved successfully!");
-  } catch (error) {
+    } catch (error) {
       // Handle error
       console.error("Error saving credit references:", error);
       alert("Failed to save credit references.");
-  }
-};
+    }
+  };
 
 
-const fetchCreditReferences = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/api/credit-reference/${deviceId}/`);
-    setCreditReferences(response.data);
-  } catch (error) {
-    console.error("Error fetching credit references:", error);
-    alert("Failed to fetch credit references.");
-  }
-};
+  const fetchCreditReferences = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/credit-reference/${deviceId}/`);
+      setCreditReferences(response.data);
+    } catch (error) {
+      console.error("Error fetching credit references:", error);
+      alert("Failed to fetch credit references.");
+    }
+  };
 
 
 
-useEffect(() => {
-  fetchCreditReferences();
-  getCreditChargeConfig(deviceId)
-  fetchGatewayConfigs(deviceId)
-  
+  useEffect(() => {
+    fetchCreditReferences();
+    getCreditChargeConfig(deviceId)
+    fetchGatewayConfigs(deviceId)
+
   }, []);
 
-  
+
 
   // Toggle adding new credit reference form
   const toggleAddForm = () => {
@@ -323,38 +323,38 @@ useEffect(() => {
 
   // Add a new credit charge configuration to the list
   const handleAddConfig = () => {
-    createCreditChargeConfig(deviceId,newCreditReference,newChargeReference)
+    createCreditChargeConfig(deviceId, newCreditReference, newChargeReference)
   };
 
 
 
 
-const createCreditChargeConfig = async (deviceId, creditReference, chargeReference) => {
+  const createCreditChargeConfig = async (deviceId, creditReference, chargeReference) => {
     try {
-        const response = await axios.post(`${BASE_URL}/api/credit-charge-config/`, [
-            {
-                device_id: deviceId,
-                credit_reference: creditReference,
-                charge_reference: chargeReference,
-            }
-        ]);
-        console.log("Credit Charge Config Created:", response.data);
+      const response = await axios.post(`${BASE_URL}/api/credit-charge-config/`, [
+        {
+          device_id: deviceId,
+          credit_reference: creditReference,
+          charge_reference: chargeReference,
+        }
+      ]);
+      console.log("Credit Charge Config Created:", response.data);
     } catch (error) {
-        console.error("Error creating Credit Charge Config:", error);
+      console.error("Error creating Credit Charge Config:", error);
     }
-};
+  };
 
 
 
-const getCreditChargeConfig = async (deviceId) => {
+  const getCreditChargeConfig = async (deviceId) => {
     try {
-        const response = await axios.get(`${BASE_URL}/api/credit-charge-config/${deviceId}/`);
-        console.log("Credit Charge Configs:", response.data);
-        setCreditChargeConfig(response.data)
+      const response = await axios.get(`${BASE_URL}/api/credit-charge-config/${deviceId}/`);
+      console.log("Credit Charge Configs:", response.data);
+      setCreditChargeConfig(response.data)
     } catch (error) {
-        console.error("Error fetching Credit Charge Configs:", error);
+      console.error("Error fetching Credit Charge Configs:", error);
     }
-};
+  };
 
 
   // Submit all credit charge configurations to the backend
@@ -377,127 +377,127 @@ const getCreditChargeConfig = async (deviceId) => {
   };
 
 
-    const [gatewayConfigs, setGatewayConfigs] = useState([]); // Stores list of token gateway configurations
-    const [creditRef, setCreditRef] = useState(""); // Stores the new credit reference
-    const [tokenProp, setTokenProp] = useState(""); // Stores the new token proportion
-    const [isAddingNewConfig, setIsAddingNewConfig] = useState(false); // Toggles form for adding new config
-  
-    // Handles input change for credit reference and token proportion
-    const handleConfigInputChange = (e) => {
-      const { name, value } = e.target;
-      if (name === "creditReference") {
-        setCreditRef(value);
-      } else if (name === "tokenProportion") {
-        setTokenProp(value);
-      }
-    };
-  
-    // Adds a new configuration to the list of token gateway configurations
-    const addNewTokenConfig = () => {
-      console.log("hello")
-      createTokenGatewayConfig(1,creditRef,tokenProp)
-    };
-  
-   
-  
-    // Toggles the form to add new token gateway configuration
-    const toggleAddTokenConfigForm = () => {
-      setIsAddingNewConfig(!isAddingNewConfig); // Toggle the add config form visibility
-    
+  const [gatewayConfigs, setGatewayConfigs] = useState([]); // Stores list of token gateway configurations
+  const [creditRef, setCreditRef] = useState(""); // Stores the new credit reference
+  const [tokenProp, setTokenProp] = useState(""); // Stores the new token proportion
+  const [isAddingNewConfig, setIsAddingNewConfig] = useState(false); // Toggles form for adding new config
+
+  // Handles input change for credit reference and token proportion
+  const handleConfigInputChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "creditReference") {
+      setCreditRef(value);
+    } else if (name === "tokenProportion") {
+      setTokenProp(value);
     }
+  };
+
+  // Adds a new configuration to the list of token gateway configurations
+  const addNewTokenConfig = () => {
+    console.log("hello")
+    createTokenGatewayConfig(1, creditRef, tokenProp)
+  };
 
 
-    
-    
-const createTokenGatewayConfig = async (deviceId, creditRef, tokenProp) => {
-  try {
+
+  // Toggles the form to add new token gateway configuration
+  const toggleAddTokenConfigForm = () => {
+    setIsAddingNewConfig(!isAddingNewConfig); // Toggle the add config form visibility
+
+  }
+
+
+
+
+  const createTokenGatewayConfig = async (deviceId, creditRef, tokenProp) => {
+    try {
       const response = await axios.post(`${BASE_URL}/api/token-gateway-config/`, [
-          {
-              device_id: deviceId,                 
-            credit_reference: creditRef,
-              token_proportion: tokenProp,
-          }
+        {
+          device_id: deviceId,
+          credit_reference: creditRef,
+          token_proportion: tokenProp,
+        }
       ]);
       console.log("Credit Charge Config Created:", response.data);
-  } catch (error) {
+    } catch (error) {
       console.error("Error creating Credit Charge Config:", error);
-  }
-};
-
-
-const fetchGatewayConfigs = async (deviceId) => {
-  try {
-    if (deviceId) {
-      const response = await axios.get(
-        `${BASE_URL}/api/token-gateway-config/${deviceId}/`
-      );
-      setGatewayConfigs(response.data);
     }
-  } catch (error) {
-    console.error("Error fetching token gateway configs:", error);
-  }
-};
+  };
 
-  
+
+  const fetchGatewayConfigs = async (deviceId) => {
+    try {
+      if (deviceId) {
+        const response = await axios.get(
+          `${BASE_URL}/api/token-gateway-config/${deviceId}/`
+        );
+        setGatewayConfigs(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching token gateway configs:", error);
+    }
+  };
+
+
   const renderContent = () => {
     switch (activeTab) {
       case 'status':
         return (
-           
-           
-            <div>
-              {/* Account Mode and Status */}
-      <div className="security-form">        
 
 
-  <label>
-    <span> Payment Mode </span>
-  <select
-    id="paymentMode"
-    name="paymentMode"
-    value={StatusformData.paymentMode || "EditValue is null"}
-    onChange={handleChange}
-  >
-    <option value="EditValue is null" disabled>
-      EditValue is null
-    </option>
-    <option value="credit">Credit Mode</option>
-    <option value="prepayment">Prepayment Mode</option>
-  </select>
-  </label>
- 
-
-</div>
+          <div>
+            {/* Account Mode and Status */}
+            <div className="security-form">
 
 
-  
-      
-      
-              {/* Account Status */}
-                          <div className="security-form">
+              <label>
+                <span> Payment Mode </span>
+                <select
+                  id="paymentMode"
+                  name="paymentMode"
+                  value={StatusformData.paymentMode || "EditValue is null"}
+                  onChange={handleChange}
+                >
+                  <option value="EditValue is null" disabled>
+                    EditValue is null
+                  </option>
+                  <option value="credit">Credit Mode</option>
+                  <option value="prepayment">Prepayment Mode</option>
+                </select>
+              </label>
+
+
+            </div>
+
+
+
+
+
+            {/* Account Status */}
+            <div className="security-form">
               <label>
                 <span> Account Status: </span>
-              <select
-                id="accountStatus"
-                name="accountStatus"
-                value={StatusformData.accountStatus || "EditValue is null"}
-                onChange={handleChange}
-              >
-                <option value="EditValue is null" disabled>
-                  EditValue is null
-                </option>
-                <option value="new_inactive">New Inactive Account</option>
-                <option value="active">Account Active</option>
-                <option value="closed">Account Closed</option>
-              </select>
+                <select
+                  id="accountStatus"
+                  name="accountStatus"
+                  value={StatusformData.accountStatus || "EditValue is null"}
+                  onChange={handleChange}
+                >
+                  <option value="EditValue is null" disabled>
+                    EditValue is null
+                  </option>
+                  <option value="new_inactive">New Inactive Account</option>
+                  <option value="active">Account Active</option>
+                  <option value="closed">Account Closed</option>
+                </select>
               </label>
             </div>
 
-      
-              {/* Current Credit in Use */}
-              <div className="security-form">
-                <label>
-                  <span> Current Credit in Use: </span>
+
+            {/* Current Credit in Use */}
+            <div className="security-form">
+              <label>
+                <span> Current Credit in Use: </span>
                 <input
                   type="number"
                   name="currentCreditInUse"
@@ -505,262 +505,262 @@ const fetchGatewayConfigs = async (deviceId) => {
                   onChange={handleChange}
                   placeholder="Enter current credit in use"
                 />
-                </label>
+              </label>
+            </div>
+
+
+
+            {/* Current Credit Status */}
+            <div className="ppp-container" style={{ marginTop: "2%", padding: '2%' }}>
+              <p className="ppp-heading ">  Current Credit Status</p>
+
+              <div className="options-grid">
+                {[
+                  "In Credit",
+                  "Low Credit",
+                  "Next Credit Enabled",
+                  "Next Credit Selectable",
+                  "Next Credit Selected",
+                  "Next Selectable Credit in Use",
+                  "Out of Credit",
+                ].map((status) => (
+                  <label className="option-label" key={status}>
+                    <input
+                      type="checkbox"
+                      className="option-checkbox"
+                      name="currentCreditStatus"
+                      value={status}
+                      checked={StatusformData.currentCreditStatus.includes(status)}
+                      onChange={(e) => {
+                        const { value, checked } = e.target;
+                        setStatusformData((prev) => ({
+                          ...prev,
+                          currentCreditStatus: checked
+                            ? [...prev.currentCreditStatus, value] // Add status if checked
+                            : prev.currentCreditStatus.filter((s) => s !== value), // Remove if unchecked
+                        }));
+                      }}
+                    />
+                    <span className="option-text">    {status} </span>
+
+
+                  </label>
+                ))}
               </div>
+            </div>
 
-               
-      
-              {/* Current Credit Status */}
-              <div className="ppp-container" style={{marginTop:"2%",padding:'2%'}}>
-                <p className="ppp-heading ">  Current Credit Status</p>
-  
-  <div className="options-grid">
-    {[
-      "In Credit",
-      "Low Credit",
-      "Next Credit Enabled",
-      "Next Credit Selectable",
-      "Next Credit Selected",
-      "Next Selectable Credit in Use",
-      "Out of Credit",
-    ].map((status) => (
-      <label  className="option-label"    key={status}>
-        <input
-          type="checkbox"
-          className="option-checkbox"
-          name="currentCreditStatus"
-          value={status}
-          checked={StatusformData.currentCreditStatus.includes(status)}
-          onChange={(e) => {
-            const { value, checked } = e.target;
-            setStatusformData((prev) => ({
-              ...prev,
-              currentCreditStatus: checked
-                ? [...prev.currentCreditStatus, value] // Add status if checked
-                : prev.currentCreditStatus.filter((s) => s !== value), // Remove if unchecked
-            }));
-          }}
-        />
-        <span className="option-text">    {status} </span>
-      
-       
-      </label>
-    ))}
-  </div>
-</div>
 
-      
-              {/* Method */}
-              <div className="security-form">
-                <label>
-                  <span> Method:  </span>
+            {/* Method */}
+            <div className="security-form">
+              <label>
+                <span> Method:  </span>
                 <select name="method" value={StatusformData.method} onChange={handleChange}>
                   <option value="Active account">Active Account</option>
                   <option value="Inactive account">Inactive Account</option>
                 </select>
-                </label>
-              </div>
-      
-              {/* Submit Button */}
-              <button style={{marginLeft:"40%"}} className='scheduler-add-button' onClick={handleSubmit}>
-                Submit
-              </button>
+              </label>
             </div>
-           
-         
+
+            {/* Submit Button */}
+            <button style={{ marginLeft: "40%" }} className='scheduler-add-button' onClick={handleSubmit}>
+              Submit
+            </button>
+          </div>
+
+
         );
       case 'value':
         return (
-            <form onSubmit={valueHandleSubmit}>
+          <form onSubmit={valueHandleSubmit}>
 
-  <div className="security-form">
-    <label>
-      <span>Available Credit:</span>
-      <input
-        type="number"
-        name="availableCredit"
-        value={valueFormData.availableCredit}
-        onChange={valueHandleInputChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Available Credit:</span>
+                <input
+                  type="number"
+                  name="availableCredit"
+                  value={valueFormData.availableCredit}
+                  onChange={valueHandleInputChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Amount to Clear:</span>
-      <input
-        type="number"
-        name="amountToClear"
-        value={valueFormData.amountToClear}
-        onChange={valueHandleInputChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Amount to Clear:</span>
+                <input
+                  type="number"
+                  name="amountToClear"
+                  value={valueFormData.amountToClear}
+                  onChange={valueHandleInputChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Clearance Threshold:</span>
-      <input
-        type="number"
-        name="clearanceThreshold"
-        value={valueFormData.clearanceThreshold}
-        onChange={valueHandleInputChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Clearance Threshold:</span>
+                <input
+                  type="number"
+                  name="clearanceThreshold"
+                  value={valueFormData.clearanceThreshold}
+                  onChange={valueHandleInputChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Aggregated Debt:</span>
-      <input
-        type="number"
-        name="aggregatedDebt"
-        value={valueFormData.aggregatedDebt}
-        onChange={valueHandleInputChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Aggregated Debt:</span>
+                <input
+                  type="number"
+                  name="aggregatedDebt"
+                  value={valueFormData.aggregatedDebt}
+                  onChange={valueHandleInputChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Account Activation Time:</span>
-      <input
-        type="datetime-local"
-        name="accountActivationTime"
-        value={valueFormData.accountActivationTime}
-        onChange={valueHandleInputChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Account Activation Time:</span>
+                <input
+                  type="datetime-local"
+                  name="accountActivationTime"
+                  value={valueFormData.accountActivationTime}
+                  onChange={valueHandleInputChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Account Closure Time:</span>
-      <input
-        type="datetime-local"
-        name="accountClosureTime"
-        value={valueFormData.accountClosureTime}
-        onChange={valueHandleInputChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Account Closure Time:</span>
+                <input
+                  type="datetime-local"
+                  name="accountClosureTime"
+                  value={valueFormData.accountClosureTime}
+                  onChange={valueHandleInputChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Currency Name:</span>
-      <input
-        type="text"
-        name="name"
-        value={valueFormData.currency.name}
-        onChange={valueHandleCurrencyChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Currency Name:</span>
+                <input
+                  type="text"
+                  name="name"
+                  value={valueFormData.currency.name}
+                  onChange={valueHandleCurrencyChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Currency Scale:</span>
-      <input
-        type="number"
-        name="scale"
-        value={valueFormData.currency.scale}
-        onChange={valueHandleCurrencyChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Currency Scale:</span>
+                <input
+                  type="number"
+                  name="scale"
+                  value={valueFormData.currency.scale}
+                  onChange={valueHandleCurrencyChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Currency Unit:</span>
-      <input
-        type="text"
-        name="unit"
-        value={valueFormData.currency.unit}
-        onChange={valueHandleCurrencyChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Currency Unit:</span>
+                <input
+                  type="text"
+                  name="unit"
+                  value={valueFormData.currency.unit}
+                  onChange={valueHandleCurrencyChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Low Credit Threshold:</span>
-      <input
-        type="number"
-        name="lowCreditThreshold"
-        value={valueFormData.lowCreditThreshold}
-        onChange={valueHandleInputChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Low Credit Threshold:</span>
+                <input
+                  type="number"
+                  name="lowCreditThreshold"
+                  value={valueFormData.lowCreditThreshold}
+                  onChange={valueHandleInputChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Next Credit Available Threshold:</span>
-      <input
-        type="number"
-        name="nextCreditAvailableThreshold"
-        value={valueFormData.nextCreditAvailableThreshold}
-        onChange={valueHandleInputChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Next Credit Available Threshold:</span>
+                <input
+                  type="number"
+                  name="nextCreditAvailableThreshold"
+                  value={valueFormData.nextCreditAvailableThreshold}
+                  onChange={valueHandleInputChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Max Provision:</span>
-      <input
-        type="number"
-        name="maxProvision"
-        value={valueFormData.maxProvision}
-        onChange={valueHandleInputChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Max Provision:</span>
+                <input
+                  type="number"
+                  name="maxProvision"
+                  value={valueFormData.maxProvision}
+                  onChange={valueHandleInputChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Max Provision Period:</span>
-      <input
-        type="number"
-        name="maxProvisionPeriod"
-        value={valueFormData.maxProvisionPeriod}
-        onChange={valueHandleInputChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Max Provision Period:</span>
+                <input
+                  type="number"
+                  name="maxProvisionPeriod"
+                  value={valueFormData.maxProvisionPeriod}
+                  onChange={valueHandleInputChange}
+                />
+              </label>
+            </div>
 
-  <button  style={{marginLeft:"40%"}} className='scheduler-add-button' type="submit">Submit</button>
+            <button style={{ marginLeft: "40%" }} className='scheduler-add-button' type="submit">Submit</button>
 
-</form>
+          </form>
         );
-      
-        case 'creditRefList':
+
+      case 'creditRefList':
         return (
-           
-           
-           <div style={{margin:"2%"}}>
-           
-      
-            
-              <div className="security-form">
-                <label> 
-                   <span onClick={handleAddReference}>
-                    <button style={{marginLeft:"10%"}} className='scheduler-add-button'>Add Reference </button></span>
+
+
+          <div style={{ margin: "2%" }}>
+
+
+
+            <div className="security-form">
+              <label>
+                <span onClick={handleAddReference}>
+                  <button style={{ marginLeft: "10%" }} className='scheduler-add-button'>Add Reference </button></span>
                 <input
                   type="text"
                   value={newReference}
                   onChange={CreditReferenceListHandleInput}
                   placeholder="Enter credit reference"
                 />
-                </label>
-               
-              </div>
-             
-              
-            
-      
-            <div className='table-container-autoanswer' style={{marginTop:'4%'}}>
-             
+              </label>
+
+            </div>
+
+
+
+
+            <div className='table-container-autoanswer' style={{ marginTop: '4%' }}>
+
               <table className='tableTariff1'>
                 <thead>
                   <tr>
@@ -772,42 +772,42 @@ const fetchGatewayConfigs = async (deviceId) => {
                   {creditReferences.map((reference, index) => (
                     <tr key={index}>
                       <td>{index + 1}</td>
-                      <td>{reference.credit_reference}</td> 
+                      <td>{reference.credit_reference}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-      
-           
+
+
           </div>
         );
-        
+
       case 'creditChargeConfig':
         return (
-            <div>
-            
+          <div>
 
 
 
-              <div className="security-form">
-                <label> 
-                   <span onClick={handleAddConfig}>
-                    <button style={{marginLeft:"10%"}} className='scheduler-add-button'>Add Configuration </button></span>
-               <input
-  type="text"
-  value={newCreditReference}
-  onChange={(e) => setNewCreditReference(e.target.value)}
-  placeholder="Enter credit reference"
-/>
-                </label>
-               
-              </div>
-             
-              
-      
-            <div className='table-container-autoanswer' style={{marginTop:'4%'}}>
-             
+
+            <div className="security-form">
+              <label>
+                <span onClick={handleAddConfig}>
+                  <button style={{ marginLeft: "10%" }} className='scheduler-add-button'>Add Configuration </button></span>
+                <input
+                  type="text"
+                  value={newCreditReference}
+                  onChange={(e) => setNewCreditReference(e.target.value)}
+                  placeholder="Enter credit reference"
+                />
+              </label>
+
+            </div>
+
+
+
+            <div className='table-container-autoanswer' style={{ marginTop: '4%' }}>
+
               <table className='tableTariff1'>
                 <thead>
                   <tr>
@@ -827,7 +827,7 @@ const fetchGatewayConfigs = async (deviceId) => {
                 </tbody>
               </table>
             </div>
-      
+
             {creditChargeConfig.length > 0 && (
               <button onClick={CreditChargeConfigHandleSubmit}>
                 Save Credit Charge Configurations
@@ -837,13 +837,13 @@ const fetchGatewayConfigs = async (deviceId) => {
         );
       case 'tokenGatewayConfig':
         return (
-            <div>
-            
-      
-           
-              <div className="security-form">
-                <label> 
-                  <span>   Credit reference </span>
+          <div>
+
+
+
+            <div className="security-form">
+              <label>
+                <span>   Credit reference </span>
                 <input
                   type="text"
                   name="creditReference"
@@ -851,11 +851,11 @@ const fetchGatewayConfigs = async (deviceId) => {
                   onChange={handleConfigInputChange}
                   placeholder="Enter credit reference"
                 />
-                </label> 
-                </div> 
-                <div className="security-form"> 
-                  <label> 
-                    <span>  Token proportion </span>
+              </label>
+            </div>
+            <div className="security-form">
+              <label>
+                <span>  Token proportion </span>
                 <input
                   type="text"
                   name="tokenProportion"
@@ -863,17 +863,17 @@ const fetchGatewayConfigs = async (deviceId) => {
                   onChange={handleConfigInputChange}
                   placeholder="Enter token proportion"
                 />
-                </label>
-               
-              </div>
+              </label>
 
-               <button style={{marginLeft:"40%"}} className='scheduler-add-button' onClick={addNewTokenConfig}>Add Configuration</button>
-           
-      
+            </div>
 
-      
-            <div className='table-container-autoanswer' style={{marginTop:'4%'}}>
-            
+            <button style={{ marginLeft: "40%" }} className='scheduler-add-button' onClick={addNewTokenConfig}>Add Configuration</button>
+
+
+
+
+            <div className='table-container-autoanswer' style={{ marginTop: '4%' }}>
+
               <table className="tableTariff1">
                 <thead>
                   <tr>
@@ -893,8 +893,8 @@ const fetchGatewayConfigs = async (deviceId) => {
                 </tbody>
               </table>
             </div>
-      
-           
+
+
           </div>
         );
       default:
@@ -902,7 +902,7 @@ const fetchGatewayConfigs = async (deviceId) => {
     }
   };
 
-   const tabs = [
+  const tabs = [
     { key: "status", label: "Status" },
     { key: "value", label: "Value" },
     { key: "creditRefList", label: "Credit Reference List" },
@@ -957,25 +957,25 @@ const fetchGatewayConfigs = async (deviceId) => {
 
   return (
     <div >
-      
-       <div className="controlsGroup_tabs" ref={containerRef} role="tablist" aria-label="Credit tabs">
-      {tabs.map((t) => (
-        <button
-          key={t.key}
-          ref={(el) => (buttonRefs.current[t.key] = el)}
-          className={`tou_button ${activeTab === t.key ? "activeButton" : ""}`}
-          onClick={() => setActiveTab(t.key)}
-          type="button"
-          role="tab"
-          aria-pressed={activeTab === t.key}
-        >
-          {t.label}
-        </button>
-      ))}
 
-      <div ref={underlineRef} className="underline" aria-hidden="true" />
-    </div>
-      
+      <div className="controlsGroup_tabs" ref={containerRef} role="tablist" aria-label="Credit tabs">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            ref={(el) => (buttonRefs.current[t.key] = el)}
+            className={`tou_button ${activeTab === t.key ? "activeButton" : ""}`}
+            onClick={() => setActiveTab(t.key)}
+            type="button"
+            role="tab"
+            aria-pressed={activeTab === t.key}
+          >
+            {t.label}
+          </button>
+        ))}
+
+        <div ref={underlineRef} className="underline" aria-hidden="true" />
+      </div>
+
       <div className="content-container">
         {renderContent()}
       </div>
@@ -993,17 +993,17 @@ const Credit = () => {
 
   const [activePage, setActivePage] = useState("tokenCredit");
 
-  
+
 
   const [isTokenValueActive, setIsTokenValueActive] = useState(true); // State to manage which section is active
   const [TokenValuesData, setTokenValuesData] = useState({
-    
+
     currentCreditAmount: 0,
     creditType: "prepaid",
     priority: 0,
     limit: 0,
     creditConfiguration: "",
-    presetCreditAmount:0,
+    presetCreditAmount: 0,
     creditAvailableThreshold: 0,
     period: "",
   });
@@ -1020,19 +1020,19 @@ const Credit = () => {
 
 
   const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
-    useEffect(() => {
-      const storedId = localStorage.getItem('selectedDeviceId');
-      setDeviceId(storedId);
-    }, []);
-  
 
- 
+  useEffect(() => {
+    const storedId = localStorage.getItem('selectedDeviceId');
+    setDeviceId(storedId);
+  }, []);
+
+
+
   const tokenValueHandleSubmit1 = (e) => {
     e.preventDefault();
 
-  
-    
+
+
     axios.post(`${BASE_URL}/api/token-credit/`, [{
       device_id: deviceId,  // This matches the backend expected field
       current_credit_amount: TokenValuesData.currentCreditAmount,
@@ -1052,54 +1052,54 @@ const Credit = () => {
       });
   };
 
-//***********33333333333333 */
- ////////////****** */
+  //***********33333333333333 */
+  ////////////****** */
   const tokenValueHandleSubmit = (e) => {
     e.preventDefault();
 
     ////////////****** */
 
 
-      const isEmpty = (val) =>
-    val === "" || val === null || val === undefined;
+    const isEmpty = (val) =>
+      val === "" || val === null || val === undefined;
 
-  const missingFields = [];
+    const missingFields = [];
 
-  if (isEmpty(TokenValuesData.currentCreditAmount))
-    missingFields.push("current credit amount");
+    if (isEmpty(TokenValuesData.currentCreditAmount))
+      missingFields.push("current credit amount");
 
-  if (isEmpty(TokenValuesData.creditType))
-    missingFields.push("credit type");
+    if (isEmpty(TokenValuesData.creditType))
+      missingFields.push("credit type");
 
-  if (isEmpty(TokenValuesData.priority))
-    missingFields.push("priority");
+    if (isEmpty(TokenValuesData.priority))
+      missingFields.push("priority");
 
-  if (isEmpty(TokenValuesData.limit))
-    missingFields.push("limit");
+    if (isEmpty(TokenValuesData.limit))
+      missingFields.push("limit");
 
-  if (isEmpty(TokenValuesData.creditConfiguration))
-    missingFields.push("credit configuration");
+    if (isEmpty(TokenValuesData.creditConfiguration))
+      missingFields.push("credit configuration");
 
-  if (isEmpty(TokenValuesData.presetCreditAmount))
-    missingFields.push("preset credit amount");
+    if (isEmpty(TokenValuesData.presetCreditAmount))
+      missingFields.push("preset credit amount");
 
-  if (isEmpty(TokenValuesData.creditAvailableThreshold))
-    missingFields.push("credit available threshold");
+    if (isEmpty(TokenValuesData.creditAvailableThreshold))
+      missingFields.push("credit available threshold");
 
-  if (isEmpty(TokenValuesData.period))
-    missingFields.push("period");
+    if (isEmpty(TokenValuesData.period))
+      missingFields.push("period");
 
-  if (!deviceId) {
-    missingFields.push("device id");
-  }
+    if (!deviceId) {
+      missingFields.push("device id");
+    }
 
-  if (missingFields.length > 0) {
-    alert(`Please fill the following details:\n\n${missingFields.join(",")}`);
-    return;
-  }
+    if (missingFields.length > 0) {
+      alert(`Please fill the following details:\n\n${missingFields.join(",")}`);
+      return;
+    }
 
-   ////////////****** */
-    
+    ////////////****** */
+
     axios.post(`${BASE_URL}/api/token-credit/`, [{
       device_id: deviceId,  // This matches the backend expected field
       current_credit_amount: TokenValuesData.currentCreditAmount,
@@ -1123,39 +1123,39 @@ const Credit = () => {
 
 
   // Function to fetch token credit data
-const fetchTokenCreditData = async (deviceId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/api/token-credit/${deviceId}/`);
-    // Assuming the response is an array, we'll pick the first item from it
-    const tokenCredit = response.data[0];
+  const fetchTokenCreditData = async (deviceId) => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/token-credit/${deviceId}/`);
+      // Assuming the response is an array, we'll pick the first item from it
+      const tokenCredit = response.data[0];
 
-    setTokenValuesData({
-      currentCreditAmount: tokenCredit.current_credit_amount || '',
-      creditType: tokenCredit.credit_type || '',
-      priority: tokenCredit.priority || '',
-      limit: tokenCredit.limit || '',
-      creditConfiguration: tokenCredit.credit_configuration || '',
-      presetCreditAmount: tokenCredit.preset_credit_amount || '',
-      creditAvailableThreshold: tokenCredit.credit_available_threshold || '',
-      period: tokenCredit.period || '',
-    });
-  } catch (error) {
-    console.error("Error fetching token credit data:", error);
-  }
-};
+      setTokenValuesData({
+        currentCreditAmount: tokenCredit.current_credit_amount || '',
+        creditType: tokenCredit.credit_type || '',
+        priority: tokenCredit.priority || '',
+        limit: tokenCredit.limit || '',
+        creditConfiguration: tokenCredit.credit_configuration || '',
+        presetCreditAmount: tokenCredit.preset_credit_amount || '',
+        creditAvailableThreshold: tokenCredit.credit_available_threshold || '',
+        period: tokenCredit.period || '',
+      });
+    } catch (error) {
+      console.error("Error fetching token credit data:", error);
+    }
+  };
 
-useEffect(() => {
-  // Call the fetch function with the deviceId
-  fetchTokenCreditData(deviceId);
-  fetchEmergencyCreditData(deviceId)
-}, []);
+  useEffect(() => {
+    // Call the fetch function with the deviceId
+    fetchTokenCreditData(deviceId);
+    fetchEmergencyCreditData(deviceId)
+  }, []);
 
-  
+
 
   const [amount, setAmount] = useState("");
   const [presetAmount, setPresetAmount] = useState("");
   const [invokeCredit, setInvokeCredit] = useState(false);
- 
+
 
   const handleTokenCreditAction = (e, action, amountValue = null) => {
     e.preventDefault();
@@ -1188,17 +1188,17 @@ useEffect(() => {
     setIsTokenValueActive(section === 'value');
   };
 
-  
 
-  
 
-  
- 
+
+
+
+
   const [emergencyCreditSetValue, setEmergencyCreditSetValue] = useState(true);
-        
+
   // State for Value data
   const [emergencyValueData, setEmergencyValueData] = useState({
-    
+
     currentCreditAmount: "",
     creditType: "",
     priority: "",
@@ -1239,7 +1239,7 @@ useEffect(() => {
     try {
       const payload = [
         {
-          device_id:deviceId,  // Ensure device_id is included
+          device_id: deviceId,  // Ensure device_id is included
           current_credit_amount: emergencyValueData.currentCreditAmount,
           credit_type: emergencyValueData.creditType,
           priority: emergencyValueData.priority,
@@ -1252,76 +1252,76 @@ useEffect(() => {
           period: emergencyValueData.period
         }
       ];
-  
+
       const response = await axios.post(
         `${BASE_URL}/api/emergency-credit`,
         payload,
         { headers: { "Content-Type": "application/json" } }
       );
-  
+
       console.log("Value data submitted successfully:", response.data);
     } catch (error) {
       console.error("Error submitting Value data:", error.response?.data || error.message);
     }
   };
 
- const handleEmergencyValueSubmit = async () => {
+  const handleEmergencyValueSubmit = async () => {
 
-/////////////*********44444444 */
+    /////////////*********44444444 */
 
-     const isEmpty = (val) =>
-    val === "" || val === null || val === undefined;
+    const isEmpty = (val) =>
+      val === "" || val === null || val === undefined;
 
-  const missingFields = [];
+    const missingFields = [];
 
-  if (isEmpty(emergencyValueData.currentCreditAmount))
-    missingFields.push("current credit amount");
+    if (isEmpty(emergencyValueData.currentCreditAmount))
+      missingFields.push("current credit amount");
 
-  if (isEmpty(emergencyValueData.creditType))
-    missingFields.push("credit type");
+    if (isEmpty(emergencyValueData.creditType))
+      missingFields.push("credit type");
 
-  if (isEmpty(emergencyValueData.priority))
-    missingFields.push("priority");
+    if (isEmpty(emergencyValueData.priority))
+      missingFields.push("priority");
 
-  if (isEmpty(emergencyValueData.warningThreshold1))
-    missingFields.push("warning threshold 1");
+    if (isEmpty(emergencyValueData.warningThreshold1))
+      missingFields.push("warning threshold 1");
 
-  if (isEmpty(emergencyValueData.limit))
-    missingFields.push("limit");
+    if (isEmpty(emergencyValueData.limit))
+      missingFields.push("limit");
 
-  if (isEmpty(emergencyValueData.creditConfiguration))
-    missingFields.push("credit configuration");
+    if (isEmpty(emergencyValueData.creditConfiguration))
+      missingFields.push("credit configuration");
 
-  if (isEmpty(emergencyValueData.creditStatus))
-    missingFields.push("credit status");
+    if (isEmpty(emergencyValueData.creditStatus))
+      missingFields.push("credit status");
 
-  if (isEmpty(emergencyValueData.presetCreditAmount))
-    missingFields.push("preset credit amount");
+    if (isEmpty(emergencyValueData.presetCreditAmount))
+      missingFields.push("preset credit amount");
 
-  if (isEmpty(emergencyValueData.creditAvailableThreshold))
-    missingFields.push("credit available threshold");
+    if (isEmpty(emergencyValueData.creditAvailableThreshold))
+      missingFields.push("credit available threshold");
 
-  if (isEmpty(emergencyValueData.period))
-    missingFields.push("period");
+    if (isEmpty(emergencyValueData.period))
+      missingFields.push("period");
 
-  if (!deviceId)
-    missingFields.push("device id");
+    if (!deviceId)
+      missingFields.push("device id");
 
-  if (missingFields.length > 0) {
-    alert(
-      `Please fill the following details: ${missingFields.join(", ")}`
-    );
-    return;
-  }
+    if (missingFields.length > 0) {
+      alert(
+        `Please fill the following details: ${missingFields.join(", ")}`
+      );
+      return;
+    }
 
-  /////////////*********44444444 */
+    /////////////*********44444444 */
 
 
 
     try {
       const payload = [
         {
-          device_id:deviceId,  // Ensure device_id is included
+          device_id: deviceId,  // Ensure device_id is included
           current_credit_amount: emergencyValueData.currentCreditAmount,
           credit_type: emergencyValueData.creditType,
           priority: emergencyValueData.priority,
@@ -1334,20 +1334,20 @@ useEffect(() => {
           period: emergencyValueData.period
         }
       ];
-  
+
       const response = await axios.post(
         `${BASE_URL}/api/emergency-credit`,
         payload,
         { headers: { "Content-Type": "application/json" } }
       );
-  
+
       console.log("Value data submitted successfully:", response.data);
     } catch (error) {
       console.error("Error submitting Value data:", error.response?.data || error.message);
     }
   };
 
-  
+
 
   const fetchEmergencyCreditData = async (deviceId) => {
     try {
@@ -1374,7 +1374,7 @@ useEffect(() => {
       console.error("Error fetching emergency credit data:", error.response?.data || error.message);
     }
   };
-  
+
 
   // Handle form submission
   const handleEmergencyMethodSubmit = (e, action) => {
@@ -1383,7 +1383,7 @@ useEffect(() => {
     if (action === "invoke-credit" && !emergencyMethodData.invokeCredit) {
       alert("Please check the 'Invoke Credit' checkbox before submitting.");
       return;
-    }             
+    }
 
     // API Endpoint
     const url = `${BASE_URL}/api/emergency-credit/${action}/`;
@@ -1393,8 +1393,8 @@ useEffect(() => {
     if (action === "update-amount") data.amount = emergencyMethodData.updateAmount;
     if (action === "set-amount") data.amount = emergencyMethodData.setAmount;
 
-    console.log("data",data)
-    
+    console.log("data", data)
+
 
     // Send Request
     axios
@@ -1417,7 +1417,7 @@ useEffect(() => {
   };
 
   // Submit form data to the API
-  const monthlyRentHandleSubmit = async () => {
+  const monthlyRentHandleSubmit1 = async () => {
     try {
       const response = await axios.post(`${BASE_URL}/api/monthly-rent-credit`, monthlyRentData);
       console.log("Data submitted successfully:", response.data);
@@ -1429,10 +1429,60 @@ useEffect(() => {
   };
 
 
+  const monthlyRentHandleSubmit = async () => {
+    const isEmpty = (val) =>
+      val === "" || val === null || val === undefined;
+
+    const missingFields = [];
+
+    if (isEmpty(monthlyRentData.value))
+      missingFields.push("value");
+
+    if (isEmpty(monthlyRentData.period))
+      missingFields.push("period");
+
+    if (isEmpty(monthlyRentData.presetCreditAmount))
+      missingFields.push("presetCreditAmount");
+
+    if (!deviceId)
+      missingFields.push("device id");
+
+    if (missingFields.length > 0) {
+      alert(`Please fill the following details: ${missingFields.join(", ")}`);
+      return;
+    }
+
+    try {
+      const payload = {
+        device_id: deviceId,
+        value: monthlyRentData.value,
+        presetCreditAmount: monthlyRentData.presetCreditAmount || "",
+        period: monthlyRentData.period,
+      };
+
+      const response = await axios.post(
+        `${BASE_URL}/api/monthly-rent-credit/`,
+        payload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      console.log("Monthly Rent Credit data submitted successfully:", response.data);
+      alert(response.data.message || "Monthly Rent Credit data submitted successfully!");
+    } catch (error) {
+      console.error(
+        "Error submitting Monthly Rent Credit data:",
+        error.response?.data || error.message
+      );
+      alert("Failed to submit Monthly Rent Credit data.");
+    }
+  };
 
 
 
-const pages = [
+
+
+
+  const pages = [
     { key: "tokenCredit", label: "Token Credit" },
     { key: "emergencyCredit", label: "Emergency Credit" },
     { key: "monthlyRentCredit", label: "Monthly Rent Credit" },
@@ -1484,472 +1534,472 @@ const pages = [
     switch (activePage) {
       case "tokenCredit":
         return (
-         
+
+
+          <div>
+
 
             <div>
- 
+              <button type="button" onClick={() => tokenToggleSection('value')}>
+                Value
+              </button>
+              <button type="button" onClick={() => tokenToggleSection('method')}>
+                Method
+              </button>
+            </div>
 
-  <div>
-    <button type="button" onClick={() => tokenToggleSection('value')}>
-      Value
-    </button>
-    <button type="button" onClick={() => tokenToggleSection('method')}>
-      Method
-    </button>
-  </div>
+            {isTokenValueActive ? (
+              <div>
 
-  {isTokenValueActive ? (
-    <div>
-      
 
-      <form onSubmit={tokenValueHandleSubmit}>
+                <form onSubmit={tokenValueHandleSubmit}>
 
-        <div className="security-form">
-          <label>
-            <span>Current Credit Amount:</span>
-            <input
-              type="number"
-              name="currentCreditAmount"
-              value={TokenValuesData.currentCreditAmount}
-              onChange={handleChangeTokenCredit}
-            />
-          </label>
-        </div>
+                  <div className="security-form">
+                    <label>
+                      <span>Current Credit Amount:</span>
+                      <input
+                        type="number"
+                        name="currentCreditAmount"
+                        value={TokenValuesData.currentCreditAmount}
+                        onChange={handleChangeTokenCredit}
+                      />
+                    </label>
+                  </div>
 
-        <div className="security-form">
-          <label>
-            <span>Credit Type:</span>
-            <select
-              name="creditType"
-              value={TokenValuesData.creditType}
-              onChange={handleChangeTokenCredit}
-            >
-              <option value="prepaid">Prepaid</option>
-              <option value="postpaid">Postpaid</option>
-            </select>
-          </label>
-        </div>
+                  <div className="security-form">
+                    <label>
+                      <span>Credit Type:</span>
+                      <select
+                        name="creditType"
+                        value={TokenValuesData.creditType}
+                        onChange={handleChangeTokenCredit}
+                      >
+                        <option value="prepaid">Prepaid</option>
+                        <option value="postpaid">Postpaid</option>
+                      </select>
+                    </label>
+                  </div>
 
-        <div className="security-form">
-          <label>
-            <span>Priority:</span>
-            <input
-              type="number"
-              name="priority"
-              value={TokenValuesData.priority}
-              onChange={handleChangeTokenCredit}
-            />
-          </label>
-        </div>
+                  <div className="security-form">
+                    <label>
+                      <span>Priority:</span>
+                      <input
+                        type="number"
+                        name="priority"
+                        value={TokenValuesData.priority}
+                        onChange={handleChangeTokenCredit}
+                      />
+                    </label>
+                  </div>
 
-        <div className="security-form">
-          <label>
-            <span>Limit:</span>
-            <input
-              type="number"
-              name="limit"
-              value={TokenValuesData.limit}
-              onChange={handleChangeTokenCredit}
-            />
-          </label>
-        </div>
+                  <div className="security-form">
+                    <label>
+                      <span>Limit:</span>
+                      <input
+                        type="number"
+                        name="limit"
+                        value={TokenValuesData.limit}
+                        onChange={handleChangeTokenCredit}
+                      />
+                    </label>
+                  </div>
 
-        <div className="security-form">
-          <label>
-            <span>Credit Configuration:</span>
-            <textarea
-              name="creditConfiguration"
-              value={TokenValuesData.creditConfiguration}
-              onChange={handleChangeTokenCredit}
-            />
-          </label>
-        </div>
+                  <div className="security-form">
+                    <label>
+                      <span>Credit Configuration:</span>
+                      <textarea
+                        name="creditConfiguration"
+                        value={TokenValuesData.creditConfiguration}
+                        onChange={handleChangeTokenCredit}
+                      />
+                    </label>
+                  </div>
 
-        <div className="security-form">
-          <label>
-            <span>Preset Credit Amount:</span>
-            <input
-              type="number"
-              name="presetCreditAmount"
-              value={TokenValuesData.presetCreditAmount}
-              onChange={handleChangeTokenCredit}
-            />
-          </label>
-        </div>
+                  <div className="security-form">
+                    <label>
+                      <span>Preset Credit Amount:</span>
+                      <input
+                        type="number"
+                        name="presetCreditAmount"
+                        value={TokenValuesData.presetCreditAmount}
+                        onChange={handleChangeTokenCredit}
+                      />
+                    </label>
+                  </div>
 
-        <div className="security-form">
-          <label>
-            <span>Credit Available Threshold:</span>
-            <input
-              type="number"
-              name="creditAvailableThreshold"
-              value={TokenValuesData.creditAvailableThreshold}
-              onChange={handleChangeTokenCredit}
-            />
-          </label>
-        </div>
+                  <div className="security-form">
+                    <label>
+                      <span>Credit Available Threshold:</span>
+                      <input
+                        type="number"
+                        name="creditAvailableThreshold"
+                        value={TokenValuesData.creditAvailableThreshold}
+                        onChange={handleChangeTokenCredit}
+                      />
+                    </label>
+                  </div>
 
-        <div className="security-form">
-          <label>
-            <span>Period:</span>
-            <input
-              type="text"
-              name="period"
-              value={TokenValuesData.period}
-              onChange={handleChangeTokenCredit}
-            />
-          </label>
-        </div>
+                  <div className="security-form">
+                    <label>
+                      <span>Period:</span>
+                      <input
+                        type="text"
+                        name="period"
+                        value={TokenValuesData.period}
+                        onChange={handleChangeTokenCredit}
+                      />
+                    </label>
+                  </div>
 
-        <button style={{marginLeft:"42%"}} className='scheduler-add-button' type="submit">Save </button>
-      </form>
-    </div>
-  ) : (
-    <div>
-     
+                  <button style={{ marginLeft: "42%" }} className='scheduler-add-button' type="submit">Save </button>
+                </form>
+              </div>
+            ) : (
+              <div>
 
-      {/* Update Amount */}
-      <form onSubmit={(e) => handleTokenCreditAction(e, "update-amount", amount)}>
 
-        <div className="security-form">
-          <label>
-            <span>Update Amount:</span>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Enter amount"
-              required
-            />
-          </label>
-        </div>
+                {/* Update Amount */}
+                <form onSubmit={(e) => handleTokenCreditAction(e, "update-amount", amount)}>
 
-        <button style={{marginLeft:"42%"}} className='scheduler-add-button' type="submit">Update Amount</button>
-      </form>
+                  <div className="security-form">
+                    <label>
+                      <span>Update Amount:</span>
+                      <input
+                        type="number"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="Enter amount"
+                        required
+                      />
+                    </label>
+                  </div>
 
-      {/* Set Amount */}
-      <form onSubmit={(e) => handleTokenCreditAction(e, "set-amount", presetAmount)}>
+                  <button style={{ marginLeft: "42%" }} className='scheduler-add-button' type="submit">Update Amount</button>
+                </form>
 
-        <div className="security-form">
-          <label>
-            <span>Set Amount:</span>
-            <input
-              type="number"
-              value={presetAmount}
-              onChange={(e) => setPresetAmount(e.target.value)}
-              placeholder="Enter preset amount"
-              required
-            />
-          </label>
-        </div>
+                {/* Set Amount */}
+                <form onSubmit={(e) => handleTokenCreditAction(e, "set-amount", presetAmount)}>
 
-        <button style={{marginLeft:"42%"}} className='scheduler-add-button' type="submit">Set Amount</button>
-      </form>
+                  <div className="security-form">
+                    <label>
+                      <span>Set Amount:</span>
+                      <input
+                        type="number"
+                        value={presetAmount}
+                        onChange={(e) => setPresetAmount(e.target.value)}
+                        placeholder="Enter preset amount"
+                        required
+                      />
+                    </label>
+                  </div>
 
-      {/* Invoke Credit */}
-      <div className="security-form">
-        <label>
-          <span>Invoke Credit:</span>
-          <input
-            type="checkbox"
-            checked={invokeCredit}
-            onChange={(e) => {
-              setInvokeCredit(e.target.checked);
-              handleTokenCreditAction(e, "invoke-credit");
-            }}
-          />
-        </label>
-      </div>
+                  <button style={{ marginLeft: "42%" }} className='scheduler-add-button' type="submit">Set Amount</button>
+                </form>
 
-    </div>
-  )}
-</div>
-      
-      
-    
-   
-        
+                {/* Invoke Credit */}
+                <div className="security-form">
+                  <label>
+                    <span>Invoke Credit:</span>
+                    <input
+                      type="checkbox"
+                      checked={invokeCredit}
+                      onChange={(e) => {
+                        setInvokeCredit(e.target.checked);
+                        handleTokenCreditAction(e, "invoke-credit");
+                      }}
+                    />
+                  </label>
+                </div>
 
-        
+              </div>
+            )}
+          </div>
+
+
+
+
+
+
+
         );
-        
-     
-     
-     
-     
-     
-     
-     
-     
-     
-     
-     
-        case "emergencyCredit":
-         
-          return (
+
+
+
+
+
+
+
+
+
+
+
+
+      case "emergencyCredit":
+
+        return (
           <div>
-  
 
-  <div>
-    <button  type="button" onClick={() => emergencyToggleSection("value")}>
-      Value
-    </button>
-    <button type="button" onClick={() => emergencyToggleSection("method")}>
-      Method
-    </button>
-  </div>
 
-  {emergencyCreditSetValue ? (
-    <div>
-      {/* Value Section */}
-      <div className="security-form">
-        <label>
-          <span>Current credit amount:</span>
-          <input
-            type="text"
-            name="currentCreditAmount"
-            value={emergencyValueData.currentCreditAmount}
-            onChange={handleEmergencyValueChange}
-          />
-        </label>
-      </div>
+            <div>
+              <button type="button" onClick={() => emergencyToggleSection("value")}>
+                Value
+              </button>
+              <button type="button" onClick={() => emergencyToggleSection("method")}>
+                Method
+              </button>
+            </div>
 
-      <div className="security-form">
-        <label>
-          <span>Credit type:</span>
-          <input
-            type="text"
-            name="creditType"
-            value={emergencyValueData.creditType}
-            onChange={handleEmergencyValueChange}
-          />
-        </label>
-      </div>
+            {emergencyCreditSetValue ? (
+              <div>
+                {/* Value Section */}
+                <div className="security-form">
+                  <label>
+                    <span>Current credit amount:</span>
+                    <input
+                      type="text"
+                      name="currentCreditAmount"
+                      value={emergencyValueData.currentCreditAmount}
+                      onChange={handleEmergencyValueChange}
+                    />
+                  </label>
+                </div>
 
-      <div className="security-form">
-        <label>
-          <span>Priority:</span>
-          <input
-            type="text"
-            name="priority"
-            value={emergencyValueData.priority}
-            onChange={handleEmergencyValueChange}
-          />
-        </label>
-      </div>
+                <div className="security-form">
+                  <label>
+                    <span>Credit type:</span>
+                    <input
+                      type="text"
+                      name="creditType"
+                      value={emergencyValueData.creditType}
+                      onChange={handleEmergencyValueChange}
+                    />
+                  </label>
+                </div>
 
-      <div className="security-form">
-        <label>
-          <span>Warning threshold 1:</span>
-          <input
-            type="text"
-            name="warningThreshold1"
-            value={emergencyValueData.warningThreshold1}
-            onChange={handleEmergencyValueChange}
-          />
-        </label>
-      </div>
+                <div className="security-form">
+                  <label>
+                    <span>Priority:</span>
+                    <input
+                      type="text"
+                      name="priority"
+                      value={emergencyValueData.priority}
+                      onChange={handleEmergencyValueChange}
+                    />
+                  </label>
+                </div>
 
-      <div className="security-form">
-        <label>
-          <span>Limit:</span>
-          <input
-            type="text"
-            name="limit"
-            value={emergencyValueData.limit}
-            onChange={handleEmergencyValueChange}
-          />
-        </label>
-      </div>
+                <div className="security-form">
+                  <label>
+                    <span>Warning threshold 1:</span>
+                    <input
+                      type="text"
+                      name="warningThreshold1"
+                      value={emergencyValueData.warningThreshold1}
+                      onChange={handleEmergencyValueChange}
+                    />
+                  </label>
+                </div>
 
-      <div className="security-form">
-        <label>
-          <span>Credit Configuration:</span>
-          <input
-            type="text"
-            name="creditConfiguration"
-            value={emergencyValueData.creditConfiguration}
-            onChange={handleEmergencyValueChange}
-          />
-        </label>
-      </div>
+                <div className="security-form">
+                  <label>
+                    <span>Limit:</span>
+                    <input
+                      type="text"
+                      name="limit"
+                      value={emergencyValueData.limit}
+                      onChange={handleEmergencyValueChange}
+                    />
+                  </label>
+                </div>
 
-      <div className="security-form">
-        <label>
-          <span>Credit Status:</span>
-          <input
-            type="text"
-            name="creditStatus"
-            value={emergencyValueData.creditStatus}
-            onChange={handleEmergencyValueChange}
-          />
-        </label>
-      </div>
+                <div className="security-form">
+                  <label>
+                    <span>Credit Configuration:</span>
+                    <input
+                      type="text"
+                      name="creditConfiguration"
+                      value={emergencyValueData.creditConfiguration}
+                      onChange={handleEmergencyValueChange}
+                    />
+                  </label>
+                </div>
 
-      <div className="security-form">
-        <label>
-          <span>Preset credit amount:</span>
-          <input
-            type="text"
-            name="presetCreditAmount"
-            value={emergencyValueData.presetCreditAmount}
-            onChange={handleEmergencyValueChange}
-          />
-        </label>
-      </div>
+                <div className="security-form">
+                  <label>
+                    <span>Credit Status:</span>
+                    <input
+                      type="text"
+                      name="creditStatus"
+                      value={emergencyValueData.creditStatus}
+                      onChange={handleEmergencyValueChange}
+                    />
+                  </label>
+                </div>
 
-      <div className="security-form">
-        <label>
-          <span>Credit available threshold:</span>
-          <input
-            type="text"
-            name="creditAvailableThreshold"
-            value={emergencyValueData.creditAvailableThreshold}
-            onChange={handleEmergencyValueChange}
-          />
-        </label>
-      </div>
+                <div className="security-form">
+                  <label>
+                    <span>Preset credit amount:</span>
+                    <input
+                      type="text"
+                      name="presetCreditAmount"
+                      value={emergencyValueData.presetCreditAmount}
+                      onChange={handleEmergencyValueChange}
+                    />
+                  </label>
+                </div>
 
-      <div className="security-form">
-        <label>
-          <span>Period:</span>
-          <input
-            type="text"
-            name="period"
-            value={emergencyValueData.period}
-            onChange={handleEmergencyValueChange}
-          />
-        </label>
-      </div>
+                <div className="security-form">
+                  <label>
+                    <span>Credit available threshold:</span>
+                    <input
+                      type="text"
+                      name="creditAvailableThreshold"
+                      value={emergencyValueData.creditAvailableThreshold}
+                      onChange={handleEmergencyValueChange}
+                    />
+                  </label>
+                </div>
 
-      <div className="security-form">
-        <button type="button" onClick={handleEmergencyValueSubmit}>
-          Submit Value
-        </button>
-      </div>
-    </div>
-  ) : (
-    <div>
-      
+                <div className="security-form">
+                  <label>
+                    <span>Period:</span>
+                    <input
+                      type="text"
+                      name="period"
+                      value={emergencyValueData.period}
+                      onChange={handleEmergencyValueChange}
+                    />
+                  </label>
+                </div>
 
-      {/* Update Amount Form */}
-      <form onSubmit={(e) => handleEmergencyMethodSubmit(e, "update-amount")}>
-        <div className="security-form">
-          <label>
-            <span>Update Amount:</span>
-            <input
-              type="number"
-              name="updateAmount"
-              value={emergencyMethodData.updateAmount}
-              onChange={handleEmergencyMethodChange}
-              placeholder="Enter amount"
-              required
-            />
-          </label>
-        </div>
+                <div className="security-form">
+                  <button type="button" onClick={handleEmergencyValueSubmit}>
+                    Submit Value
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
 
-        <div className="security-form">
-          <button  style={{marginLeft:"40%"}} className='scheduler-add-button'type="submit">Update Amount</button>
-        </div>
-      </form>
 
-      {/* Set Amount Form */}
-      <form onSubmit={(e) => handleEmergencyMethodSubmit(e, "set-amount")}>
-        <div className="security-form">
-          <label>
-            <span>Set Amount:</span>
-            <input
-              type="number"
-              name="setAmount"
-              value={emergencyMethodData.setAmount}
-              onChange={handleEmergencyMethodChange}
-              placeholder="Enter preset amount"
-              required
-            />
-          </label>
-        </div>
+                {/* Update Amount Form */}
+                <form onSubmit={(e) => handleEmergencyMethodSubmit(e, "update-amount")}>
+                  <div className="security-form">
+                    <label>
+                      <span>Update Amount:</span>
+                      <input
+                        type="number"
+                        name="updateAmount"
+                        value={emergencyMethodData.updateAmount}
+                        onChange={handleEmergencyMethodChange}
+                        placeholder="Enter amount"
+                        required
+                      />
+                    </label>
+                  </div>
 
-        <div className="security-form">
-          <button style={{marginLeft:"40%"}} className='scheduler-add-button' type="submit">Set Amount</button>
-        </div>
-      </form>
+                  <div className="security-form">
+                    <button style={{ marginLeft: "40%" }} className='scheduler-add-button' type="submit">Update Amount</button>
+                  </div>
+                </form>
 
-      {/* Invoke Credit */}
-      <div className="security-form">
-        <label>
-          <span>Invoke Credit:</span>
-          <input
-            type="checkbox"
-            name="invokeCredit"
-            checked={emergencyMethodData.invokeCredit}
-            onChange={handleEmergencyMethodChange}
-          />
-        </label>
+                {/* Set Amount Form */}
+                <form onSubmit={(e) => handleEmergencyMethodSubmit(e, "set-amount")}>
+                  <div className="security-form">
+                    <label>
+                      <span>Set Amount:</span>
+                      <input
+                        type="number"
+                        name="setAmount"
+                        value={emergencyMethodData.setAmount}
+                        onChange={handleEmergencyMethodChange}
+                        placeholder="Enter preset amount"
+                        required
+                      />
+                    </label>
+                  </div>
 
-        <div style={{ marginTop: 8 }}>
-          <button
-          style={{marginLeft:"40%"}} className='scheduler-add-button'
-            type="button"
-            onClick={(e) => handleEmergencyMethodSubmit(e, "invoke-credit")}
-          >
-            Submit Invoke Credit
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-</div>
-          );
-        
+                  <div className="security-form">
+                    <button style={{ marginLeft: "40%" }} className='scheduler-add-button' type="submit">Set Amount</button>
+                  </div>
+                </form>
+
+                {/* Invoke Credit */}
+                <div className="security-form">
+                  <label>
+                    <span>Invoke Credit:</span>
+                    <input
+                      type="checkbox"
+                      name="invokeCredit"
+                      checked={emergencyMethodData.invokeCredit}
+                      onChange={handleEmergencyMethodChange}
+                    />
+                  </label>
+
+                  <div style={{ marginTop: 8 }}>
+                    <button
+                      style={{ marginLeft: "40%" }} className='scheduler-add-button'
+                      type="button"
+                      onClick={(e) => handleEmergencyMethodSubmit(e, "invoke-credit")}
+                    >
+                      Submit Invoke Credit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+
       case "monthlyRentCredit":
         return (
 
           <div>
- 
 
-  <div className="security-form">
-    <label>
-      <span>Value:</span>
-      <input
-        type="text"
-        name="value"
-        value={monthlyRentData.value}
-        onChange={monthlyRentHandleInputChange}
-      />
-    </label>
-  </div>
 
-  <div className="security-form">
-    <label>
-      <span>Preset credit amount:</span>
-      <input
-        type="text"
-        name="presetCreditAmount"
-        value={monthlyRentData.presetCreditAmount}
-        onChange={monthlyRentHandleInputChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Value:</span>
+                <input
+                  type="text"
+                  name="value"
+                  value={monthlyRentData.value}
+                  onChange={monthlyRentHandleInputChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Period:</span>
-      <input
-        type="text"
-        name="period"
-        value={monthlyRentData.period}
-        onChange={monthlyRentHandleInputChange}
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Preset credit amount:</span>
+                <input
+                  type="text"
+                  name="presetCreditAmount"
+                  value={monthlyRentData.presetCreditAmount}
+                  onChange={monthlyRentHandleInputChange}
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <button style={{marginLeft:"40%"}} className='scheduler-add-button' type="button" onClick={monthlyRentHandleSubmit}>
-      Submit
-    </button>
-  </div>
-</div>
-      
+            <div className="security-form">
+              <label>
+                <span>Period:</span>
+                <input
+                  type="text"
+                  name="period"
+                  value={monthlyRentData.period}
+                  onChange={monthlyRentHandleInputChange}
+                />
+              </label>
+            </div>
+
+            <div className="security-form">
+              <button style={{ marginLeft: "40%" }} className='scheduler-add-button' type="button" onClick={monthlyRentHandleSubmit}>
+                Submit
+              </button>
+            </div>
+          </div>
+
         );
       default:
         return <div>Select a Credit Type</div>;
@@ -1959,30 +2009,30 @@ const pages = [
   return (
     <div>
       {/* Buttons to switch between credit configurations */}
-      
-        <div style={{marginLeft:'2%'}}
-      className="controlsGroup_tabs"
-      ref={containerRef}
-      role="tablist"
-      aria-label="Page tabs"
-    >
-      {pages.map((p) => (
-        <button
-          key={p.key}
-          ref={(el) => (buttonRefs.current[p.key] = el)}
-          className={`tou_button ${activePage === p.key ? "activeButton" : ""}`}
-          onClick={() => handlePageChange(p.key)}
-          type="button"
-          role="tab"
-          aria-pressed={activePage === p.key}
-        >
-          {p.label}
-        </button>
-      ))}
 
-      <div ref={underlineRef} className="underline" aria-hidden="true" />
-    </div>
-     
+      <div style={{ marginLeft: '2%' }}
+        className="controlsGroup_tabs"
+        ref={containerRef}
+        role="tablist"
+        aria-label="Page tabs"
+      >
+        {pages.map((p) => (
+          <button
+            key={p.key}
+            ref={(el) => (buttonRefs.current[p.key] = el)}
+            className={`tou_button ${activePage === p.key ? "activeButton" : ""}`}
+            onClick={() => handlePageChange(p.key)}
+            type="button"
+            role="tab"
+            aria-pressed={activePage === p.key}
+          >
+            {p.label}
+          </button>
+        ))}
+
+        <div ref={underlineRef} className="underline" aria-hidden="true" />
+      </div>
+
 
       {/* Render form based on activePage */}
       {renderForm()}
@@ -2066,7 +2116,7 @@ const CHARGE_VALUE_OPTIONS = [
 
 
 const Charge1 = () => {
-  
+
   const UNIT_CHARGE_TABLE_ROWS = Array.from({ length: 10 }, (_, i) => i + 1);
 
 
@@ -2103,391 +2153,391 @@ const Charge1 = () => {
 
 
   // Change these to your actual meter OBIS if needed
-const UNIT_CHARGE_ACTIVE_OBIS_CODE = "0.0.19.20.0.255";
-const UNIT_CHARGE_PASSIVE_OBIS_CODE = "0.0.19.20.0.255";
+  const UNIT_CHARGE_ACTIVE_OBIS_CODE = "0.0.19.20.0.255";
+  const UNIT_CHARGE_PASSIVE_OBIS_CODE = "0.0.19.20.0.255";
 
-const createChargeTable = () =>
-  UNIT_CHARGE_TABLE_ROWS.map((step) => ({
-    step: `Step ${step}`,
-    tariff1: "",
-    tariff2: "",
-    tariff3: "",
-    tariff4: "",
-  }));
+  const createChargeTable = () =>
+    UNIT_CHARGE_TABLE_ROWS.map((step) => ({
+      step: `Step ${step}`,
+      tariff1: "",
+      tariff2: "",
+      tariff3: "",
+      tariff4: "",
+    }));
 
 
 
-const createUnitChargeState = () => ({
-  selected: false,
-  activationTimeSelected: false,
-  commodityScale: "",
-  priceScale: "",
-  classId: "",
-  logicalName: "",
-  attributeId: "",
-  unitChargeActivationTime: "",
-  chargeTable: createChargeTable(),
-});
-
-const [unitChargeActiveData, setUnitChargeActiveData] = useState(
-  createUnitChargeState()
-);
-const [unitChargePassiveData, setUnitChargePassiveData] = useState(
-  createUnitChargeState()
-);
-
-const getUnitChargeState = (mode) =>
-  mode === "active" ? unitChargeActiveData : unitChargePassiveData;
-
-const setUnitChargeState = (mode, updater) => {
-  if (mode === "active") {
-    setUnitChargeActiveData(updater);
-  } else {
-    setUnitChargePassiveData(updater);
-  }
-};
-
-const handleUnitChargeFieldChange = (mode, field, value) => {
-  setUnitChargeState(mode, (prev) => ({
-    ...prev,
-    [field]: value,
-  }));
-};
-
-const handleUnitChargeTableChange = (mode, rowIndex, field, value) => {
-  setUnitChargeState(mode, (prev) => {
-    const nextTable = [...prev.chargeTable];
-    nextTable[rowIndex] = {
-      ...nextTable[rowIndex],
-      [field]: value,
-    };
-    return {
-      ...prev,
-      chargeTable: nextTable,
-    };
+  const createUnitChargeState = () => ({
+    selected: false,
+    activationTimeSelected: false,
+    commodityScale: "",
+    priceScale: "",
+    classId: "",
+    logicalName: "",
+    attributeId: "",
+    unitChargeActivationTime: "",
+    chargeTable: createChargeTable(),
   });
-};
 
-const normalizeUnitChargeTable = (rawTable) => {
-  const baseTable = createChargeTable();
+  const [unitChargeActiveData, setUnitChargeActiveData] = useState(
+    createUnitChargeState()
+  );
+  const [unitChargePassiveData, setUnitChargePassiveData] = useState(
+    createUnitChargeState()
+  );
 
-  if (!Array.isArray(rawTable)) return baseTable;
+  const getUnitChargeState = (mode) =>
+    mode === "active" ? unitChargeActiveData : unitChargePassiveData;
 
-  return baseTable.map((row, index) => {
-    const src = rawTable[index] ?? {};
+  const setUnitChargeState = (mode, updater) => {
+    if (mode === "active") {
+      setUnitChargeActiveData(updater);
+    } else {
+      setUnitChargePassiveData(updater);
+    }
+  };
 
-    if (Array.isArray(src)) {
+  const handleUnitChargeFieldChange = (mode, field, value) => {
+    setUnitChargeState(mode, (prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleUnitChargeTableChange = (mode, rowIndex, field, value) => {
+    setUnitChargeState(mode, (prev) => {
+      const nextTable = [...prev.chargeTable];
+      nextTable[rowIndex] = {
+        ...nextTable[rowIndex],
+        [field]: value,
+      };
+      return {
+        ...prev,
+        chargeTable: nextTable,
+      };
+    });
+  };
+
+  const normalizeUnitChargeTable = (rawTable) => {
+    const baseTable = createChargeTable();
+
+    if (!Array.isArray(rawTable)) return baseTable;
+
+    return baseTable.map((row, index) => {
+      const src = rawTable[index] ?? {};
+
+      if (Array.isArray(src)) {
+        return {
+          step: row.step,
+          tariff1: src[0] ?? "",
+          tariff2: src[1] ?? "",
+          tariff3: src[2] ?? "",
+          tariff4: src[3] ?? "",
+        };
+      }
+
       return {
         step: row.step,
-        tariff1: src[0] ?? "",
-        tariff2: src[1] ?? "",
-        tariff3: src[2] ?? "",
-        tariff4: src[3] ?? "",
+        tariff1: src.tariff1 ?? src.value1 ?? src.charge_per_unit ?? "",
+        tariff2: src.tariff2 ?? src.value2 ?? "",
+        tariff3: src.tariff3 ?? src.value3 ?? "",
+        tariff4: src.tariff4 ?? src.value4 ?? "",
       };
-    }
+    });
+  };
+
+  const parseUnitChargeResponse = (rawData) => {
+    const root = Array.isArray(rawData) ? rawData[0] : rawData;
+    const payload = root?.value ?? root?.data ?? root?.result ?? root ?? {};
+
+    const scaling =
+      payload.charge_per_unit_scaling ??
+      payload.scaling ??
+      payload.chargePerUnitScaling ??
+      {};
+
+    const reference =
+      payload.commodity_reference ??
+      payload.reference ??
+      payload.commodityReference ??
+      {};
+
+    const table =
+      payload.charge_table ??
+      payload.chargeTable ??
+      payload.table ??
+      [];
 
     return {
-      step: row.step,
-      tariff1: src.tariff1 ?? src.value1 ?? src.charge_per_unit ?? "",
-      tariff2: src.tariff2 ?? src.value2 ?? "",
-      tariff3: src.tariff3 ?? src.value3 ?? "",
-      tariff4: src.tariff4 ?? src.value4 ?? "",
+      selected: true,
+      activationTimeSelected: true,
+      commodityScale: scaling.commodity_scale ?? scaling.commodityScale ?? "",
+      priceScale: scaling.price_scale ?? scaling.priceScale ?? "",
+      classId: reference.class_id ?? reference.classId ?? "",
+      logicalName: reference.logical_name ?? reference.logicalName ?? "",
+      attributeId: reference.attribute_index ?? reference.attributeId ?? "",
+      unitChargeActivationTime:
+        payload.unit_charge_activation_time ??
+        payload.unitChargeActivationTime ??
+        "",
+      chargeTable: normalizeUnitChargeTable(table),
     };
-  });
-};
-
-const parseUnitChargeResponse = (rawData) => {
-  const root = Array.isArray(rawData) ? rawData[0] : rawData;
-  const payload = root?.value ?? root?.data ?? root?.result ?? root ?? {};
-
-  const scaling =
-    payload.charge_per_unit_scaling ??
-    payload.scaling ??
-    payload.chargePerUnitScaling ??
-    {};
-
-  const reference =
-    payload.commodity_reference ??
-    payload.reference ??
-    payload.commodityReference ??
-    {};
-
-  const table =
-    payload.charge_table ??
-    payload.chargeTable ??
-    payload.table ??
-    [];
-
-  return {
-    selected: true,
-    activationTimeSelected: true,
-    commodityScale: scaling.commodity_scale ?? scaling.commodityScale ?? "",
-    priceScale: scaling.price_scale ?? scaling.priceScale ?? "",
-    classId: reference.class_id ?? reference.classId ?? "",
-    logicalName: reference.logical_name ?? reference.logicalName ?? "",
-    attributeId: reference.attribute_index ?? reference.attributeId ?? "",
-    unitChargeActivationTime:
-      payload.unit_charge_activation_time ??
-      payload.unitChargeActivationTime ??
-      "",
-    chargeTable: normalizeUnitChargeTable(table),
   };
-};
 
-const handleUnitChargeRead = async (mode) => {
-  const serial =
-    localStorage.getItem("selectedSerialNumber") ||
-    localStorage.getItem("selectedDeviceId") ||
-    deviceId;
+  const handleUnitChargeRead = async (mode) => {
+    const serial =
+      localStorage.getItem("selectedSerialNumber") ||
+      localStorage.getItem("selectedDeviceId") ||
+      deviceId;
 
-  if (!serial) {
-    alert("No serial/device selected");
-    return;
-  }
+    if (!serial) {
+      alert("No serial/device selected");
+      return;
+    }
 
-  const current = getUnitChargeState(mode);
+    const current = getUnitChargeState(mode);
 
-  if (!current.selected && !(mode === "passive" && current.activationTimeSelected)) {
-    alert(`Please select ${mode === "active" ? "Unit charge active" : "Unit charge passive"}`);
-    return;
-  }
+    if (!current.selected && !(mode === "passive" && current.activationTimeSelected)) {
+      alert(`Please select ${mode === "active" ? "Unit charge active" : "Unit charge passive"}`);
+      return;
+    }
 
-  const parameters = [];
+    const parameters = [];
 
-  if (mode === "active" && current.selected) {
-    parameters.push({
-      obis_code: UNIT_CHARGE_ACTIVE_OBIS_CODE,
-      attribute_index: "5",
-    });
-  }
-
-  if (mode === "passive") {
-    if (current.selected) {
+    if (mode === "active" && current.selected) {
       parameters.push({
-        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
-        attribute_index: "6",
+        obis_code: UNIT_CHARGE_ACTIVE_OBIS_CODE,
+        attribute_index: "5",
       });
     }
 
-    if (current.activationTimeSelected) {
-      parameters.push({
-        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
-        attribute_index: "7",
-      });
-    }
-  }
+    if (mode === "passive") {
+      if (current.selected) {
+        parameters.push({
+          obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+          attribute_index: "6",
+        });
+      }
 
-  const payload = {
-    serial_number: serial,
-    action: "read_obis",
-    parameters,
+      if (current.activationTimeSelected) {
+        parameters.push({
+          obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+          attribute_index: "7",
+        });
+      }
+    }
+
+    const payload = {
+      serial_number: serial,
+      action: "read_obis",
+      parameters,
+    };
+
+    try {
+      setReadLoading(true);
+
+      const response = await axios.post(`${BASE_URL}/api/getmeterinfo/`, payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = response?.data?.data ?? response?.data ?? {};
+      const nextState = parseUnitChargeResponse(data);
+
+      setUnitChargeState(mode, (prev) => ({
+        ...prev,
+        ...nextState,
+      }));
+    } catch (error) {
+      console.error("Unit charge read error:", error);
+      alert("Failed to read unit charge data");
+    } finally {
+      setReadLoading(false);
+    }
   };
 
-  try {
-    setReadLoading(true);
+  const renderUnitChargeSection = (mode) => {
+    const isActive = mode === "active";
+    const state = getUnitChargeState(mode);
 
-    const response = await axios.post(`${BASE_URL}/api/getmeterinfo/`, payload, {
-      headers: { "Content-Type": "application/json" },
-    });
+    const setSelected = (checked) =>
+      setUnitChargeState(mode, (prev) => ({
+        ...prev,
+        selected: checked,
+      }));
 
-    const data = response?.data?.data ?? response?.data ?? {};
-    const nextState = parseUnitChargeResponse(data);
+    const setActivationSelected = (checked) =>
+      setUnitChargeState(mode, (prev) => ({
+        ...prev,
+        activationTimeSelected: checked,
+      }));
 
-    setUnitChargeState(mode, (prev) => ({
-      ...prev,
-      ...nextState,
-    }));
-  } catch (error) {
-    console.error("Unit charge read error:", error);
-    alert("Failed to read unit charge data");
-  } finally {
-    setReadLoading(false);
-  }
-};
-
-const renderUnitChargeSection = (mode) => {
-  const isActive = mode === "active";
-  const state = getUnitChargeState(mode);
-
-  const setSelected = (checked) =>
-    setUnitChargeState(mode, (prev) => ({
-      ...prev,
-      selected: checked,
-    }));
-
-  const setActivationSelected = (checked) =>
-    setUnitChargeState(mode, (prev) => ({
-      ...prev,
-      activationTimeSelected: checked,
-    }));
-
-  return (
-    <form onSubmit={(e) => handleSubmit(e, mode)}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input
-            type="checkbox"
-            checked={state.selected}
-            onChange={(e) => setSelected(e.target.checked)}
-          />
-          {isActive ? "Unit charge active" : "Unit charge passive"}
-          <span style={{ marginLeft: 8, color: "#666" }}>
-            (Attribute Index: {isActive ? "5" : "6"})
-          </span>
-        </label>
-
-        <button
-          type="button"
-          className="scheduler-add-button"
-          onClick={() => handleUnitChargeRead(mode)}
-          disabled={readLoading}
-        >
-          {readLoading ? "Reading..." : "Read"}
-        </button>
-      </div>
-
-      <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
-        <legend style={{ padding: "0 8px" }}>Per unit scaling</legend>
-
-        <div className="security-form">
-          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ minWidth: 120 }}>Commodity scale</span>
-            <input
-              type="number"
-              value={state.commodityScale}
-              onChange={(e) =>
-                handleUnitChargeFieldChange(mode, "commodityScale", e.target.value)
-              }
-            />
-          </label>
-        </div>
-
-        <div className="security-form">
-          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ minWidth: 120 }}>Price scale</span>
-            <input
-              type="number"
-              value={state.priceScale}
-              onChange={(e) =>
-                handleUnitChargeFieldChange(mode, "priceScale", e.target.value)
-              }
-            />
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
-        <legend style={{ padding: "0 8px" }}>Commodity reference</legend>
-
-        <div className="security-form">
-          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ minWidth: 120 }}>Class ID</span>
-            <input
-              type="text"
-              value={state.classId}
-              onChange={(e) =>
-                handleUnitChargeFieldChange(mode, "classId", e.target.value)
-              }
-            />
-          </label>
-        </div>
-
-        <div className="security-form">
-          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ minWidth: 120 }}>Logical name</span>
-            <input
-              type="text"
-              value={state.logicalName}
-              onChange={(e) =>
-                handleUnitChargeFieldChange(mode, "logicalName", e.target.value)
-              }
-            />
-          </label>
-        </div>
-
-        <div className="security-form">
-          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ minWidth: 120 }}>Attribute ID</span>
-            <input
-              type="text"
-              value={state.attributeId}
-              onChange={(e) =>
-                handleUnitChargeFieldChange(mode, "attributeId", e.target.value)
-              }
-            />
-          </label>
-        </div>
-      </fieldset>
-
-      {!isActive && (
-        <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
-          <legend style={{ padding: "0 8px" }}>Activation time</legend>
-
-          <div className="security-form" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    return (
+      <form onSubmit={(e) => handleSubmit(e, mode)}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input
               type="checkbox"
-              checked={state.activationTimeSelected}
-              onChange={(e) => setActivationSelected(e.target.checked)}
+              checked={state.selected}
+              onChange={(e) => setSelected(e.target.checked)}
             />
-            <span style={{ minWidth: 120 }}>Unit charge activation time</span>
-            <input
-              type="text"
-              value={state.unitChargeActivationTime}
-              onChange={(e) =>
-                handleUnitChargeFieldChange(mode, "unitChargeActivationTime", e.target.value)
-              }
-            />
+            {isActive ? "Unit charge active" : "Unit charge passive"}
+            <span style={{ marginLeft: 8, color: "#666" }}>
+              (Attribute Index: {isActive ? "5" : "6"})
+            </span>
+          </label>
+
+          <button
+            type="button"
+            className="scheduler-add-button"
+            onClick={() => handleUnitChargeRead(mode)}
+            disabled={readLoading}
+          >
+            {readLoading ? "Reading..." : "Read"}
+          </button>
+        </div>
+
+        <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
+          <legend style={{ padding: "0 8px" }}>Per unit scaling</legend>
+
+          <div className="security-form">
+            <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ minWidth: 120 }}>Commodity scale</span>
+              <input
+                type="number"
+                value={state.commodityScale}
+                onChange={(e) =>
+                  handleUnitChargeFieldChange(mode, "commodityScale", e.target.value)
+                }
+              />
+            </label>
+          </div>
+
+          <div className="security-form">
+            <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ minWidth: 120 }}>Price scale</span>
+              <input
+                type="number"
+                value={state.priceScale}
+                onChange={(e) =>
+                  handleUnitChargeFieldChange(mode, "priceScale", e.target.value)
+                }
+              />
+            </label>
           </div>
         </fieldset>
-      )}
 
-      <fieldset style={{ border: "1px solid #ddd", padding: 12 }}>
-        <legend style={{ padding: "0 8px" }}>Charge table</legend>
+        <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
+          <legend style={{ padding: "0 8px" }}>Commodity reference</legend>
 
-        <div style={{ maxWidth: "100%", overflowX: "auto" }}>
-          <table className="tableTariff1" style={{ width: "100%" }}>
-            <thead>
-              <tr>
-                <th></th>
-                <th>Tariff 1</th>
-                <th>Tariff 2</th>
-                <th>Tariff 3</th>
-                <th>Tariff 4</th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.chargeTable.map((row, rowIndex) => (
-                <tr key={rowIndex}>
-                  <td style={{ whiteSpace: "nowrap", padding: "6px 8px" }}>
-                    {row.step}
-                  </td>
+          <div className="security-form">
+            <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ minWidth: 120 }}>Class ID</span>
+              <input
+                type="text"
+                value={state.classId}
+                onChange={(e) =>
+                  handleUnitChargeFieldChange(mode, "classId", e.target.value)
+                }
+              />
+            </label>
+          </div>
 
-                  {["tariff1", "tariff2", "tariff3", "tariff4"].map((field) => (
-                    <td key={field}>
-                      <input
-                        type="text"
-                        value={row[field]}
-                        onChange={(e) =>
-                          handleUnitChargeTableChange(
-                            mode,
-                            rowIndex,
-                            field,
-                            e.target.value
-                          )
-                        }
-                        style={{ width: "100%" }}
-                      />
-                    </td>
-                  ))}
+          <div className="security-form">
+            <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ minWidth: 120 }}>Logical name</span>
+              <input
+                type="text"
+                value={state.logicalName}
+                onChange={(e) =>
+                  handleUnitChargeFieldChange(mode, "logicalName", e.target.value)
+                }
+              />
+            </label>
+          </div>
+
+          <div className="security-form">
+            <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ minWidth: 120 }}>Attribute ID</span>
+              <input
+                type="text"
+                value={state.attributeId}
+                onChange={(e) =>
+                  handleUnitChargeFieldChange(mode, "attributeId", e.target.value)
+                }
+              />
+            </label>
+          </div>
+        </fieldset>
+
+        {!isActive && (
+          <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
+            <legend style={{ padding: "0 8px" }}>Activation time</legend>
+
+            <div className="security-form" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <input
+                type="checkbox"
+                checked={state.activationTimeSelected}
+                onChange={(e) => setActivationSelected(e.target.checked)}
+              />
+              <span style={{ minWidth: 120 }}>Unit charge activation time</span>
+              <input
+                type="text"
+                value={state.unitChargeActivationTime}
+                onChange={(e) =>
+                  handleUnitChargeFieldChange(mode, "unitChargeActivationTime", e.target.value)
+                }
+              />
+            </div>
+          </fieldset>
+        )}
+
+        <fieldset style={{ border: "1px solid #ddd", padding: 12 }}>
+          <legend style={{ padding: "0 8px" }}>Charge table</legend>
+
+          <div style={{ maxWidth: "100%", overflowX: "auto" }}>
+            <table className="tableTariff1" style={{ width: "100%" }}>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Tariff 1</th>
+                  <th>Tariff 2</th>
+                  <th>Tariff 3</th>
+                  <th>Tariff 4</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </fieldset>
-    </form>
-  );
-};
+              </thead>
+              <tbody>
+                {state.chargeTable.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    <td style={{ whiteSpace: "nowrap", padding: "6px 8px" }}>
+                      {row.step}
+                    </td>
+
+                    {["tariff1", "tariff2", "tariff3", "tariff4"].map((field) => (
+                      <td key={field}>
+                        <input
+                          type="text"
+                          value={row[field]}
+                          onChange={(e) =>
+                            handleUnitChargeTableChange(
+                              mode,
+                              rowIndex,
+                              field,
+                              e.target.value
+                            )
+                          }
+                          style={{ width: "100%" }}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </fieldset>
+      </form>
+    );
+  };
 
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [selectAll, setSelectAll] = useState(false);
@@ -2706,127 +2756,127 @@ const renderUnitChargeSection = (mode) => {
 
   const controllerRef = useRef(null);
 
-const handleReadValues = async () => {
-  const serial =
-    localStorage.getItem("selectedSerialNumber") ||
-    localStorage.getItem("selectedDeviceId") ||
-    deviceId;
+  const handleReadValues = async () => {
+    const serial =
+      localStorage.getItem("selectedSerialNumber") ||
+      localStorage.getItem("selectedDeviceId") ||
+      deviceId;
 
-  if (!serial) {
-    alert("No serial/device selected");
-    return;
-  }
-
-  if (selectedItems.size === 0) {
-    alert("Please select at least one checkbox");
-    return;
-  }
-
-  const parameters = Array.from(selectedItems).map((i) => {
-    const item = CHARGE_VALUE_OPTIONS[i];
-    return {
-      obis_code: "0.0.19.20.0.255",
-      attribute_index: String(item.index),
-    };
-  });
-
-  const payload = {
-    serial_number: serial,
-    action: "read_obis",
-    parameters,
-  };
-
-  try {
-    setReadLoading(true);
-
-    if (controllerRef.current) {
-      controllerRef.current.abort();
+    if (!serial) {
+      alert("No serial/device selected");
+      return;
     }
 
-    controllerRef.current = new AbortController();
+    if (selectedItems.size === 0) {
+      alert("Please select at least one checkbox");
+      return;
+    }
 
-    const response = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-      signal: controllerRef.current.signal,
+    const parameters = Array.from(selectedItems).map((i) => {
+      const item = CHARGE_VALUE_OPTIONS[i];
+      return {
+        obis_code: "0.0.19.20.0.255",
+        attribute_index: String(item.index),
+      };
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const payload = {
+      serial_number: serial,
+      action: "read_obis",
+      parameters,
+    };
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
+    try {
+      setReadLoading(true);
 
-    let buffer = "";
-    const nextReadValues = {};
-    const nextFormValues = {};
+      if (controllerRef.current) {
+        controllerRef.current.abort();
+      }
 
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
+      controllerRef.current = new AbortController();
 
-      buffer += decoder.decode(value, { stream: true });
-      const chunks = buffer.split("\n\n");
-      buffer = chunks.pop();
+      const response = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        signal: controllerRef.current.signal,
+      });
 
-      for (const chunk of chunks) {
-        if (!chunk.startsWith("data:")) continue;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-        try {
-          const msg = JSON.parse(chunk.replace(/^data:\s*/, ""));
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
 
-          const matched = CHARGE_VALUE_OPTIONS.find(
-            (x) => String(x.index) === String(msg.attribute_index)
-          );
+      let buffer = "";
+      const nextReadValues = {};
+      const nextFormValues = {};
 
-          if (!matched) continue;
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
 
-          if (matched.field === "charge_configuration") {
-            const arrayValue = normalizeChargeConfig(msg.value);
-            nextReadValues[matched.field] = arrayValue.join(", ");
-            nextFormValues[matched.field] = arrayValue;
-          } else {
-            const displayValue =
-              msg.value === null || msg.value === undefined
-                ? ""
-                : typeof msg.value === "object"
-                ? JSON.stringify(msg.value)
-                : String(msg.value);
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split("\n\n");
+        buffer = chunks.pop();
 
-            nextReadValues[matched.field] = displayValue;
-            nextFormValues[matched.field] = msg.value;
+        for (const chunk of chunks) {
+          if (!chunk.startsWith("data:")) continue;
+
+          try {
+            const msg = JSON.parse(chunk.replace(/^data:\s*/, ""));
+
+            const matched = CHARGE_VALUE_OPTIONS.find(
+              (x) => String(x.index) === String(msg.attribute_index)
+            );
+
+            if (!matched) continue;
+
+            if (matched.field === "charge_configuration") {
+              const arrayValue = normalizeChargeConfig(msg.value);
+              nextReadValues[matched.field] = arrayValue.join(", ");
+              nextFormValues[matched.field] = arrayValue;
+            } else {
+              const displayValue =
+                msg.value === null || msg.value === undefined
+                  ? ""
+                  : typeof msg.value === "object"
+                    ? JSON.stringify(msg.value)
+                    : String(msg.value);
+
+              nextReadValues[matched.field] = displayValue;
+              nextFormValues[matched.field] = msg.value;
+            }
+
+            setReadValues((prev) => ({
+              ...prev,
+              ...nextReadValues,
+            }));
+
+            setValueFormData((prev) => ({
+              ...prev,
+              ...nextFormValues,
+              device_id: serial,
+            }));
+          } catch (err) {
+            console.error("Chunk parse error:", err);
           }
-
-          setReadValues((prev) => ({
-            ...prev,
-            ...nextReadValues,
-          }));
-
-          setValueFormData((prev) => ({
-            ...prev,
-            ...nextFormValues,
-            device_id: serial,
-          }));
-        } catch (err) {
-          console.error("Chunk parse error:", err);
         }
       }
+    } catch (error) {
+      if (error.name === "AbortError") {
+        console.log("Request was aborted");
+      } else {
+        console.error("Read Error:", error);
+        alert("Failed to read charge values");
+      }
+    } finally {
+      setReadLoading(false);
     }
-  } catch (error) {
-    if (error.name === "AbortError") {
-      console.log("Request was aborted");
-    } else {
-      console.error("Read Error:", error);
-      alert("Failed to read charge values");
-    }
-  } finally {
-    setReadLoading(false);
-  }
-};
+  };
 
 
 
@@ -2965,14 +3015,14 @@ const handleReadValues = async () => {
     let displayValue = getFieldValue(field);
 
     // Add % for proportion field
-  if (
-    field === "proportion" &&
-    displayValue !== "" &&
-    displayValue !== null &&
-    displayValue !== undefined
-  ) {
-    displayValue = `${displayValue}%`;
-  }
+    if (
+      field === "proportion" &&
+      displayValue !== "" &&
+      displayValue !== null &&
+      displayValue !== undefined
+    ) {
+      displayValue = `${displayValue}%`;
+    }
 
     return (
       <div className="security-form" key={field}>
@@ -2983,62 +3033,62 @@ const handleReadValues = async () => {
             onChange={() => handleReadCheckbox(idx)}
           />
           <span>{label}:</span>
-           <input
-          type={type}
-          value={displayValue}
-          readOnly
-          onChange={(e) => valueHandleChange(field, e.target.value)}
-        />
+          <input
+            type={type}
+            value={displayValue}
+            readOnly
+            onChange={(e) => valueHandleChange(field, e.target.value)}
+          />
         </label>
 
-       
+
       </div>
     );
   };
 
 
 
- const getChargeTypeDisplay = (value) => {
-  // Empty before meter read
-  if (value === "" || value === null || value === undefined) {
-    return "";
-  }
+  const getChargeTypeDisplay = (value) => {
+    // Empty before meter read
+    if (value === "" || value === null || value === undefined) {
+      return "";
+    }
 
-  switch (Number(value)) {
-    case 0:
-      return "0 (Consumption Based Collection)";
-    case 1:
-      return "1 (Time Based Collection)";
-    case 2:
-      return "2 (Payment Event Based Collection)";
-    default:
-      return value;
-  }
-};
+    switch (Number(value)) {
+      case 0:
+        return "0 (Consumption Based Collection)";
+      case 1:
+        return "1 (Time Based Collection)";
+      case 2:
+        return "2 (Payment Event Based Collection)";
+      default:
+        return value;
+    }
+  };
 
-const renderChargeTypeField = () => {
-  const rawValue = getFieldValue("charge_type");
-  const displayValue = getChargeTypeDisplay(rawValue);
+  const renderChargeTypeField = () => {
+    const rawValue = getFieldValue("charge_type");
+    const displayValue = getChargeTypeDisplay(rawValue);
 
-  return (
-    <div className="security-form" key="charge_type">
-      <label>
-        <input
-          type="checkbox"
-          checked={selectedItems.has(1)}
-          onChange={() => handleReadCheckbox(1)}
-        />
-        <span>Charge Type:</span>
+    return (
+      <div className="security-form" key="charge_type">
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedItems.has(1)}
+            onChange={() => handleReadCheckbox(1)}
+          />
+          <span>Charge Type:</span>
 
-        <input
-          type="text"
-          value={displayValue}
-          readOnly
-        />
-      </label>
-    </div>
-  );
-};
+          <input
+            type="text"
+            value={displayValue}
+            readOnly
+          />
+        </label>
+      </div>
+    );
+  };
 
 
 
@@ -3052,8 +3102,8 @@ const renderChargeTypeField = () => {
       (Array.isArray(valueFormData.charge_configuration)
         ? valueFormData.charge_configuration.join(", ")
         : "");
-    
-    displayValue=parseInt(displayValue)
+
+    displayValue = parseInt(displayValue)
     return (
       <div className="security-form">
         <label>
@@ -3063,13 +3113,13 @@ const renderChargeTypeField = () => {
             onChange={() => handleReadCheckbox(4)}
           />
           <span>Charge Configuration:</span>
-         
+
           <label>
             <input
               type="checkbox"
               value="continuous"
-               checked={displayValue === 2 || displayValue === 3}
-              
+              checked={displayValue === 2 || displayValue === 3}
+
             />
             Continuous collection
           </label>
@@ -3080,159 +3130,159 @@ const renderChargeTypeField = () => {
               value="percentage_based"
               checked={displayValue === 1 || displayValue === 3}
             />
-             Percentage collection
+            Percentage collection
           </label>
-        
-    
+
+
         </label>
-          </div>
+      </div>
 
-       
 
-        
+
+
     );
   };
 
 
   const getPriorityDisplay = (value) => {
-  // Empty before meter read
-  if (value === "" || value === null || value === undefined) {
-    return "";
-  }
-
-  switch (Number(value)) {
-    case 1:
-      return "1 (Highest Priority)";
-    case 0:
-      return "0 (Not Activated)";
-    case 255:
-      return "255 (Lowest Priority)";
-    default:
-      return value;
-  }
-};
-
-const renderPriorityField = () => {
-  const rawValue = getFieldValue("priority");
-  const displayValue = getPriorityDisplay(rawValue);
-
-  return (
-    <div className="security-form" key="priority">
-      <label>
-        <input
-          type="checkbox"
-          checked={selectedItems.has(2)}
-          onChange={() => handleReadCheckbox(2)}
-        />
-        <span>Priority:</span>
-        <input
-          type="text"
-          value={displayValue}
-          readOnly
-        />
-      </label>
-    </div>
-  );
-};
-
-
-
-
-const formatPeriod = (seconds) => {
-  // Empty before meter read
-  if (seconds === "" || seconds === null || seconds === undefined) {
-    return "";
-  }
-
-  const totalSeconds = Number(seconds);
-
-  const hrs = Math.floor(totalSeconds / 3600);
-  const mins = Math.floor((totalSeconds % 3600) / 60);
-  const secs = totalSeconds % 60;
-
-  return `${hrs}h:${mins}m:${secs}s`;
-};
-
-const renderPeriodField = () => {
-  const rawValue = getFieldValue("period");
-  const displayValue = formatPeriod(rawValue);
-
-  return (
-    <div className="security-form" key="period">
-      <label>
-        <input
-          type="checkbox"
-          checked={selectedItems.has(3)}
-          onChange={() => handleReadCheckbox(3)}
-        />
-        <span>Period:</span>
-
-        <input
-          type="text"
-          value={displayValue}
-          readOnly
-        />
-      </label>
-    </div>
-  );
-};
-
-
-
-
-
-const formatLastCollectionTime = (value) => {
-  if (!value) return "";
-
-  // If value comes as a JSON string
-  let data = value;
-  if (typeof value === "string") {
-    try {
-      data = JSON.parse(value);
-    } catch (error) {
-      return value;
+    // Empty before meter read
+    if (value === "" || value === null || value === undefined) {
+      return "";
     }
-  }
 
-  const datePart = data?.Date || "";
-  const timePart = data?.Time || "";
+    switch (Number(value)) {
+      case 1:
+        return "1 (Highest Priority)";
+      case 0:
+        return "0 (Not Activated)";
+      case 255:
+        return "255 (Lowest Priority)";
+      default:
+        return value;
+    }
+  };
 
-  // Remove extra text like "(Deviation: Z)"
-  const cleanTime = timePart.split(" ")[0];
+  const renderPriorityField = () => {
+    const rawValue = getFieldValue("priority");
+    const displayValue = getPriorityDisplay(rawValue);
 
-  // Remove weekday text like "Saturday,"
-  const cleanDate = datePart.includes(",")
-    ? datePart.split(",")[1].trim()
-    : datePart;
+    return (
+      <div className="security-form" key="priority">
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedItems.has(2)}
+            onChange={() => handleReadCheckbox(2)}
+          />
+          <span>Priority:</span>
+          <input
+            type="text"
+            value={displayValue}
+            readOnly
+          />
+        </label>
+      </div>
+    );
+  };
 
-  if (!cleanDate && !cleanTime) return "";
 
-  return `${cleanDate} ${cleanTime}`.trim();
-};
 
-const renderLastCollectionTimeField = () => {
-  const rawValue = getFieldValue("last_collection_time");
-  const displayValue = formatLastCollectionTime(rawValue);
 
-  return (
-    <div className="security-form" key="last_collection_time">
-      <label>
-        <input
-          type="checkbox"
-          checked={selectedItems.has(4)}
-          onChange={() => handleReadCheckbox(4)}
-        />
-        <span>Last Collection Time:</span>
+  const formatPeriod = (seconds) => {
+    // Empty before meter read
+    if (seconds === "" || seconds === null || seconds === undefined) {
+      return "";
+    }
 
-        <input
-          type="text"
-          value={displayValue}
-          readOnly
-        />
-      </label>
-    </div>
-  );
-};
+    const totalSeconds = Number(seconds);
+
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+
+    return `${hrs}h:${mins}m:${secs}s`;
+  };
+
+  const renderPeriodField = () => {
+    const rawValue = getFieldValue("period");
+    const displayValue = formatPeriod(rawValue);
+
+    return (
+      <div className="security-form" key="period">
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedItems.has(3)}
+            onChange={() => handleReadCheckbox(3)}
+          />
+          <span>Period:</span>
+
+          <input
+            type="text"
+            value={displayValue}
+            readOnly
+          />
+        </label>
+      </div>
+    );
+  };
+
+
+
+
+
+  const formatLastCollectionTime = (value) => {
+    if (!value) return "";
+
+    // If value comes as a JSON string
+    let data = value;
+    if (typeof value === "string") {
+      try {
+        data = JSON.parse(value);
+      } catch (error) {
+        return value;
+      }
+    }
+
+    const datePart = data?.Date || "";
+    const timePart = data?.Time || "";
+
+    // Remove extra text like "(Deviation: Z)"
+    const cleanTime = timePart.split(" ")[0];
+
+    // Remove weekday text like "Saturday,"
+    const cleanDate = datePart.includes(",")
+      ? datePart.split(",")[1].trim()
+      : datePart;
+
+    if (!cleanDate && !cleanTime) return "";
+
+    return `${cleanDate} ${cleanTime}`.trim();
+  };
+
+  const renderLastCollectionTimeField = () => {
+    const rawValue = getFieldValue("last_collection_time");
+    const displayValue = formatLastCollectionTime(rawValue);
+
+    return (
+      <div className="security-form" key="last_collection_time">
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedItems.has(4)}
+            onChange={() => handleReadCheckbox(4)}
+          />
+          <span>Last Collection Time:</span>
+
+          <input
+            type="text"
+            value={displayValue}
+            readOnly
+          />
+        </label>
+      </div>
+    );
+  };
 
   const renderContent = () => {
     switch (currentPage) {
@@ -3263,12 +3313,12 @@ const renderLastCollectionTimeField = () => {
             </div>
 
             {renderValueField("total_amount_paid", "Total Amount Paid", "number", 0)}
-            
+
             {renderChargeTypeField()}
             {renderPriorityField()}
             {renderPeriodField()}
             {renderChargeConfigurationField()}
-             {renderLastCollectionTimeField()}
+            {renderLastCollectionTimeField()}
             {renderValueField(
               "last_collection_amount",
               "Last Collection Amount",
@@ -3283,19 +3333,19 @@ const renderLastCollectionTimeField = () => {
             )}
             {renderValueField("proportion", "Proportion", "text", 8)}
 
-           
+
           </form>
         );
 
-        case "unitChargeActive":
-  return renderUnitChargeSection("active");
+      case "unitChargeActive":
+        return renderUnitChargeSection("active");
 
-case "unitChargePassive":
-  return renderUnitChargeSection("passive");
+      case "unitChargePassive":
+        return renderUnitChargeSection("passive");
 
-        
 
-    
+
+
 
       default:
         return <p>Please select an option above.</p>;
@@ -3330,10 +3380,10 @@ case "unitChargePassive":
 
 
 const Charge = () => {
-  
+
   const UNIT_CHARGE_TABLE_ROWS = Array.from({ length: 10 }, (_, i) => i + 1);
 
-const unitChargeControllerRef = useRef(null);
+  const unitChargeControllerRef = useRef(null);
   const [currentPage, setCurrentPage] = useState("value");
 
   const [deviceId, setDeviceId] = useState(() =>
@@ -3367,896 +3417,1026 @@ const unitChargeControllerRef = useRef(null);
 
 
   // Change these to your actual meter OBIS if needed
-const UNIT_CHARGE_ACTIVE_OBIS_CODE = "0.0.19.20.0.255";
-const UNIT_CHARGE_PASSIVE_OBIS_CODE = "0.0.19.20.0.255";
+  const UNIT_CHARGE_ACTIVE_OBIS_CODE = "0.0.19.20.0.255";
+  const UNIT_CHARGE_PASSIVE_OBIS_CODE = "0.0.19.20.0.255";
 
-const createChargeTable = () =>
-  UNIT_CHARGE_TABLE_ROWS.map((step) => ({
-    step: `Step ${step}`,
-    tariff1: "",
-    tariff2: "",
-    tariff3: "",
-    tariff4: "",
-  }));
-
- 
+  const createChargeTable = () =>
+    UNIT_CHARGE_TABLE_ROWS.map((step) => ({
+      step: `Step ${step}`,
+      tariff1: "",
+      tariff2: "",
+      tariff3: "",
+      tariff4: "",
+    }));
 
 
 
 
-const createUnitChargeState = () => ({
-  selected: false,
-  activationTimeSelected: false,
-  commodityScale: "",
-  priceScale: "",
-  classId: "",
-  logicalName: "",
-  attributeId: "",
-  unitChargeActivationTime: "",
-  chargeTableRaw: "",
-  chargeTable: createChargeTable(),
-});
 
 
-const [unitChargeActiveData, setUnitChargeActiveData] = useState(
-  createUnitChargeState()
-);
-const [unitChargePassiveData, setUnitChargePassiveData] = useState(
-  createUnitChargeState()
-);
-
-const getUnitChargeState = (mode) =>
-  mode === "active" ? unitChargeActiveData : unitChargePassiveData;
-
-const setUnitChargeState = (mode, updater) => {
-  if (mode === "active") {
-    setUnitChargeActiveData(updater);
-  } else {
-    setUnitChargePassiveData(updater);
-  }
-};
-
-const handleUnitChargeFieldChange = (mode, field, value) => {
-  setUnitChargeState(mode, (prev) => ({
-    ...prev,
-    [field]: value,
-  }));
-};
-
-const handleUnitChargeTableChange = (mode, rowIndex, field, value) => {
-  setUnitChargeState(mode, (prev) => {
-    const nextTable = [...prev.chargeTable];
-    nextTable[rowIndex] = {
-      ...nextTable[rowIndex],
-      [field]: value,
-    };
-    return {
-      ...prev,
-      chargeTable: nextTable,
-    };
+  const createUnitChargeState = () => ({
+    selected: false,
+    activationTimeSelected: false,
+    commodityScale: "",
+    priceScale: "",
+    classId: "",
+    logicalName: "",
+    attributeId: "",
+    unitChargeActivationTime: "",
+    chargeTableRaw: "",
+    chargeTable: createChargeTable(),
   });
-};
 
-const normalizeUnitChargeTable = (rawTable) => {
-  const baseTable = createChargeTable();
 
-  if (!Array.isArray(rawTable)) return baseTable;
+  const [unitChargeActiveData, setUnitChargeActiveData] = useState(
+    createUnitChargeState()
+  );
+  const [unitChargePassiveData, setUnitChargePassiveData] = useState(
+    createUnitChargeState()
+  );
 
-  return baseTable.map((row, index) => {
-    const src = rawTable[index] ?? {};
+  const getUnitChargeState = (mode) =>
+    mode === "active" ? unitChargeActiveData : unitChargePassiveData;
 
-    if (Array.isArray(src)) {
+  const setUnitChargeState = (mode, updater) => {
+    if (mode === "active") {
+      setUnitChargeActiveData(updater);
+    } else {
+      setUnitChargePassiveData(updater);
+    }
+  };
+
+  const handleUnitChargeFieldChange = (mode, field, value) => {
+    setUnitChargeState(mode, (prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleUnitChargeTableChange = (mode, rowIndex, field, value) => {
+    setUnitChargeState(mode, (prev) => {
+      const nextTable = [...prev.chargeTable];
+      nextTable[rowIndex] = {
+        ...nextTable[rowIndex],
+        [field]: value,
+      };
+      return {
+        ...prev,
+        chargeTable: nextTable,
+      };
+    });
+  };
+
+  const normalizeUnitChargeTable = (rawTable) => {
+    const baseTable = createChargeTable();
+
+    if (!Array.isArray(rawTable)) return baseTable;
+
+    return baseTable.map((row, index) => {
+      const src = rawTable[index] ?? {};
+
+      if (Array.isArray(src)) {
+        return {
+          step: row.step,
+          tariff1: src[0] ?? "",
+          tariff2: src[1] ?? "",
+          tariff3: src[2] ?? "",
+          tariff4: src[3] ?? "",
+        };
+      }
+
       return {
         step: row.step,
-        tariff1: src[0] ?? "",
-        tariff2: src[1] ?? "",
-        tariff3: src[2] ?? "",
-        tariff4: src[3] ?? "",
+        tariff1: src.tariff1 ?? src.value1 ?? src.charge_per_unit ?? "",
+        tariff2: src.tariff2 ?? src.value2 ?? "",
+        tariff3: src.tariff3 ?? src.value3 ?? "",
+        tariff4: src.tariff4 ?? src.value4 ?? "",
       };
-    }
+    });
+  };
+
+  const parseUnitChargeResponse = (rawData) => {
+    const root = Array.isArray(rawData) ? rawData[0] : rawData;
+    const payload = root?.value ?? root?.data ?? root?.result ?? root ?? {};
+
+    const scaling =
+      payload.charge_per_unit_scaling ??
+      payload.scaling ??
+      payload.chargePerUnitScaling ??
+      {};
+
+    const reference =
+      payload.commodity_reference ??
+      payload.reference ??
+      payload.commodityReference ??
+      {};
+
+    const table =
+      payload.charge_table ??
+      payload.chargeTable ??
+      payload.table ??
+      [];
 
     return {
-      step: row.step,
-      tariff1: src.tariff1 ?? src.value1 ?? src.charge_per_unit ?? "",
-      tariff2: src.tariff2 ?? src.value2 ?? "",
-      tariff3: src.tariff3 ?? src.value3 ?? "",
-      tariff4: src.tariff4 ?? src.value4 ?? "",
-    };
-  });
-};
-
-const parseUnitChargeResponse = (rawData) => {
-  const root = Array.isArray(rawData) ? rawData[0] : rawData;
-  const payload = root?.value ?? root?.data ?? root?.result ?? root ?? {};
-
-  const scaling =
-    payload.charge_per_unit_scaling ??
-    payload.scaling ??
-    payload.chargePerUnitScaling ??
-    {};
-
-  const reference =
-    payload.commodity_reference ??
-    payload.reference ??
-    payload.commodityReference ??
-    {};
-
-  const table =
-    payload.charge_table ??
-    payload.chargeTable ??
-    payload.table ??
-    [];
-
-  return {
-    selected: true,
-    activationTimeSelected: true,
-    commodityScale: scaling.commodity_scale ?? scaling.commodityScale ?? "",
-    priceScale: scaling.price_scale ?? scaling.priceScale ?? "",
-    classId: reference.class_id ?? reference.classId ?? "",
-    logicalName: reference.logical_name ?? reference.logicalName ?? "",
-    attributeId: reference.attribute_index ?? reference.attributeId ?? "",
-    unitChargeActivationTime:
-      payload.unit_charge_activation_time ??
-      payload.unitChargeActivationTime ??
-      "",
-    chargeTable: normalizeUnitChargeTable(table),
-  };
-};
-
-const handleUnitChargeRead1 = async (mode) => {
-  const serial =
-    localStorage.getItem("selectedSerialNumber") ||
-    localStorage.getItem("selectedDeviceId") ||
-    deviceId;
-
-  if (!serial) {
-    alert("No serial/device selected");
-    return;
-  }
-
-  const current = getUnitChargeState(mode);
-
-  if (!current.selected && !(mode === "passive" && current.activationTimeSelected)) {
-    alert(`Please select ${mode === "active" ? "Unit charge active" : "Unit charge passive"}`);
-    return;
-  }
-
-  const parameters = [];
-
-  if (mode === "active" && current.selected) {
-    parameters.push({
-      obis_code: UNIT_CHARGE_ACTIVE_OBIS_CODE,
-      attribute_index: "5",
-    });
-  }
-
-  if (mode === "passive") {
-    if (current.selected) {
-      parameters.push({
-        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
-        attribute_index: "6",
-      });
-    }
-
-    if (current.activationTimeSelected) {
-      parameters.push({
-        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
-        attribute_index: "7",
-      });
-    }
-  }
-
-  const payload = {
-    serial_number: serial,
-    action: "read_obis",
-    parameters,
-  };
-
-  try {
-    setReadLoading(true);
-
-    const response = await axios.post(`${BASE_URL}/api/getmeterinfo/`, payload, {
-      headers: { "Content-Type": "application/json" },
-    });
-
-    const data = response?.data?.data ?? response?.data ?? {};
-    const nextState = parseUnitChargeResponse(data);
-
-    setUnitChargeState(mode, (prev) => ({
-      ...prev,
-      ...nextState,
-    }));
-  } catch (error) {
-    console.error("Unit charge read error:", error);
-    alert("Failed to read unit charge data");
-  } finally {
-    setReadLoading(false);
-  }
-};
-
-
-
-
-
-
-
-const renderUnitChargeSection = (mode) => {
-  const isActive = mode === "active";
-  const state = getUnitChargeState(mode);
-
-  const setSelected = (checked) =>
-    setUnitChargeState(mode, (prev) => ({
-      ...prev,
-      selected: checked,
-    }));
-
-  const setActivationSelected = (checked) =>
-    setUnitChargeState(mode, (prev) => ({
-      ...prev,
-      activationTimeSelected: checked,
-    }));
-
-
-
-  
-
-const parseUnitChargeResponseItem = (item) => {
-  const attr = String(
-    item?.attribute_index ?? item?.attributeId ?? item?.attribute_index ?? ""
-  );
-
-  const value = item?.value ?? item?.data ?? item?.result ?? item;
-
-  const next = { selected: true };
-
-  const scaling =
-    value?.charge_per_unit_scaling ??
-    value?.scaling ??
-    value?.chargePerUnitScaling ??
-    null;
-
-  if (scaling) {
-    next.commodityScale =
-      scaling.commodity_scale ?? scaling.commodityScale ?? "";
-    next.priceScale = scaling.price_scale ?? scaling.priceScale ?? "";
-  }
-
-  const reference =
-    value?.commodity_reference ??
-    value?.reference ??
-    value?.commodityReference ??
-    null;
-
-  if (reference) {
-    next.classId = reference.class_id ?? reference.classId ?? "";
-    next.logicalName = reference.logical_name ?? reference.logicalName ?? "";
-    next.attributeId = reference.attribute_index ?? reference.attributeId ?? "";
-  }
-
-  if (attr === "6") {
-    next.chargeTableRaw =
-      typeof value === "string" ? value : JSON.stringify(value ?? "");
-
-    const maybeTable = Array.isArray(value)
-      ? value
-      : value?.charge_table ?? value?.chargeTable ?? value?.table ?? null;
-
-    if (maybeTable) {
-      next.chargeTable = normalizeUnitChargeTable(maybeTable);
-    }
-  }
-
-  if (attr === "7") {
-    next.activationTimeSelected = true;
-    next.unitChargeActivationTime = formatUnitChargeActivationTime(value);
-  }
-
-  const maybeTable =
-    value?.charge_table ?? value?.chargeTable ?? value?.table ?? null;
-
-  if (Array.isArray(maybeTable)) {
-    next.chargeTable = normalizeUnitChargeTable(maybeTable);
-  }
-
-  return next;
-};
-
-const parseUnitChargeRaw = (raw) => {
-  const text = String(raw ?? "");
-
-  // Example:
-  // "-120, -89None, 30[]"
-  const parts = text.split(",");
-
-  const commodityScale = parts[0]?.trim() ?? "";
-
-  const secondPart = parts[1]?.trim() ?? "";
-  const priceMatch = secondPart.match(/-?\d+/);
-  const priceScale = priceMatch?.[0] ?? "";
-
-  const logicalName = secondPart.replace(/-?\d+/, "").trim() || "None";
-
-  const chargeTableRaw = parts.slice(2).join(",").trim();
-
-  return {
-    commodityScale,
-    priceScale,
-    logicalName,
-    chargeTableRaw,
-  };
-};
-
-const mergeUnitChargeResponse = (rawData) => {
-  const items = Array.isArray(rawData) ? rawData : rawData ? [rawData] : [];
-
-  return items.reduce((acc, item) => {
-    const parsed = parseUnitChargeResponseItem(item);
-
-    return {
-      ...acc,
-      ...parsed,
-      chargeTable: parsed.chargeTable ?? acc.chargeTable,
-    };
-  }, {});
-};
-
-
-//*************** */ 
-
-const normalizeUnitChargeTable = (rows = []) => {
-  if (!Array.isArray(rows)) return [];
-
-  const result = [];
-
-  for (let i = 0; i < rows.length; i += 4) {
-    result.push({
-      step: `Step ${Math.floor(i / 4) + 1}`,
-
-      tariff1: rows[i]?.chargePerUnit ?? "",
-
-      tariff2: rows[i + 1]?.chargePerUnit ?? "",
-
-      tariff3: rows[i + 2]?.chargePerUnit ?? "",
-
-      tariff4: rows[i + 3]?.chargePerUnit ?? "",
-    });
-  }
-
-  return result;
-};
-
-const formatUnitChargeActivationTime = (value) => {
-  if (value == null) return "";
-  if (typeof value === "string") return value;
-  if (typeof value !== "object") return String(value);
-
-  const date = value.Date ?? value.date ?? "";
-  const time = value.Time ?? value.time ?? "";
-  const status =
-    value["Clock Status"] ??
-    value.clock_status ??
-    value.clockStatus ??
-    "";
-
-  return [date, time, status !== "" ? `Clock Status: ${status}` : ""]
-    .filter(Boolean)
-    .join(" | ");
-};
-
-const applyUnitChargeResponse = (mode, msg) => {
-  const attr = String(msg?.attribute_index ?? "");
-  const value = msg?.value ?? {};
-
-  setUnitChargeState(mode, (prev) => {
-    const next = {
-      ...prev,
       selected: true,
+      activationTimeSelected: true,
+      commodityScale: scaling.commodity_scale ?? scaling.commodityScale ?? "",
+      priceScale: scaling.price_scale ?? scaling.priceScale ?? "",
+      classId: reference.class_id ?? reference.classId ?? "",
+      logicalName: reference.logical_name ?? reference.logicalName ?? "",
+      attributeId: reference.attribute_index ?? reference.attributeId ?? "",
+      unitChargeActivationTime:
+        payload.unit_charge_activation_time ??
+        payload.unitChargeActivationTime ??
+        "",
+      chargeTable: normalizeUnitChargeTable(table),
     };
-
-    if (attr === "5" || attr === "6") {
-      next.commodityScale =
-        value?.chargePerUnitScaling?.commodityScale ?? "";
-
-      next.priceScale =
-        value?.chargePerUnitScaling?.priceScale ?? "";
-
-      next.classId = value?.commodity?.classId ?? "";
-      next.logicalName = value?.commodity?.logicalName ?? "";
-      next.attributeId = value?.commodity?.attributeIndex ?? "";
-
-      next.chargeTableRaw = JSON.stringify(
-        value?.chargeTables ?? [],
-        null,
-        2
-      );
-
-      next.chargeTable = normalizeUnitChargeTable(
-        value?.chargeTables ?? []
-      );
-    }
-
-    if (mode === "passive" && attr === "7") {
-      next.activationTimeSelected = true;
-      next.unitChargeActivationTime =
-        formatUnitChargeActivationTime(value);
-    }
-
-    return next;
-  });
-};
-
-const handleUnitChargeRead = async (mode) => {
-  const serial =
-    localStorage.getItem("selectedSerialNumber") ||
-    localStorage.getItem("selectedDeviceId") ||
-    deviceId;
-
-  if (!serial) {
-    alert("No serial/device selected");
-    return;
-  }
-
-  const current = getUnitChargeState(mode);
-
-  if (
-    !current.selected &&
-    !(mode === "passive" && current.activationTimeSelected)
-  ) {
-    alert(
-      `Please select ${
-        mode === "active" ? "Unit charge active" : "Unit charge passive"
-      }`
-    );
-    return;
-  }
-
-  const parameters = [];
-
-  if (mode === "active" && current.selected) {
-    parameters.push({
-      obis_code: UNIT_CHARGE_ACTIVE_OBIS_CODE,
-      attribute_index: "5",
-    });
-  }
-
-  if (mode === "passive") {
-    if (current.selected) {
-      parameters.push({
-        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
-        attribute_index: "6",
-      });
-    }
-
-    if (current.activationTimeSelected) {
-      parameters.push({
-        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
-        attribute_index: "7",
-      });
-    }
-  }
-
-  const payload = {
-    serial_number: serial,
-    action: "read_obis",
-    parameters,
   };
 
-  try {
-    setReadLoading(true);
+  const handleUnitChargeRead1 = async (mode) => {
+    const serial =
+      localStorage.getItem("selectedSerialNumber") ||
+      localStorage.getItem("selectedDeviceId") ||
+      deviceId;
 
-    if (unitChargeControllerRef.current) {
-      unitChargeControllerRef.current.abort();
+    if (!serial) {
+      alert("No serial/device selected");
+      return;
     }
 
-    unitChargeControllerRef.current = new AbortController();
+    const current = getUnitChargeState(mode);
 
-    const response = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-      signal: unitChargeControllerRef.current.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (!current.selected && !(mode === "passive" && current.activationTimeSelected)) {
+      alert(`Please select ${mode === "active" ? "Unit charge active" : "Unit charge passive"}`);
+      return;
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
+    const parameters = [];
 
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
+    if (mode === "active" && current.selected) {
+      parameters.push({
+        obis_code: UNIT_CHARGE_ACTIVE_OBIS_CODE,
+        attribute_index: "5",
+      });
+    }
 
-      buffer += decoder.decode(value, { stream: true });
+    if (mode === "passive") {
+      if (current.selected) {
+        parameters.push({
+          obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+          attribute_index: "6",
+        });
+      }
 
-      const chunks = buffer.split("\n\n");
-      buffer = chunks.pop() || "";
-
-      for (const chunk of chunks) {
-        if (!chunk.startsWith("data:")) continue;
-
-        try {
-          const msg = JSON.parse(chunk.replace(/^data:\s*/, ""));
-          console.log("STREAM MSG", msg);
-
-          applyUnitChargeResponse(mode, msg);
-        } catch (err) {
-          console.error("Unit charge chunk parse error:", err);
-        }
+      if (current.activationTimeSelected) {
+        parameters.push({
+          obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+          attribute_index: "7",
+        });
       }
     }
-  } catch (error) {
-    if (error.name === "AbortError") {
-      console.log("Request was aborted");
-    } else {
+
+    const payload = {
+      serial_number: serial,
+      action: "read_obis",
+      parameters,
+    };
+
+    try {
+      setReadLoading(true);
+
+      const response = await axios.post(`${BASE_URL}/api/getmeterinfo/`, payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = response?.data?.data ?? response?.data ?? {};
+      const nextState = parseUnitChargeResponse(data);
+
+      setUnitChargeState(mode, (prev) => ({
+        ...prev,
+        ...nextState,
+      }));
+    } catch (error) {
       console.error("Unit charge read error:", error);
       alert("Failed to read unit charge data");
+    } finally {
+      setReadLoading(false);
     }
-  } finally {
-    setReadLoading(false);
-  }
-};
-////////////////////********** */
-
-
-const handleUnitChargeRead1 = async (mode) => {
-  const serial =
-    localStorage.getItem("selectedSerialNumber") ||
-    localStorage.getItem("selectedDeviceId") ||
-    deviceId;
-
-  if (!serial) {
-    alert("No serial/device selected");
-    return;
-  }
-
-  const current = getUnitChargeState(mode);
-
-  if (
-    !current.selected &&
-    !(mode === "passive" && current.activationTimeSelected)
-  ) {
-    alert(
-      `Please select ${
-        mode === "active"
-          ? "Unit charge active"
-          : "Unit charge passive"
-      }`
-    );
-    return;
-  }
-
-  const parameters = [];
-
-  if (mode === "active" && current.selected) {
-    parameters.push({
-      obis_code: UNIT_CHARGE_ACTIVE_OBIS_CODE,
-      attribute_index: "5",
-    });
-  }
-
-  if (mode === "passive") {
-    if (current.selected) {
-      parameters.push({
-        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
-        attribute_index: "6",
-      });
-    }
-
-    if (current.activationTimeSelected) {
-      parameters.push({
-        obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
-        attribute_index: "7",
-      });
-    }
-  }
-
-  const payload = {
-    serial_number: serial,
-    action: "read_obis",
-    parameters,
   };
 
-  try {
-    setReadLoading(true);
 
-    if (unitChargeControllerRef.current) {
-      unitChargeControllerRef.current.abort();
-    }
 
-    unitChargeControllerRef.current = new AbortController();
+  const [writeLoading, setWriteLoading] = useState(false);
 
-    const response = await fetch(
-      `${BASE_URL}/api/getmeterinfo/`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-        signal: unitChargeControllerRef.current.signal,
+
+
+  const renderUnitChargeSection = (mode) => {
+    const isActive = mode === "active";
+    const state = getUnitChargeState(mode);
+
+    const setSelected = (checked) =>
+      setUnitChargeState(mode, (prev) => ({
+        ...prev,
+        selected: checked,
+      }));
+
+    const setActivationSelected = (checked) =>
+      setUnitChargeState(mode, (prev) => ({
+        ...prev,
+        activationTimeSelected: checked,
+      }));
+
+
+
+
+
+    const parseUnitChargeResponseItem = (item) => {
+      const attr = String(
+        item?.attribute_index ?? item?.attributeId ?? item?.attribute_index ?? ""
+      );
+
+      const value = item?.value ?? item?.data ?? item?.result ?? item;
+
+      const next = { selected: true };
+
+      const scaling =
+        value?.charge_per_unit_scaling ??
+        value?.scaling ??
+        value?.chargePerUnitScaling ??
+        null;
+
+      if (scaling) {
+        next.commodityScale =
+          scaling.commodity_scale ?? scaling.commodityScale ?? "";
+        next.priceScale = scaling.price_scale ?? scaling.priceScale ?? "";
       }
-    );
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+      const reference =
+        value?.commodity_reference ??
+        value?.reference ??
+        value?.commodityReference ??
+        null;
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
+      if (reference) {
+        next.classId = reference.class_id ?? reference.classId ?? "";
+        next.logicalName = reference.logical_name ?? reference.logicalName ?? "";
+        next.attributeId = reference.attribute_index ?? reference.attributeId ?? "";
+      }
 
-    let buffer = "";
+      if (attr === "6") {
+        next.chargeTableRaw =
+          typeof value === "string" ? value : JSON.stringify(value ?? "");
 
-    while (true) {
-      const { value, done } = await reader.read();
+        const maybeTable = Array.isArray(value)
+          ? value
+          : value?.charge_table ?? value?.chargeTable ?? value?.table ?? null;
 
-      if (done) break;
+        if (maybeTable) {
+          next.chargeTable = normalizeUnitChargeTable(maybeTable);
+        }
+      }
 
-      buffer += decoder.decode(value, { stream: true });
+      if (attr === "7") {
+        next.activationTimeSelected = true;
+        next.unitChargeActivationTime = formatUnitChargeActivationTime(value);
+      }
 
-      const chunks = buffer.split("\n\n");
+      const maybeTable =
+        value?.charge_table ?? value?.chargeTable ?? value?.table ?? null;
 
-      buffer = chunks.pop();
+      if (Array.isArray(maybeTable)) {
+        next.chargeTable = normalizeUnitChargeTable(maybeTable);
+      }
 
-      for (const chunk of chunks) {
-        if (!chunk.startsWith("data:")) continue;
+      return next;
+    };
 
-        try {
-          const msg = JSON.parse(
-            chunk.replace(/^data:\s*/, "")
-          );
+    const parseUnitChargeRaw = (raw) => {
+      const text = String(raw ?? "");
 
-          console.log("STREAM MSG", msg);
+      // Example:
+      // "-120, -89None, 30[]"
+      const parts = text.split(",");
+
+      const commodityScale = parts[0]?.trim() ?? "";
+
+      const secondPart = parts[1]?.trim() ?? "";
+      const priceMatch = secondPart.match(/-?\d+/);
+      const priceScale = priceMatch?.[0] ?? "";
+
+      const logicalName = secondPart.replace(/-?\d+/, "").trim() || "None";
+
+      const chargeTableRaw = parts.slice(2).join(",").trim();
+
+      return {
+        commodityScale,
+        priceScale,
+        logicalName,
+        chargeTableRaw,
+      };
+    };
+
+    const mergeUnitChargeResponse = (rawData) => {
+      const items = Array.isArray(rawData) ? rawData : rawData ? [rawData] : [];
+
+      return items.reduce((acc, item) => {
+        const parsed = parseUnitChargeResponseItem(item);
+
+        return {
+          ...acc,
+          ...parsed,
+          chargeTable: parsed.chargeTable ?? acc.chargeTable,
+        };
+      }, {});
+    };
 
 
-          const attr = String(msg.attribute_index ?? "");
+    //*************** */ 
 
-                
-          setUnitChargeState(mode, (prev) => {
-  const next = { ...prev };
+    const normalizeUnitChargeTable = (rows = []) => {
+      if (!Array.isArray(rows)) return [];
 
-  const attr = String(msg.attribute_index ?? "");
-  const rawValue = msg.value;
+      const result = [];
 
-  next.selected = true;
+      for (let i = 0; i < rows.length; i += 4) {
+        result.push({
+          step: `Step ${Math.floor(i / 4) + 1}`,
 
-  if (mode === "active" && attr === "5") {
-    const parsed = parseUnitChargeRaw(rawValue);
+          tariff1: rows[i]?.chargePerUnit ?? "",
 
-    next.commodityScale = parsed.commodityScale;
-    next.priceScale = parsed.priceScale;
-    next.logicalName = parsed.logicalName;
-    next.chargeTableRaw = parsed.chargeTableRaw;
+          tariff2: rows[i + 1]?.chargePerUnit ?? "",
 
-    next.chargeTable = createChargeTable().map((row, index) => ({
-      ...row,
-      tariff1: index === 0 ? parsed.chargeTableRaw : "",
-    }));
-  }
+          tariff3: rows[i + 2]?.chargePerUnit ?? "",
 
-  if (mode === "passive" && attr === "6") {
-    const parsed = parseUnitChargeRaw(rawValue);
+          tariff4: rows[i + 3]?.chargePerUnit ?? "",
+        });
+      }
 
-    next.commodityScale = parsed.commodityScale;
-    next.priceScale = parsed.priceScale;
-    next.logicalName = parsed.logicalName;
-    next.chargeTableRaw = parsed.chargeTableRaw;
+      return result;
+    };
 
-    next.chargeTable = createChargeTable().map((row, index) => ({
-      ...row,
-      tariff1: index === 0 ? parsed.chargeTableRaw : "",
-    }));
-  }
+    const formatUnitChargeActivationTime = (value) => {
+      if (value == null) return "";
+      if (typeof value === "string") return value;
+      if (typeof value !== "object") return String(value);
 
-  if (mode === "passive" && attr === "7") {
-    next.activationTimeSelected = true;
+      const date = value.Date ?? value.date ?? "";
+      const time = value.Time ?? value.time ?? "";
+      const status =
+        value["Clock Status"] ??
+        value.clock_status ??
+        value.clockStatus ??
+        "";
 
-    const date = rawValue?.Date ?? "";
-    const time = rawValue?.Time ?? "";
-    const status = rawValue?.["Clock Status"] ?? "";
-
-    next.unitChargeActivationTime =
-      [date, time, status ? `Clock Status: ${status}` : ""]
+      return [date, time, status !== "" ? `Clock Status: ${status}` : ""]
         .filter(Boolean)
         .join(" | ");
-  }
+    };
 
-  return next;
-});
+    const applyUnitChargeResponse = (mode, msg) => {
+      const attr = String(msg?.attribute_index ?? "");
+      const value = msg?.value ?? {};
 
-  
-           
+      setUnitChargeState(mode, (prev) => {
+        const next = {
+          ...prev,
+          selected: true,
+        };
 
+        if (attr === "5" || attr === "6") {
+          next.commodityScale =
+            value?.chargePerUnitScaling?.commodityScale ?? "";
 
-        } catch (err) {
-          console.error(
-            "Unit charge chunk parse error:",
-            err
+          next.priceScale =
+            value?.chargePerUnitScaling?.priceScale ?? "";
+
+          next.classId = value?.commodity?.classId ?? "";
+          next.logicalName = value?.commodity?.logicalName ?? "";
+          next.attributeId = value?.commodity?.attributeIndex ?? "";
+
+          next.chargeTableRaw = JSON.stringify(
+            value?.chargeTables ?? [],
+            null,
+            2
+          );
+
+          next.chargeTable = normalizeUnitChargeTable(
+            value?.chargeTables ?? []
           );
         }
+
+        if (mode === "passive" && attr === "7") {
+          next.activationTimeSelected = true;
+          next.unitChargeActivationTime =
+            formatUnitChargeActivationTime(value);
+        }
+
+        return next;
+      });
+    };
+
+    const handleUnitChargeRead = async (mode) => {
+      const serial =
+        localStorage.getItem("selectedSerialNumber") ||
+        localStorage.getItem("selectedDeviceId") ||
+        deviceId;
+
+      if (!serial) {
+        alert("No serial/device selected");
+        return;
       }
-    }
-  } catch (error) {
-    if (error.name === "AbortError") {
-      console.log("Request was aborted");
-    } else {
-      console.error("Unit charge read error:", error);
-      alert("Failed to read unit charge data");
-    }
-  } finally {
-    setReadLoading(false);
-  }
-};
 
-  return (
-    <form onSubmit={(e) => handleSubmit(e, mode)}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input
-            type="checkbox"
-            checked={state.selected}
-            onChange={(e) => setSelected(e.target.checked)}
-          />
-          {isActive ? "Unit charge active" : "Unit charge passive"}
-          <span style={{ marginLeft: 8, color: "#666" }}>
-            (Attribute Index: {isActive ? "5" : "6"})
-          </span>
-        </label>
+      const current = getUnitChargeState(mode);
 
-        <button
-          type="button"
-          className="scheduler-add-button"
-          onClick={() => handleUnitChargeRead(mode)}
-          disabled={readLoading}
-        >
-          {readLoading ? "Reading..." : "Read"}
-        </button>
-      </div>
+      if (
+        !current.selected &&
+        !(mode === "passive" && current.activationTimeSelected)
+      ) {
+        alert(
+          `Please select ${mode === "active" ? "Unit charge active" : "Unit charge passive"
+          }`
+        );
+        return;
+      }
 
-      <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
-        <legend style={{ padding: "0 8px" }}>Per unit scaling</legend>
+      const parameters = [];
 
-        <div className="security-form">
-          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ minWidth: 120 }}>Commodity scale</span>
-            <input
-              type="number"
-              value={state.commodityScale}
-              onChange={(e) =>
-                handleUnitChargeFieldChange(mode, "commodityScale", e.target.value)
-              }
-            />
-          </label>
-        </div>
+      if (mode === "active" && current.selected) {
+        parameters.push({
+          obis_code: UNIT_CHARGE_ACTIVE_OBIS_CODE,
+          attribute_index: "5",
+        });
+      }
 
-        <div className="security-form">
-          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ minWidth: 120 }}>Price scale</span>
-            <input
-              type="number"
-              value={state.priceScale}
-              onChange={(e) =>
-                handleUnitChargeFieldChange(mode, "priceScale", e.target.value)
-              }
-            />
-          </label>
-        </div>
-      </fieldset>
+      if (mode === "passive") {
+        if (current.selected) {
+          parameters.push({
+            obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+            attribute_index: "6",
+          });
+        }
 
-      <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
-        <legend style={{ padding: "0 8px" }}>Commodity reference</legend>
+        if (current.activationTimeSelected) {
+          parameters.push({
+            obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+            attribute_index: "7",
+          });
+        }
+      }
 
-        <div className="security-form">
-          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ minWidth: 120 }}>Class ID</span>
-            <input
-              type="text"
-              value={state.classId}
-              onChange={(e) =>
-                handleUnitChargeFieldChange(mode, "classId", e.target.value)
-              }
-            />
-          </label>
-        </div>
+      const payload = {
+        serial_number: serial,
+        action: "read_obis",
+        parameters,
+      };
 
-        <div className="security-form">
-          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ minWidth: 120 }}>Logical name</span>
-            <input
-              type="text"
-              value={state.logicalName}
-              onChange={(e) =>
-                handleUnitChargeFieldChange(mode, "logicalName", e.target.value)
-              }
-            />
-          </label>
-        </div>
+      try {
+        setReadLoading(true);
 
-        <div className="security-form">
-          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ minWidth: 120 }}>Attribute ID</span>
-            <input
-              type="text"
-              value={state.attributeId}
-              onChange={(e) =>
-                handleUnitChargeFieldChange(mode, "attributeId", e.target.value)
-              }
-            />
-          </label>
-        </div>
-      </fieldset>
+        if (unitChargeControllerRef.current) {
+          unitChargeControllerRef.current.abort();
+        }
 
-      {!isActive && (
-        <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
-          <legend style={{ padding: "0 8px" }}>Activation time</legend>
+        unitChargeControllerRef.current = new AbortController();
 
-          <div className="security-form" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        const response = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+          signal: unitChargeControllerRef.current.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          const chunks = buffer.split("\n\n");
+          buffer = chunks.pop() || "";
+
+          for (const chunk of chunks) {
+            if (!chunk.startsWith("data:")) continue;
+
+            try {
+              const msg = JSON.parse(chunk.replace(/^data:\s*/, ""));
+              console.log("STREAM MSG", msg);
+
+              applyUnitChargeResponse(mode, msg);
+            } catch (err) {
+              console.error("Unit charge chunk parse error:", err);
+            }
+          }
+        }
+      } catch (error) {
+        if (error.name === "AbortError") {
+          console.log("Request was aborted");
+        } else {
+          console.error("Unit charge read error:", error);
+          alert("Failed to read unit charge data");
+        }
+      } finally {
+        setReadLoading(false);
+      }
+    };
+    ////////////////////********** */
+
+
+    const handleUnitChargeRead1 = async (mode) => {
+      const serial =
+        localStorage.getItem("selectedSerialNumber") ||
+        localStorage.getItem("selectedDeviceId") ||
+        deviceId;
+
+      if (!serial) {
+        alert("No serial/device selected");
+        return;
+      }
+
+      const current = getUnitChargeState(mode);
+
+      if (
+        !current.selected &&
+        !(mode === "passive" && current.activationTimeSelected)
+      ) {
+        alert(
+          `Please select ${mode === "active"
+            ? "Unit charge active"
+            : "Unit charge passive"
+          }`
+        );
+        return;
+      }
+
+      const parameters = [];
+
+      if (mode === "active" && current.selected) {
+        parameters.push({
+          obis_code: UNIT_CHARGE_ACTIVE_OBIS_CODE,
+          attribute_index: "5",
+        });
+      }
+
+      if (mode === "passive") {
+        if (current.selected) {
+          parameters.push({
+            obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+            attribute_index: "6",
+          });
+        }
+
+        if (current.activationTimeSelected) {
+          parameters.push({
+            obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+            attribute_index: "7",
+          });
+        }
+      }
+
+      const payload = {
+        serial_number: serial,
+        action: "read_obis",
+        parameters,
+      };
+
+      try {
+        setReadLoading(true);
+
+        if (unitChargeControllerRef.current) {
+          unitChargeControllerRef.current.abort();
+        }
+
+        unitChargeControllerRef.current = new AbortController();
+
+        const response = await fetch(
+          `${BASE_URL}/api/getmeterinfo/`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+            signal: unitChargeControllerRef.current.signal,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        let buffer = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          const chunks = buffer.split("\n\n");
+
+          buffer = chunks.pop();
+
+          for (const chunk of chunks) {
+            if (!chunk.startsWith("data:")) continue;
+
+            try {
+              const msg = JSON.parse(
+                chunk.replace(/^data:\s*/, "")
+              );
+
+              console.log("STREAM MSG", msg);
+
+
+              const attr = String(msg.attribute_index ?? "");
+
+
+              setUnitChargeState(mode, (prev) => {
+                const next = { ...prev };
+
+                const attr = String(msg.attribute_index ?? "");
+                const rawValue = msg.value;
+
+                next.selected = true;
+
+                if (mode === "active" && attr === "5") {
+                  const parsed = parseUnitChargeRaw(rawValue);
+
+                  next.commodityScale = parsed.commodityScale;
+                  next.priceScale = parsed.priceScale;
+                  next.logicalName = parsed.logicalName;
+                  next.chargeTableRaw = parsed.chargeTableRaw;
+
+                  next.chargeTable = createChargeTable().map((row, index) => ({
+                    ...row,
+                    tariff1: index === 0 ? parsed.chargeTableRaw : "",
+                  }));
+                }
+
+                if (mode === "passive" && attr === "6") {
+                  const parsed = parseUnitChargeRaw(rawValue);
+
+                  next.commodityScale = parsed.commodityScale;
+                  next.priceScale = parsed.priceScale;
+                  next.logicalName = parsed.logicalName;
+                  next.chargeTableRaw = parsed.chargeTableRaw;
+
+                  next.chargeTable = createChargeTable().map((row, index) => ({
+                    ...row,
+                    tariff1: index === 0 ? parsed.chargeTableRaw : "",
+                  }));
+                }
+
+                if (mode === "passive" && attr === "7") {
+                  next.activationTimeSelected = true;
+
+                  const date = rawValue?.Date ?? "";
+                  const time = rawValue?.Time ?? "";
+                  const status = rawValue?.["Clock Status"] ?? "";
+
+                  next.unitChargeActivationTime =
+                    [date, time, status ? `Clock Status: ${status}` : ""]
+                      .filter(Boolean)
+                      .join(" | ");
+                }
+
+                return next;
+              });
+
+
+
+
+
+            } catch (err) {
+              console.error(
+                "Unit charge chunk parse error:",
+                err
+              );
+            }
+          }
+        }
+      } catch (error) {
+        if (error.name === "AbortError") {
+          console.log("Request was aborted");
+        } else {
+          console.error("Unit charge read error:", error);
+          alert("Failed to read unit charge data");
+        }
+      } finally {
+        setReadLoading(false);
+      }
+    };
+
+    const buildUnitChargeChargeTables = (rows = []) => {
+      if (!Array.isArray(rows)) return [];
+
+      const chargeTables = [];
+
+      rows.forEach((row, rowIndex) => {
+        ["tariff1", "tariff2", "tariff3", "tariff4"].forEach(
+          (field, tariffIndex) => {
+            const raw = row?.[field];
+            const text = String(raw ?? "").trim();
+
+            if (text === "") return;
+
+            const num = Number(text);
+
+            chargeTables.push([
+              rowIndex * 4 + tariffIndex + 1, // index
+              Number.isNaN(num) ? 0 : num,    // chargePerUnit
+            ]);
+          }
+        );
+      });
+
+      return chargeTables;
+    };
+
+    ///// update 
+    const handleUnitChargeWrite = async (mode) => {
+      // Only allow write for passive attribute 6
+      if (mode !== "passive") {
+        alert("Write is enabled only for Unit charge passive (Attribute 6).");
+        return;
+      }
+
+      const current = getUnitChargeState(mode);
+
+
+
+      if (!current.selected) {
+        alert("Please select Unit charge passive");
+        return;
+      }
+
+      if (
+        current.commodityScale === "" ||
+        current.priceScale === "" ||
+        current.classId === "" ||
+        !current.logicalName ||
+        current.attributeIndex === ""
+      ) {
+        alert("Please fill all the required values.");
+        return;
+      }
+      const serial =
+        localStorage.getItem("selectedSerialNumber") ||
+        localStorage.getItem("selectedDeviceId") ||
+        deviceId;
+
+      if (!serial) {
+        alert("No serial/device selected");
+        return;
+      }
+
+
+
+
+
+      const payload = {
+        serial_number: serial,
+        action: "write_obis",
+        parameters: [
+          {
+            obis_code: UNIT_CHARGE_PASSIVE_OBIS_CODE,
+            attribute_index: "6",
+            value: [
+              [
+                Number(current.commodityScale),
+                Number(current.priceScale),
+              ],
+
+              [
+                Number(current.classId),
+                current.logicalName
+                  .split(".")
+                  .map((item) => Number(item)),
+                Number(current.attributeIndex || 2),
+              ],
+
+              buildUnitChargeChargeTables(current.chargeTable),
+            ],
+          },
+        ],
+      };
+
+      try {
+        setWriteLoading(true);
+
+        const response = await fetch(`${BASE_URL}/api/TimeSettingsAPIView/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("WRITE RESPONSE:", result);
+        alert("Write request sent successfully");
+      } catch (error) {
+        console.error("Unit charge write error:", error);
+        alert("Failed to write unit charge data");
+      } finally {
+        setWriteLoading(false);
+      }
+    };
+
+    return (
+      <form onSubmit={(e) => handleSubmit(e, mode)}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input
               type="checkbox"
-              checked={state.activationTimeSelected}
-              onChange={(e) => setActivationSelected(e.target.checked)}
+              checked={state.selected}
+              onChange={(e) => setSelected(e.target.checked)}
             />
-            <span style={{ minWidth: 120 }}>Unit charge activation time</span>
-            <input
-              type="text"
-              value={state.unitChargeActivationTime}
-              onChange={(e) =>
-                handleUnitChargeFieldChange(mode, "unitChargeActivationTime", e.target.value)
-              }
-            />
+            {isActive ? "Unit charge active" : "Unit charge passive"}
+            <span style={{ marginLeft: 8, color: "#666" }}>
+              (Attribute Index: {isActive ? "5" : "6"})
+            </span>
+          </label>
+
+          <button
+            type="button"
+            className="scheduler-add-button"
+            onClick={() => handleUnitChargeRead(mode)}
+            disabled={readLoading}
+          >
+            {readLoading ? "Reading..." : "Read"}
+          </button>
+
+
+          {!isActive && (
+            <button
+              type="button"
+              className="scheduler-add-button"
+              onClick={() => handleUnitChargeWrite(mode)}
+              disabled={writeLoading}
+            >
+              {writeLoading ? "Writing..." : "Write"}
+            </button>
+          )}
+        </div>
+
+        <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
+          <legend style={{ padding: "0 8px" }}>Per unit scaling</legend>
+
+          <div className="security-form">
+            <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ minWidth: 120 }}>Commodity scale</span>
+              <input
+                type="number"
+                value={state.commodityScale}
+                onChange={(e) =>
+                  handleUnitChargeFieldChange(mode, "commodityScale", e.target.value)
+                }
+              />
+            </label>
+          </div>
+
+          <div className="security-form">
+            <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ minWidth: 120 }}>Price scale</span>
+              <input
+                type="number"
+                value={state.priceScale}
+                onChange={(e) =>
+                  handleUnitChargeFieldChange(mode, "priceScale", e.target.value)
+                }
+              />
+            </label>
           </div>
         </fieldset>
-      )}
 
-      
+        <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
+          <legend style={{ padding: "0 8px" }}>Commodity reference</legend>
+
+          <div className="security-form">
+            <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ minWidth: 120 }}>Class ID</span>
+              <input
+                type="text"
+                value={state.classId}
+                onChange={(e) =>
+                  handleUnitChargeFieldChange(mode, "classId", e.target.value)
+                }
+              />
+            </label>
+          </div>
+
+          <div className="security-form">
+            <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ minWidth: 120 }}>Logical name</span>
+              <input
+                type="text"
+                value={state.logicalName}
+                onChange={(e) =>
+                  handleUnitChargeFieldChange(mode, "logicalName", e.target.value)
+                }
+              />
+            </label>
+          </div>
+
+          <div className="security-form">
+            <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ minWidth: 120 }}>Attribute ID</span>
+              <input
+                type="text"
+                value={state.attributeId}
+                onChange={(e) =>
+                  handleUnitChargeFieldChange(mode, "attributeId", e.target.value)
+                }
+              />
+            </label>
+          </div>
+        </fieldset>
+
+        {!isActive && (
+          <fieldset style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
+            <legend style={{ padding: "0 8px" }}>Activation time</legend>
+
+            <div className="security-form" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <input
+                type="checkbox"
+                checked={state.activationTimeSelected}
+                onChange={(e) => setActivationSelected(e.target.checked)}
+              />
+              <span style={{ minWidth: 120 }}>Unit charge activation time</span>
+              <input
+                type="text"
+                value={state.unitChargeActivationTime}
+                onChange={(e) =>
+                  handleUnitChargeFieldChange(mode, "unitChargeActivationTime", e.target.value)
+                }
+              />
+            </div>
+          </fieldset>
+        )}
 
 
 
-      <table  className="tableTariff1">
-  <thead>
-    <tr>
-      <th>Step</th>
-      <th>Tariff 1</th>
-      <th>Tariff 2</th>
-      <th>Tariff 3</th>
-      <th>Tariff 4</th>
-    </tr>
-  </thead>
-  <tbody>
-    {(Array.isArray(state.chargeTable) ? state.chargeTable : []).map((row, rowIndex) => (
-      <tr key={rowIndex}>
-        <td style={{ width: "180px" }} >{row.step}</td>
-        {["tariff1", "tariff2", "tariff3", "tariff4"].map((field) => (
-          <td style={{ width: "180px" }} key={field}>
-            <input
 
-             style={{
-        width: "100%",
-        minWidth: "160px",
-        padding: "6px 10px",
-        boxSizing: "border-box",
-      }}
-             
-              type="text"
-              value={row[field]}
-              onChange={(e) =>
-                handleUnitChargeTableChange(mode, rowIndex, field, e.target.value)
-              }
-            />
-          </td>
-        ))}
-      </tr>
-    ))}
-  </tbody>
-</table>
-      
-    </form>
-  );
-};
+
+        <table className="tableTariff1">
+          <thead>
+            <tr>
+              <th>Step</th>
+              <th>Tariff 1</th>
+              <th>Tariff 2</th>
+              <th>Tariff 3</th>
+              <th>Tariff 4</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(Array.isArray(state.chargeTable) ? state.chargeTable : []).map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                <td style={{ width: "180px" }} >{row.step}</td>
+                {["tariff1", "tariff2", "tariff3", "tariff4"].map((field) => (
+                  <td style={{ width: "180px" }} key={field}>
+                    <input
+
+                      style={{
+                        width: "100%",
+                        minWidth: "160px",
+                        padding: "6px 10px",
+                        boxSizing: "border-box",
+                      }}
+
+                      type="text"
+                      value={row[field]}
+                      onChange={(e) =>
+                        handleUnitChargeTableChange(mode, rowIndex, field, e.target.value)
+                      }
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+      </form>
+    );
+  };
 
 
 
@@ -4407,127 +4587,127 @@ const handleUnitChargeRead1 = async (mode) => {
 
   const controllerRef = useRef(null);
 
-const handleReadValues = async () => {
-  const serial =
-    localStorage.getItem("selectedSerialNumber") ||
-    localStorage.getItem("selectedDeviceId") ||
-    deviceId;
+  const handleReadValues = async () => {
+    const serial =
+      localStorage.getItem("selectedSerialNumber") ||
+      localStorage.getItem("selectedDeviceId") ||
+      deviceId;
 
-  if (!serial) {
-    alert("No serial/device selected");
-    return;
-  }
-
-  if (selectedItems.size === 0) {
-    alert("Please select at least one checkbox");
-    return;
-  }
-
-  const parameters = Array.from(selectedItems).map((i) => {
-    const item = CHARGE_VALUE_OPTIONS[i];
-    return {
-      obis_code: "0.0.19.20.0.255",
-      attribute_index: String(item.index),
-    };
-  });
-
-  const payload = {
-    serial_number: serial,
-    action: "read_obis",
-    parameters,
-  };
-
-  try {
-    setReadLoading(true);
-
-    if (controllerRef.current) {
-      controllerRef.current.abort();
+    if (!serial) {
+      alert("No serial/device selected");
+      return;
     }
 
-    controllerRef.current = new AbortController();
+    if (selectedItems.size === 0) {
+      alert("Please select at least one checkbox");
+      return;
+    }
 
-    const response = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-      signal: controllerRef.current.signal,
+    const parameters = Array.from(selectedItems).map((i) => {
+      const item = CHARGE_VALUE_OPTIONS[i];
+      return {
+        obis_code: "0.0.19.20.0.255",
+        attribute_index: String(item.index),
+      };
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const payload = {
+      serial_number: serial,
+      action: "read_obis",
+      parameters,
+    };
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
+    try {
+      setReadLoading(true);
 
-    let buffer = "";
-    const nextReadValues = {};
-    const nextFormValues = {};
+      if (controllerRef.current) {
+        controllerRef.current.abort();
+      }
 
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
+      controllerRef.current = new AbortController();
 
-      buffer += decoder.decode(value, { stream: true });
-      const chunks = buffer.split("\n\n");
-      buffer = chunks.pop();
+      const response = await fetch(`${BASE_URL}/api/getmeterinfo/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        signal: controllerRef.current.signal,
+      });
 
-      for (const chunk of chunks) {
-        if (!chunk.startsWith("data:")) continue;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-        try {
-          const msg = JSON.parse(chunk.replace(/^data:\s*/, ""));
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
 
-          const matched = CHARGE_VALUE_OPTIONS.find(
-            (x) => String(x.index) === String(msg.attribute_index)
-          );
+      let buffer = "";
+      const nextReadValues = {};
+      const nextFormValues = {};
 
-          if (!matched) continue;
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
 
-          if (matched.field === "charge_configuration") {
-            const arrayValue = normalizeChargeConfig(msg.value);
-            nextReadValues[matched.field] = arrayValue.join(", ");
-            nextFormValues[matched.field] = arrayValue;
-          } else {
-            const displayValue =
-              msg.value === null || msg.value === undefined
-                ? ""
-                : typeof msg.value === "object"
-                ? JSON.stringify(msg.value)
-                : String(msg.value);
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split("\n\n");
+        buffer = chunks.pop();
 
-            nextReadValues[matched.field] = displayValue;
-            nextFormValues[matched.field] = msg.value;
+        for (const chunk of chunks) {
+          if (!chunk.startsWith("data:")) continue;
+
+          try {
+            const msg = JSON.parse(chunk.replace(/^data:\s*/, ""));
+
+            const matched = CHARGE_VALUE_OPTIONS.find(
+              (x) => String(x.index) === String(msg.attribute_index)
+            );
+
+            if (!matched) continue;
+
+            if (matched.field === "charge_configuration") {
+              const arrayValue = normalizeChargeConfig(msg.value);
+              nextReadValues[matched.field] = arrayValue.join(", ");
+              nextFormValues[matched.field] = arrayValue;
+            } else {
+              const displayValue =
+                msg.value === null || msg.value === undefined
+                  ? ""
+                  : typeof msg.value === "object"
+                    ? JSON.stringify(msg.value)
+                    : String(msg.value);
+
+              nextReadValues[matched.field] = displayValue;
+              nextFormValues[matched.field] = msg.value;
+            }
+
+            setReadValues((prev) => ({
+              ...prev,
+              ...nextReadValues,
+            }));
+
+            setValueFormData((prev) => ({
+              ...prev,
+              ...nextFormValues,
+              device_id: serial,
+            }));
+          } catch (err) {
+            console.error("Chunk parse error:", err);
           }
-
-          setReadValues((prev) => ({
-            ...prev,
-            ...nextReadValues,
-          }));
-
-          setValueFormData((prev) => ({
-            ...prev,
-            ...nextFormValues,
-            device_id: serial,
-          }));
-        } catch (err) {
-          console.error("Chunk parse error:", err);
         }
       }
+    } catch (error) {
+      if (error.name === "AbortError") {
+        console.log("Request was aborted");
+      } else {
+        console.error("Read Error:", error);
+        alert("Failed to read charge values");
+      }
+    } finally {
+      setReadLoading(false);
     }
-  } catch (error) {
-    if (error.name === "AbortError") {
-      console.log("Request was aborted");
-    } else {
-      console.error("Read Error:", error);
-      alert("Failed to read charge values");
-    }
-  } finally {
-    setReadLoading(false);
-  }
-};
+  };
 
 
 
@@ -4666,14 +4846,14 @@ const handleReadValues = async () => {
     let displayValue = getFieldValue(field);
 
     // Add % for proportion field
-  if (
-    field === "proportion" &&
-    displayValue !== "" &&
-    displayValue !== null &&
-    displayValue !== undefined
-  ) {
-    displayValue = `${displayValue}%`;
-  }
+    if (
+      field === "proportion" &&
+      displayValue !== "" &&
+      displayValue !== null &&
+      displayValue !== undefined
+    ) {
+      displayValue = `${displayValue}%`;
+    }
 
     return (
       <div className="security-form" key={field}>
@@ -4684,62 +4864,62 @@ const handleReadValues = async () => {
             onChange={() => handleReadCheckbox(idx)}
           />
           <span>{label}:</span>
-           <input
-          type={type}
-          value={displayValue}
-          readOnly
-          onChange={(e) => valueHandleChange(field, e.target.value)}
-        />
+          <input
+            type={type}
+            value={displayValue}
+            readOnly
+            onChange={(e) => valueHandleChange(field, e.target.value)}
+          />
         </label>
 
-       
+
       </div>
     );
   };
 
 
 
- const getChargeTypeDisplay = (value) => {
-  // Empty before meter read
-  if (value === "" || value === null || value === undefined) {
-    return "";
-  }
+  const getChargeTypeDisplay = (value) => {
+    // Empty before meter read
+    if (value === "" || value === null || value === undefined) {
+      return "";
+    }
 
-  switch (Number(value)) {
-    case 0:
-      return "0 (Consumption Based Collection)";
-    case 1:
-      return "1 (Time Based Collection)";
-    case 2:
-      return "2 (Payment Event Based Collection)";
-    default:
-      return value;
-  }
-};
+    switch (Number(value)) {
+      case 0:
+        return "0 (Consumption Based Collection)";
+      case 1:
+        return "1 (Time Based Collection)";
+      case 2:
+        return "2 (Payment Event Based Collection)";
+      default:
+        return value;
+    }
+  };
 
-const renderChargeTypeField = () => {
-  const rawValue = getFieldValue("charge_type");
-  const displayValue = getChargeTypeDisplay(rawValue);
+  const renderChargeTypeField = () => {
+    const rawValue = getFieldValue("charge_type");
+    const displayValue = getChargeTypeDisplay(rawValue);
 
-  return (
-    <div className="security-form" key="charge_type">
-      <label>
-        <input
-          type="checkbox"
-          checked={selectedItems.has(1)}
-          onChange={() => handleReadCheckbox(1)}
-        />
-        <span>Charge Type:</span>
+    return (
+      <div className="security-form" key="charge_type">
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedItems.has(1)}
+            onChange={() => handleReadCheckbox(1)}
+          />
+          <span>Charge Type:</span>
 
-        <input
-          type="text"
-          value={displayValue}
-          readOnly
-        />
-      </label>
-    </div>
-  );
-};
+          <input
+            type="text"
+            value={displayValue}
+            readOnly
+          />
+        </label>
+      </div>
+    );
+  };
 
 
 
@@ -4753,8 +4933,8 @@ const renderChargeTypeField = () => {
       (Array.isArray(valueFormData.charge_configuration)
         ? valueFormData.charge_configuration.join(", ")
         : "");
-    
-    displayValue=parseInt(displayValue)
+
+    displayValue = parseInt(displayValue)
     return (
       <div className="security-form">
         <label>
@@ -4764,13 +4944,13 @@ const renderChargeTypeField = () => {
             onChange={() => handleReadCheckbox(4)}
           />
           <span>Charge Configuration:</span>
-         
+
           <label>
             <input
               type="checkbox"
               value="continuous"
-               checked={displayValue === 2 || displayValue === 3}
-              
+              checked={displayValue === 2 || displayValue === 3}
+
             />
             Continuous collection
           </label>
@@ -4781,159 +4961,159 @@ const renderChargeTypeField = () => {
               value="percentage_based"
               checked={displayValue === 1 || displayValue === 3}
             />
-             Percentage collection
+            Percentage collection
           </label>
-        
-    
+
+
         </label>
-          </div>
+      </div>
 
-       
 
-        
+
+
     );
   };
 
 
   const getPriorityDisplay = (value) => {
-  // Empty before meter read
-  if (value === "" || value === null || value === undefined) {
-    return "";
-  }
-
-  switch (Number(value)) {
-    case 1:
-      return "1 (Highest Priority)";
-    case 0:
-      return "0 (Not Activated)";
-    case 255:
-      return "255 (Lowest Priority)";
-    default:
-      return value;
-  }
-};
-
-const renderPriorityField = () => {
-  const rawValue = getFieldValue("priority");
-  const displayValue = getPriorityDisplay(rawValue);
-
-  return (
-    <div className="security-form" key="priority">
-      <label>
-        <input
-          type="checkbox"
-          checked={selectedItems.has(2)}
-          onChange={() => handleReadCheckbox(2)}
-        />
-        <span>Priority:</span>
-        <input
-          type="text"
-          value={displayValue}
-          readOnly
-        />
-      </label>
-    </div>
-  );
-};
-
-
-
-
-const formatPeriod = (seconds) => {
-  // Empty before meter read
-  if (seconds === "" || seconds === null || seconds === undefined) {
-    return "";
-  }
-
-  const totalSeconds = Number(seconds);
-
-  const hrs = Math.floor(totalSeconds / 3600);
-  const mins = Math.floor((totalSeconds % 3600) / 60);
-  const secs = totalSeconds % 60;
-
-  return `${hrs}h:${mins}m:${secs}s`;
-};
-
-const renderPeriodField = () => {
-  const rawValue = getFieldValue("period");
-  const displayValue = formatPeriod(rawValue);
-
-  return (
-    <div className="security-form" key="period">
-      <label>
-        <input
-          type="checkbox"
-          checked={selectedItems.has(3)}
-          onChange={() => handleReadCheckbox(3)}
-        />
-        <span>Period:</span>
-
-        <input
-          type="text"
-          value={displayValue}
-          readOnly
-        />
-      </label>
-    </div>
-  );
-};
-
-
-
-
-
-const formatLastCollectionTime = (value) => {
-  if (!value) return "";
-
-  // If value comes as a JSON string
-  let data = value;
-  if (typeof value === "string") {
-    try {
-      data = JSON.parse(value);
-    } catch (error) {
-      return value;
+    // Empty before meter read
+    if (value === "" || value === null || value === undefined) {
+      return "";
     }
-  }
 
-  const datePart = data?.Date || "";
-  const timePart = data?.Time || "";
+    switch (Number(value)) {
+      case 1:
+        return "1 (Highest Priority)";
+      case 0:
+        return "0 (Not Activated)";
+      case 255:
+        return "255 (Lowest Priority)";
+      default:
+        return value;
+    }
+  };
 
-  // Remove extra text like "(Deviation: Z)"
-  const cleanTime = timePart.split(" ")[0];
+  const renderPriorityField = () => {
+    const rawValue = getFieldValue("priority");
+    const displayValue = getPriorityDisplay(rawValue);
 
-  // Remove weekday text like "Saturday,"
-  const cleanDate = datePart.includes(",")
-    ? datePart.split(",")[1].trim()
-    : datePart;
+    return (
+      <div className="security-form" key="priority">
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedItems.has(2)}
+            onChange={() => handleReadCheckbox(2)}
+          />
+          <span>Priority:</span>
+          <input
+            type="text"
+            value={displayValue}
+            readOnly
+          />
+        </label>
+      </div>
+    );
+  };
 
-  if (!cleanDate && !cleanTime) return "";
 
-  return `${cleanDate} ${cleanTime}`.trim();
-};
 
-const renderLastCollectionTimeField = () => {
-  const rawValue = getFieldValue("last_collection_time");
-  const displayValue = formatLastCollectionTime(rawValue);
 
-  return (
-    <div className="security-form" key="last_collection_time">
-      <label>
-        <input
-          type="checkbox"
-          checked={selectedItems.has(4)}
-          onChange={() => handleReadCheckbox(4)}
-        />
-        <span>Last Collection Time:</span>
+  const formatPeriod = (seconds) => {
+    // Empty before meter read
+    if (seconds === "" || seconds === null || seconds === undefined) {
+      return "";
+    }
 
-        <input
-          type="text"
-          value={displayValue}
-          readOnly
-        />
-      </label>
-    </div>
-  );
-};
+    const totalSeconds = Number(seconds);
+
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+
+    return `${hrs}h:${mins}m:${secs}s`;
+  };
+
+  const renderPeriodField = () => {
+    const rawValue = getFieldValue("period");
+    const displayValue = formatPeriod(rawValue);
+
+    return (
+      <div className="security-form" key="period">
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedItems.has(3)}
+            onChange={() => handleReadCheckbox(3)}
+          />
+          <span>Period:</span>
+
+          <input
+            type="text"
+            value={displayValue}
+            readOnly
+          />
+        </label>
+      </div>
+    );
+  };
+
+
+
+
+
+  const formatLastCollectionTime = (value) => {
+    if (!value) return "";
+
+    // If value comes as a JSON string
+    let data = value;
+    if (typeof value === "string") {
+      try {
+        data = JSON.parse(value);
+      } catch (error) {
+        return value;
+      }
+    }
+
+    const datePart = data?.Date || "";
+    const timePart = data?.Time || "";
+
+    // Remove extra text like "(Deviation: Z)"
+    const cleanTime = timePart.split(" ")[0];
+
+    // Remove weekday text like "Saturday,"
+    const cleanDate = datePart.includes(",")
+      ? datePart.split(",")[1].trim()
+      : datePart;
+
+    if (!cleanDate && !cleanTime) return "";
+
+    return `${cleanDate} ${cleanTime}`.trim();
+  };
+
+  const renderLastCollectionTimeField = () => {
+    const rawValue = getFieldValue("last_collection_time");
+    const displayValue = formatLastCollectionTime(rawValue);
+
+    return (
+      <div className="security-form" key="last_collection_time">
+        <label>
+          <input
+            type="checkbox"
+            checked={selectedItems.has(4)}
+            onChange={() => handleReadCheckbox(4)}
+          />
+          <span>Last Collection Time:</span>
+
+          <input
+            type="text"
+            value={displayValue}
+            readOnly
+          />
+        </label>
+      </div>
+    );
+  };
 
   const renderContent = () => {
     switch (currentPage) {
@@ -4964,12 +5144,12 @@ const renderLastCollectionTimeField = () => {
             </div>
 
             {renderValueField("total_amount_paid", "Total Amount Paid", "number", 0)}
-            
+
             {renderChargeTypeField()}
             {renderPriorityField()}
             {renderPeriodField()}
             {renderChargeConfigurationField()}
-             {renderLastCollectionTimeField()}
+            {renderLastCollectionTimeField()}
             {renderValueField(
               "last_collection_amount",
               "Last Collection Amount",
@@ -4984,19 +5164,19 @@ const renderLastCollectionTimeField = () => {
             )}
             {renderValueField("proportion", "Proportion", "text", 8)}
 
-           
+
           </form>
         );
 
-        case "unitChargeActive":
-  return renderUnitChargeSection("active");
+      case "unitChargeActive":
+        return renderUnitChargeSection("active");
 
-case "unitChargePassive":
-  return renderUnitChargeSection("passive");
+      case "unitChargePassive":
+        return renderUnitChargeSection("passive");
 
-        
 
-    
+
+
 
       default:
         return <p>Please select an option above.</p>;
@@ -5039,7 +5219,7 @@ const TokenGateway = () => {
     tokenTime: "",
     tokenDescription: [],
     tokenDeliveryMethod: "",
-    
+
     statusCode: "",
     datavalue: "",
     enterMethod: "",
@@ -5069,7 +5249,7 @@ const TokenGateway = () => {
 
 
   const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
+
   useEffect(() => {
     const storedId = localStorage.getItem('selectedDeviceId');
     setDeviceId(storedId);
@@ -5078,9 +5258,9 @@ const TokenGateway = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Submitting Data:", formData);
-  
+
     const formattedData = {
-      device_id:deviceId,
+      device_id: deviceId,
       token: formData.token,
       token_time: formData.tokenTime,  // Converted to snake_case
       token_description: formData.tokenDescription,  // Converted to snake_case
@@ -5089,7 +5269,7 @@ const TokenGateway = () => {
       data_value: formData.datavalue,  // Converted to snake_case
       enter_method: formData.enterMethod,  // Converted to snake_case
     };
-  
+
     try {
       const response = await axios.post(`${BASE_URL}/api/payment-token/`, formattedData);
       console.log("Response:", response.data);
@@ -5100,170 +5280,170 @@ const TokenGateway = () => {
       alert("Failed to submit token data.");
     }
   };
-  
+
 
   return (
     <form onSubmit={handleSubmit}>
 
-  <div className="security-form">
-    <label>
-      <span>Token:</span>
-      <input
-        type="text"
-        name="token"
-        value={formData.token}
-        onChange={handleChange}
-        className="input"
-      />
-    </label>
-  </div>
+      <div className="security-form">
+        <label>
+          <span>Token:</span>
+          <input
+            type="text"
+            name="token"
+            value={formData.token}
+            onChange={handleChange}
+            className="input"
+          />
+        </label>
+      </div>
 
-  <div className="security-form">
-    <label>
-      <span>Token Time:</span>
-      <input
-        type="text"
-        name="tokenTime"
-        value={formData.tokenTime}
-        onChange={handleChange}
-        className="input"
-      />
-    </label>
-  </div>
+      <div className="security-form">
+        <label>
+          <span>Token Time:</span>
+          <input
+            type="text"
+            name="tokenTime"
+            value={formData.tokenTime}
+            onChange={handleChange}
+            className="input"
+          />
+        </label>
+      </div>
 
-  <div className="security-form">
-    <label>
-      <span>Token Description:</span>
-    </label>
+      <div className="security-form">
+        <label>
+          <span>Token Description:</span>
+        </label>
 
-    <div className="description-container">
-  <table className="tableTariff1">
-    <thead>
-      <tr>
-        <th style={{ width: "50px" }}>Index</th>
-        <th>Description</th>
-      </tr>
-    </thead>
+        <div className="description-container">
+          <table className="tableTariff1">
+            <thead>
+              <tr>
+                <th style={{ width: "50px" }}>Index</th>
+                <th>Description</th>
+              </tr>
+            </thead>
 
-    <tbody>
-      {formData.tokenDescription.map((desc, index) => (
-        <tr key={index}>
-          <td>{index}</td>
-          <td>{desc.description}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
-  </div>
-
-  {showPopup && (
-    <div className="popup">
-      <div className="popup-content">
-        <h3>Add Token Description</h3>
-
-        <div className="security-form">
-          <label>
-            <span>Index:</span>
-            <input
-              type="text"
-              style={{ width: "60%" }}
-              value={newDescription.index}
-              onChange={handleDescriptionChange}
-              className="input"
-            />
-          </label>
-        </div>
-
-        <div className="security-form">
-          <label>
-            <span>Description:</span>
-            <input
-              type="text"
-              name="description"
-              style={{ width: "60%" }}
-              value={newDescription.description}
-              onChange={handleDescriptionChange}
-              className="input"
-            />
-          </label>
-        </div>
-
-        <div className="security-form">
-          <button type="button" onClick={addDescription} className="confirm-button">
-            Add
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowPopup(false)}
-            className="cancel-button"
-          >
-            Cancel
-          </button>
+            <tbody>
+              {formData.tokenDescription.map((desc, index) => (
+                <tr key={index}>
+                  <td>{index}</td>
+                  <td>{desc.description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
-  )}
 
-  <div className="security-form">
-    <label>
-      <span>Token Delivery Method:</span>
-      <input
-        type="text"
-        name="tokenDeliveryMethod"
-        value={formData.tokenDeliveryMethod}
-        onChange={handleChange}
-        className="input"
-      />
-    </label>
-  </div>
+      {showPopup && (
+        <div className="popup">
+          <div className="popup-content">
+            <h3>Add Token Description</h3>
 
-  <h5> Token Status </h5>
+            <div className="security-form">
+              <label>
+                <span>Index:</span>
+                <input
+                  type="text"
+                  style={{ width: "60%" }}
+                  value={newDescription.index}
+                  onChange={handleDescriptionChange}
+                  className="input"
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Status Code:</span>
-      <input
-        type="text"
-        name="statusCode"
-        value={formData.statusCode}
-        onChange={handleChange}
-        className="input"
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <label>
+                <span>Description:</span>
+                <input
+                  type="text"
+                  name="description"
+                  style={{ width: "60%" }}
+                  value={newDescription.description}
+                  onChange={handleDescriptionChange}
+                  className="input"
+                />
+              </label>
+            </div>
 
-  <div className="security-form">
-    <label>
-      <span>Data Value:</span>
-      <input
-        type="text"
-        name="datavalue"
-        value={formData.datavalue}
-        onChange={handleChange}
-        className="input"
-      />
-    </label>
-  </div>
+            <div className="security-form">
+              <button type="button" onClick={addDescription} className="confirm-button">
+                Add
+              </button>
 
-  <div className="security-form">
-    <label>
-      <span>Enter Method:</span>
-      <input
-        type="text"
-        name="enterMethod"
-        value={formData.enterMethod}
-        onChange={handleChange}
-        className="input"
-      />
-    </label>
-  </div>
+              <button
+                type="button"
+                onClick={() => setShowPopup(false)}
+                className="cancel-button"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-  <div className="security-form">
-    <button style={{marginLeft:"42%"}} className='scheduler-add-button' type="submit" >Submit</button>
-  </div>
-</form>
+      <div className="security-form">
+        <label>
+          <span>Token Delivery Method:</span>
+          <input
+            type="text"
+            name="tokenDeliveryMethod"
+            value={formData.tokenDeliveryMethod}
+            onChange={handleChange}
+            className="input"
+          />
+        </label>
+      </div>
+
+      <h5> Token Status </h5>
+
+      <div className="security-form">
+        <label>
+          <span>Status Code:</span>
+          <input
+            type="text"
+            name="statusCode"
+            value={formData.statusCode}
+            onChange={handleChange}
+            className="input"
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Data Value:</span>
+          <input
+            type="text"
+            name="datavalue"
+            value={formData.datavalue}
+            onChange={handleChange}
+            className="input"
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <label>
+          <span>Enter Method:</span>
+          <input
+            type="text"
+            name="enterMethod"
+            value={formData.enterMethod}
+            onChange={handleChange}
+            className="input"
+          />
+        </label>
+      </div>
+
+      <div className="security-form">
+        <button style={{ marginLeft: "42%" }} className='scheduler-add-button' type="submit" >Submit</button>
+      </div>
+    </form>
   );
 };
 
@@ -5273,27 +5453,27 @@ const TokenGateway = () => {
 
 
 
-const PaymentInfoTable1=()=> {
+const PaymentInfoTable1 = () => {
   const [selected, setSelected] = useState({});
   const [paymentData, setPaymentData] = useState(
- [
-    { id: 1, name: "STS Ti", code: "1,0-68: 128.0.1.255", value: "", unit: "" },
-    { id: 2, name: "STS KEN", code: "1,0-68: 128.0.2.255", value: "", unit: "" },
-    { id: 3, name: "STS KRN", code: "1,0-68: 128.0.3.255", value: "", unit: "" },
-    { id: 4, name: "STS KT", code: "1,0-68: 128.0.4.255", value: "", unit: "" },
-    { id: 5, name: "STS SGC", code: "1,0-68: 128.0.8.255", value: "", unit: "" },
-    { id: 6, name: "STS EA", code: "1,0-68: 128.0.11.255", value: "", unit: "" },
-    { id: 7, name: "Manufacture TID", code: "1,0-68: 128.0.9.255", value: "", unit: "" },
-    { id: 8, name: "Residual Credit", code: "3,0-0: 19.130.0.255", value: "", unit: "" },
-    { id: 9, name: "Energy used", code: "3,1-0: 15.9.0.255", value: "", unit: "GHC" },
-    { id: 10, name: "Currency used", code: "3,0-0: 19.133.0.255", value: "", unit: "KWh" },
-    { id: 11, name: "Cumulative purchase credit", code: "3,1-65: 1.140.2.255", value: "", unit: "GHC" },
-    { id: 12, name: "Cumulative consume Credit", code: "3,1-0: 96.51.5.255", value: "", unit: "GHC" },
-    { id: 13, name: "Max Credit limit", code: "3,0-0: 19.50.1.255", value: "", unit: "GHC" },
-    { id: 14, name: "Non-resident monthly rent price", code: "1,0-0: 19.14.12.255", value: "", unit: "" },
-    { id: 15, name: "Monthly rent mode", code: "1,0-0: 96.14.13.255", value: "", unit: "" },
-  ]);
-  
+    [
+      { id: 1, name: "STS Ti", code: "1,0-68: 128.0.1.255", value: "", unit: "" },
+      { id: 2, name: "STS KEN", code: "1,0-68: 128.0.2.255", value: "", unit: "" },
+      { id: 3, name: "STS KRN", code: "1,0-68: 128.0.3.255", value: "", unit: "" },
+      { id: 4, name: "STS KT", code: "1,0-68: 128.0.4.255", value: "", unit: "" },
+      { id: 5, name: "STS SGC", code: "1,0-68: 128.0.8.255", value: "", unit: "" },
+      { id: 6, name: "STS EA", code: "1,0-68: 128.0.11.255", value: "", unit: "" },
+      { id: 7, name: "Manufacture TID", code: "1,0-68: 128.0.9.255", value: "", unit: "" },
+      { id: 8, name: "Residual Credit", code: "3,0-0: 19.130.0.255", value: "", unit: "" },
+      { id: 9, name: "Energy used", code: "3,1-0: 15.9.0.255", value: "", unit: "GHC" },
+      { id: 10, name: "Currency used", code: "3,0-0: 19.133.0.255", value: "", unit: "KWh" },
+      { id: 11, name: "Cumulative purchase credit", code: "3,1-65: 1.140.2.255", value: "", unit: "GHC" },
+      { id: 12, name: "Cumulative consume Credit", code: "3,1-0: 96.51.5.255", value: "", unit: "GHC" },
+      { id: 13, name: "Max Credit limit", code: "3,0-0: 19.50.1.255", value: "", unit: "GHC" },
+      { id: 14, name: "Non-resident monthly rent price", code: "1,0-0: 19.14.12.255", value: "", unit: "" },
+      { id: 15, name: "Monthly rent mode", code: "1,0-0: 96.14.13.255", value: "", unit: "" },
+    ]);
+
 
   const toggleCheckbox = (id) => {
     setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -5302,13 +5482,13 @@ const PaymentInfoTable1=()=> {
 
 
   const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
-    useEffect(() => {
-      const storedId = localStorage.getItem('selectedDeviceId');
-      setDeviceId(storedId);
-    }, []);
 
-  
+  useEffect(() => {
+    const storedId = localStorage.getItem('selectedDeviceId');
+    setDeviceId(storedId);
+  }, []);
+
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -5333,41 +5513,41 @@ const PaymentInfoTable1=()=> {
 
   return (
     <div className="p-4">
-      
-    
-        <table className="tableTariff1">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="border p-2">Checked</th>
-              <th className="border p-2">No</th>
-              <th className="border p-2">Name</th>
-              <th className="border p-2">Code</th>
-              <th className="border p-2">Value</th>
-              <th className="border p-2">Unit</th>
+
+
+      <table className="tableTariff1">
+        <thead>
+          <tr className="bg-gray-200">
+            <th className="border p-2">Checked</th>
+            <th className="border p-2">No</th>
+            <th className="border p-2">Name</th>
+            <th className="border p-2">Code</th>
+            <th className="border p-2">Value</th>
+            <th className="border p-2">Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {paymentData.map((item) => (
+            <tr key={item.id} className="text-center">
+              <td className="border p-2">
+                <input
+                  type="checkbox"
+                  checked={!!selected[item.id]}
+                  onChange={() => toggleCheckbox(item.id)}
+                />
+              </td>
+              <td className="border p-2">{item.id}</td>
+              <td className="border p-2">{item.name}</td>
+              <td className="border p-2">{item.code}</td>
+              <td className="border p-2">
+                {item.value}
+              </td>
+              <td className="border p-2">{item.unit}</td>
             </tr>
-          </thead>
-          <tbody>
-            {paymentData.map((item) => (
-              <tr key={item.id} className="text-center">
-                <td className="border p-2">
-                  <input
-                    type="checkbox"
-                    checked={!!selected[item.id]}
-                    onChange={() => toggleCheckbox(item.id)}
-                  />
-                </td>
-                <td className="border p-2">{item.id}</td>
-                <td className="border p-2">{item.name}</td>
-                <td className="border p-2">{item.code}</td>
-                <td className="border p-2">
-                 {item.value}
-                </td>
-                <td className="border p-2">{item.unit}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      
+          ))}
+        </tbody>
+      </table>
+
     </div>
   );
 }
@@ -5388,7 +5568,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 1,
       name: "STS Ti",
-      code: "1,0-68:128.0.1.255",
+      code: "0.68.128.0.1.255",
+      codes: "{1,0-68:128.0.1.255}",
+      attribute_index: 2,
       value: "",
       unit: "",
     },
@@ -5396,7 +5578,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 2,
       name: "STS KEN",
-      code: "1,0-68:128.0.2.255",
+      code: "0.68.128.0.2.255",
+      codes: "{1,0-68:128.0.2.255}",
+      attribute_index: 2,
       value: "",
       unit: "",
     },
@@ -5404,7 +5588,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 3,
       name: "STS KRN",
-      code: "1,0-68:128.0.3.255",
+      code: "0.68.128.0.3.255",
+      codes: "{1,0-68:128.0.3.255}",
+      attribute_index: 2,
       value: "",
       unit: "",
     },
@@ -5412,7 +5598,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 4,
       name: "STS KT",
-      code: "1,0-68:128.0.4.255",
+      code: "0.68.128.0.4.255",
+      codes: "{1,0-68:128.0.4.255}",
+      attribute_index: 2,
       value: "",
       unit: "",
     },
@@ -5420,7 +5608,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 5,
       name: "STS SGC",
-      code: "1,0-68:128.0.8.255",
+      code: "0.68.128.0.8.255",
+      codes: "{1,0-68:128.0.8.255}",
+      attribute_index: 2,
       value: "",
       unit: "",
     },
@@ -5428,7 +5618,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 6,
       name: "STS EA",
-      code: "1,0-68:128.0.11.255",
+      code: "0.68.128.0.11.255",
+      codes: "{1,0-68:128.0.11.255}",
+      attribute_index: 2,
       value: "",
       unit: "",
     },
@@ -5436,7 +5628,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 7,
       name: "Manufacture TID",
-      code: "1,0-68:128.0.9.255",
+      code: "0.68.128.0.9.255",
+      codes: "{1,0-68:128.0.9.255}",
+      attribute_index: 2,
       value: "",
       unit: "",
     },
@@ -5444,7 +5638,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 8,
       name: "Residual Credit",
-      code: "3,0-0:19.130.0.255",
+      code: "0.0.19.130.0.255",
+      codes: "{3,0-0:19.130.0.255}",
+      attribute_index: 2,
       value: "",
       unit: "",
     },
@@ -5452,7 +5648,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 9,
       name: "Energy used",
-      code: "3,1-0:15.9.0.255",
+      code: "1.0.15.9.0.255",
+      codes: "{3,1-0:15.9.0.255}",
+      attribute_index: 2,
       value: "",
       unit: "GHC",
     },
@@ -5460,7 +5658,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 10,
       name: "Currency used",
-      code: "3,0-0:19.133.0.255",
+      code: "0.0.19.133.0.255",
+      codes: "{3,0-0:19.133.0.255}",
+      attribute_index: 2,
       value: "",
       unit: "KWh",
     },
@@ -5468,7 +5668,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 11,
       name: "Cumulative purchase credit",
-      code: "3,1-65:1.140.2.255",
+      code: "1.65.1.140.2.255",
+      codes: "{3,1-65:1.140.2.255}",
+      attribute_index: 2,
       value: "",
       unit: "GHC",
     },
@@ -5476,7 +5678,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 12,
       name: "Cumulative consume Credit",
-      code: "3,1-0:96.51.5.255",
+      code: "1.0.96.51.5.255",
+      codes: "{3,1-0:96.51.5.255}",
+      attribute_index: 2,
       value: "",
       unit: "GHC",
     },
@@ -5484,7 +5688,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 13,
       name: "Max Credit limit",
-      code: "3,0-0:19.50.1.255",
+      code: "0.0.19.50.1.255",
+      codes: "{3,0-0:19.50.1.255}",
+      attribute_index: 2,
       value: "",
       unit: "GHC",
     },
@@ -5492,7 +5698,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 14,
       name: "Non-resident monthly rent price",
-      code: "1,0-0:19.14.12.255",
+      code: "0.0.96.14.12.255",
+      codes: "{1,0-0:96.14.12.255}",
+      attribute_index: 2,
       value: "",
       unit: "",
     },
@@ -5500,7 +5708,9 @@ const PaymentInfoTable = () => {
       checked: false,
       no: 15,
       name: "Monthly rent mode",
-      code: "1,0-0:96.14.13.255",
+      code: "0.0.96.14.13.255",
+      codes: "{1,0-0:96.14.13.255}",
+      attribute_index: 2,
       value: "",
       unit: "",
     },
@@ -5531,15 +5741,15 @@ const PaymentInfoTable = () => {
   };
 
   const handleSelectAll = (e) => {
-  const isChecked = e.target.checked;
+    const isChecked = e.target.checked;
 
-  setRows(prevRows =>
-    prevRows.map(row => ({
-      ...row,
-      checked: isChecked
-    }))
-  );
-};
+    setRows(prevRows =>
+      prevRows.map(row => ({
+        ...row,
+        checked: isChecked
+      }))
+    );
+  };
   const handleSendSelected = async () => {
     const selectedItems = rows.filter((row) => row.checked);
 
@@ -5555,12 +5765,12 @@ const PaymentInfoTable = () => {
 
     try {
       const payload = {
-        device_id: deviceId,
         action: "read_obis",
-        serial_number: localStorage.getItem("serial_number") || "",
-        payment_data: selectedItems.map((item) => ({
+        serial_number: localStorage.getItem("selectedSerialNumber") || "",
+        parameters: selectedItems.map((item) => ({
           name: item.name,
-          code: item.code,
+          obis_code: item.code,
+          attribute_index: item.attribute_index,
           value: item.value || "",
           unit: item.unit || "",
         })),
@@ -5569,13 +5779,18 @@ const PaymentInfoTable = () => {
       console.log("Payment Payload:", payload);
 
       const response = await axios.post(
-        `${BASE_URL}/api/payment-information/`,
+        `${BASE_URL}/api/getmeterinfo/`,
         payload
       );
 
-      console.log("Payment Response:", response.data);
+      console.log("Payment   sumittttttttt Response:", response.data);
 
-      setApiData(response.data.data || []);
+      const parsedData = response.data
+        .split("\n\n")
+        .filter((chunk) => chunk.trim())
+        .map((chunk) => JSON.parse(chunk.replace(/^data:\s*/, "")));
+
+      setApiData(parsedData);
     } catch (error) {
       console.error("Payment API Error:", error);
 
@@ -5585,35 +5800,35 @@ const PaymentInfoTable = () => {
     }
   };
 
-  const getValueByCode = (code) => {
-    const found = apiData.find((item) => item.code === code);
-    return found ? found.value : "";
-  };
+const getValueByCode = (code) => {
+  const found = apiData.find((item) => item.obis_code === code);
+  return found ? found.value : "";
+};
 
   return (
     <div className="tou_container">
       <div style={{ marginBottom: "15px" }}>
-       
+
 
         <button
           className="scheduler-add-button"
           onClick={handleSendSelected}
         >
-           Read
+          Read
         </button>
       </div>
 
       <table className="tableTariff1">
         <thead>
           <tr>
-           <th>
-  <input
-    type="checkbox"
-    checked={rows.length > 0 && rows.every(row => row.checked)}
-    onChange={handleSelectAll}
-  />
-  {" "}
-</th>
+            <th>
+              <input
+                type="checkbox"
+                checked={rows.length > 0 && rows.every(row => row.checked)}
+                onChange={handleSelectAll}
+              />
+              {" "}
+            </th>
             <th>No</th>
             <th>Name</th>
             <th>Code</th>
@@ -5637,7 +5852,7 @@ const PaymentInfoTable = () => {
 
               <td>{item.name}</td>
 
-              <td>{item.code}</td>
+              <td>{item.codes}</td>
 
               <td>{getValueByCode(item.code)}</td>
 
@@ -5666,13 +5881,13 @@ const FriendlyPeriods1 = () => {
   const [endTime, setEndTime] = useState("");
 
   const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
+
   useEffect(() => {
     const storedId = localStorage.getItem('selectedDeviceId');
     setDeviceId(storedId);
   }, []);
 
- // Replace this with actual device_id if needed
+  // Replace this with actual device_id if needed
 
   // Fetch periods from the backend
   const fetchPeriods = async () => {
@@ -5783,8 +5998,8 @@ const FriendlyPeriods = () => {
   const [editValue, setEditValue] = useState("");
 
   const hasSelected = selectedRow !== null;
-const atFirst = hasSelected && selectedRow === 0;
-const atLast = hasSelected && selectedRow === periods.length - 1;
+  const atFirst = hasSelected && selectedRow === 0;
+  const atLast = hasSelected && selectedRow === periods.length - 1;
 
   // refresh when deviceId changes in localStorage (if some other code updates it)
   useEffect(() => {
@@ -5930,44 +6145,44 @@ const atLast = hasSelected && selectedRow === periods.length - 1;
 
 
   // Move row position
-const moveItem = (fromIndex, toIndex) => {
-  if (fromIndex === null || fromIndex === undefined) return;
+  const moveItem = (fromIndex, toIndex) => {
+    if (fromIndex === null || fromIndex === undefined) return;
 
-  setPeriods((prev) => {
-    const next = [...prev];
-    const [item] = next.splice(fromIndex, 1);
+    setPeriods((prev) => {
+      const next = [...prev];
+      const [item] = next.splice(fromIndex, 1);
 
-    const insertIndex = Math.max(0, Math.min(toIndex, next.length));
-    next.splice(insertIndex, 0, item);
+      const insertIndex = Math.max(0, Math.min(toIndex, next.length));
+      next.splice(insertIndex, 0, item);
 
-    setSelectedRow(insertIndex);
-    return next;
-  });
-};
+      setSelectedRow(insertIndex);
+      return next;
+    });
+  };
 
   const handleFirst = () => {
-  if (selectedRow === null) return;
-  if (selectedRow === 0) return;
-  moveItem(selectedRow, 0);
-};
+    if (selectedRow === null) return;
+    if (selectedRow === 0) return;
+    moveItem(selectedRow, 0);
+  };
 
-const handlePrevious = () => {
-  if (selectedRow === null) return;
-  if (selectedRow <= 0) return;
-  moveItem(selectedRow, selectedRow - 1);
-};
+  const handlePrevious = () => {
+    if (selectedRow === null) return;
+    if (selectedRow <= 0) return;
+    moveItem(selectedRow, selectedRow - 1);
+  };
 
-const handleNext = () => {
-  if (selectedRow === null) return;
-  if (selectedRow >= periods.length - 1) return;
-  moveItem(selectedRow, selectedRow + 1);
-};
+  const handleNext = () => {
+    if (selectedRow === null) return;
+    if (selectedRow >= periods.length - 1) return;
+    moveItem(selectedRow, selectedRow + 1);
+  };
 
-const handleLast = () => {
-  if (selectedRow === null) return;
-  if (selectedRow === periods.length - 1) return;
-  moveItem(selectedRow, periods.length - 1);
-};
+  const handleLast = () => {
+    if (selectedRow === null) return;
+    if (selectedRow === periods.length - 1) return;
+    moveItem(selectedRow, periods.length - 1);
+  };
   // scroll selected into view
   useEffect(() => {
     if (selectedRow !== null && rowRefs.current[selectedRow]) {
@@ -6041,20 +6256,20 @@ const handleLast = () => {
   return (
     <div className="display-root">
       <div className="sub_container_display">
-        <div  className="security-form">
+        <div className="security-form">
           <label>
             <span>Start Time</span>
             <input
               type="time"
-              
+
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
               className="friendly-input"
             />
           </label>
-           </div>
+        </div>
 
-           <div  className="security-form"> 
+        <div className="security-form">
           <label>
             <span>End Time</span>
             <input
@@ -6064,13 +6279,13 @@ const handleLast = () => {
               className="friendly-input"
             />
           </label>
-          </div>
-          </div>
-         
+        </div>
+      </div>
 
 
 
-           <div className="vertical-toolbar">
+
+      <div className="vertical-toolbar">
         <button className="tool-btn" onClick={handleAdd} title="Add selected to end">
           <span className="tool-icon">+</span>
           <span className="tool-text">Add1</span>
@@ -6093,93 +6308,93 @@ const handleLast = () => {
 
         <div className="tool-separator" />
 
-       <button
-  className="tool-btn"
-  onClick={handleFirst}
-  title="First"
-  disabled={!hasSelected || atFirst}
->
-  <span className="tool-icon">|◀</span>
-  <span className="tool-text">First</span>
-</button>
+        <button
+          className="tool-btn"
+          onClick={handleFirst}
+          title="First"
+          disabled={!hasSelected || atFirst}
+        >
+          <span className="tool-icon">|◀</span>
+          <span className="tool-text">First</span>
+        </button>
 
-<button
-  className="tool-btn"
-  onClick={handlePrevious}
-  title="Previous"
-  disabled={!hasSelected || atFirst}
->
-  <span className="tool-icon">◀</span>
-  <span className="tool-text">Previous</span>
-</button>
+        <button
+          className="tool-btn"
+          onClick={handlePrevious}
+          title="Previous"
+          disabled={!hasSelected || atFirst}
+        >
+          <span className="tool-icon">◀</span>
+          <span className="tool-text">Previous</span>
+        </button>
 
-<button
-  className="tool-btn"
-  onClick={handleNext}
-  title="Next"
-  disabled={!hasSelected || atLast}
->
-  <span className="tool-icon">▶</span>
-  <span className="tool-text">Next</span>
-</button>
+        <button
+          className="tool-btn"
+          onClick={handleNext}
+          title="Next"
+          disabled={!hasSelected || atLast}
+        >
+          <span className="tool-icon">▶</span>
+          <span className="tool-text">Next</span>
+        </button>
 
-<button
-  className="tool-btn"
-  onClick={handleLast}
-  title="Last"
-  disabled={!hasSelected || atLast}
->
-  <span className="tool-icon">▶|</span>
-  <span className="tool-text">Last</span>
-</button>
+        <button
+          className="tool-btn"
+          onClick={handleLast}
+          title="Last"
+          disabled={!hasSelected || atLast}
+        >
+          <span className="tool-icon">▶|</span>
+          <span className="tool-text">Last</span>
+        </button>
       </div>
 
-         
-      
-      
+
+
+
 
       <div className="sub_container_display_2">
         <div className="display_table">
-         <table className="tableTariff1">
-  <thead>
-    <tr className="thead-row">
-      <th className="th-cell">No</th>
-      <th className="th-cell">Start Time</th>
-      <th className="th-cell">End Time</th>
-    </tr>
-  </thead>
+          <table className="tableTariff1">
+            <thead>
+              <tr className="thead-row">
+                <th className="th-cell">No</th>
+                <th className="th-cell">Start Time</th>
+                <th className="th-cell">End Time</th>
+              </tr>
+            </thead>
 
-  <tbody>
-    {periods.length === 0 ? (
-      <tr>
-        <td colSpan={3} className="empty-cell">
-          No periods saved
-        </td>
-      </tr>
-    ) : (
-      periods.map((period, idx) => (
-        <tr
-          key={period.id || idx}
-          ref={(el) => (rowRefs.current[idx] = el)}
-          style={{
-    cursor: "pointer",
-    background: selectedRow === idx ? "#eef6ff" : "",
-    color: selectedRow === idx ? "#0b53a0" : "#111",
-    fontWeight: selectedRow === idx ? 600 : 400,
-    transition: "background 120ms ease, color 120ms ease",
-    borderBottom: "1px solid #f3f4f6",
-  }}
-          onClick={() => setSelectedRow(idx)}
-         
-        >
-          <td className="td-cell">{idx + 1}</td>
-          <td className="td-cell">{period.start_time}</td>
-          <td className="td-cell">{period.end_time}</td>
-        </tr>
-      ))
-    )}
-  </tbody>
-</table>
+            <tbody>
+              {periods.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="empty-cell">
+                    No periods saved
+                  </td>
+                </tr>
+              ) : (
+                periods.map((period, idx) => (
+                  <tr
+                    key={period.id || idx}
+                    ref={(el) => (rowRefs.current[idx] = el)}
+                    style={{
+                      cursor: "pointer",
+                      background: selectedRow === idx ? "#eef6ff" : "",
+                      color: selectedRow === idx ? "#0b53a0" : "#111",
+                      fontWeight: selectedRow === idx ? 600 : 400,
+                      transition: "background 120ms ease, color 120ms ease",
+                      borderBottom: "1px solid #f3f4f6",
+                    }}
+                    onClick={() => setSelectedRow(idx)}
+
+                  >
+                    <td className="td-cell">{idx + 1}</td>
+                    <td className="td-cell">{period.start_time}</td>
+                    <td className="td-cell">{period.end_time}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -6200,11 +6415,11 @@ const FriendlyWeekday = () => {
     saturday: false,
     sunday: false,
   });
-   
+
 
 
   const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
+
   useEffect(() => {
     const storedId = localStorage.getItem('selectedDeviceId');
     setDeviceId(storedId);
@@ -6227,7 +6442,7 @@ const FriendlyWeekday = () => {
   const handleCheckboxChange = (day) => {
     setWeekdays((prev) => {
       const updatedWeekdays = { ...prev, [day]: !prev[day] };
-      
+
       // Send updated data to backend
       axios.post(`${BASE_URL}/api/friendly-weekdays/`, {
         device_id: deviceId,
@@ -6240,81 +6455,81 @@ const FriendlyWeekday = () => {
 
   return (
 
-    <div className="table-container-payment"> 
-  <div className="options-grid">
+    <div className="table-container-payment">
+      <div className="options-grid">
 
-  <label className="option-label">
-    <input
-      className="option-checkbox"
-      type="checkbox"
-      checked={weekdays.monday}
-      onChange={() => handleCheckboxChange("monday")}
-    />
-    Monday
-  </label>
+        <label className="option-label">
+          <input
+            className="option-checkbox"
+            type="checkbox"
+            checked={weekdays.monday}
+            onChange={() => handleCheckboxChange("monday")}
+          />
+          Monday
+        </label>
 
-  <label className="option-label">
-    <input
-      className="option-checkbox"
-      type="checkbox"
-      checked={weekdays.tuesday}
-      onChange={() => handleCheckboxChange("tuesday")}
-    />
-    Tuesday
-  </label>
+        <label className="option-label">
+          <input
+            className="option-checkbox"
+            type="checkbox"
+            checked={weekdays.tuesday}
+            onChange={() => handleCheckboxChange("tuesday")}
+          />
+          Tuesday
+        </label>
 
-  <label className="option-label">
-    <input
-      className="option-checkbox"
-      type="checkbox"
-      checked={weekdays.wednesday}
-      onChange={() => handleCheckboxChange("wednesday")}
-    />
-    Wednesday
-  </label>
+        <label className="option-label">
+          <input
+            className="option-checkbox"
+            type="checkbox"
+            checked={weekdays.wednesday}
+            onChange={() => handleCheckboxChange("wednesday")}
+          />
+          Wednesday
+        </label>
 
-  <label className="option-label">
-    <input
-      className="option-checkbox"
-      type="checkbox"
-      checked={weekdays.thursday}
-      onChange={() => handleCheckboxChange("thursday")}
-    />
-    Thursday
-  </label>
+        <label className="option-label">
+          <input
+            className="option-checkbox"
+            type="checkbox"
+            checked={weekdays.thursday}
+            onChange={() => handleCheckboxChange("thursday")}
+          />
+          Thursday
+        </label>
 
-  <label className="option-label">
-    <input
-      className="option-checkbox"
-      type="checkbox"
-      checked={weekdays.friday}
-      onChange={() => handleCheckboxChange("friday")}
-    />
-    Friday
-  </label>
+        <label className="option-label">
+          <input
+            className="option-checkbox"
+            type="checkbox"
+            checked={weekdays.friday}
+            onChange={() => handleCheckboxChange("friday")}
+          />
+          Friday
+        </label>
 
-  <label className="option-label">
-    <input
-      className="option-checkbox"
-      type="checkbox"
-      checked={weekdays.saturday}
-      onChange={() => handleCheckboxChange("saturday")}
-    />
-    Saturday
-  </label>
+        <label className="option-label">
+          <input
+            className="option-checkbox"
+            type="checkbox"
+            checked={weekdays.saturday}
+            onChange={() => handleCheckboxChange("saturday")}
+          />
+          Saturday
+        </label>
 
-  <label className="option-label">
-    <input
-      className="option-checkbox"
-      type="checkbox"
-      checked={weekdays.sunday}
-      onChange={() => handleCheckboxChange("sunday")}
-    />
-    Sunday
-  </label>
+        <label className="option-label">
+          <input
+            className="option-checkbox"
+            type="checkbox"
+            checked={weekdays.sunday}
+            onChange={() => handleCheckboxChange("sunday")}
+          />
+          Sunday
+        </label>
 
-</div>
-</div>
+      </div>
+    </div>
   );
 };
 
@@ -6545,107 +6760,107 @@ const FriendlyHolidays = () => {
 
       {/* POPUP MODAL */}
       {isModalOpen && (
-  <div className="popup">
-    <div style={{padding:"2%"}} className="popup-content">
-      <h4>Select Holiday Date</h4>
+        <div className="popup">
+          <div style={{ padding: "2%" }} className="popup-content">
+            <h4>Select Holiday Date</h4>
 
-      <div className="security-form">
-        <label>
-          <span>Year Type:</span>
-          <select
-            name="year_type"
-            value={yearType}
-            onChange={(e) => setYearType(e.target.value)}
-          >
-            <option value="Every Year">Every Year</option>
-            <option value="Special Year">Special Year</option>
-          </select>
-        </label>
-      </div>
+            <div className="security-form">
+              <label>
+                <span>Year Type:</span>
+                <select
+                  name="year_type"
+                  value={yearType}
+                  onChange={(e) => setYearType(e.target.value)}
+                >
+                  <option value="Every Year">Every Year</option>
+                  <option value="Special Year">Special Year</option>
+                </select>
+              </label>
+            </div>
 
-      {yearType === "Special Year" && (
-        <div className="security-form">
-          <label>
-            <span>Enter Year:</span>
-            <input
-              type="number"
-              name="special_year"
-              placeholder="YYYY"
-              value={specialYear}
-              onChange={(e) => setSpecialYear(e.target.value)}
-            />
-          </label>
+            {yearType === "Special Year" && (
+              <div className="security-form">
+                <label>
+                  <span>Enter Year:</span>
+                  <input
+                    type="number"
+                    name="special_year"
+                    placeholder="YYYY"
+                    value={specialYear}
+                    onChange={(e) => setSpecialYear(e.target.value)}
+                  />
+                </label>
+              </div>
+            )}
+
+            <div className="security-form">
+              <label>
+                <span>Month:</span>
+                <select
+                  name="month"
+                  value={month}
+                  onChange={(e) => setMonth(e.target.value)}
+                >
+                  <option value="Every Month">Every Month</option>
+                  {[
+                    "January",
+                    "February",
+                    "March",
+                    "April",
+                    "May",
+                    "June",
+                    "July",
+                    "August",
+                    "September",
+                    "October",
+                    "November",
+                    "December",
+                  ].map((m, idx) => (
+                    <option key={idx} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="security-form">
+              <label>
+                <span>Day:</span>
+                <select
+                  name="day"
+                  value={day}
+                  onChange={(e) => setDay(e.target.value)}
+                >
+                  <option value="Every Day">Every Day</option>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="modal-buttons">
+              <button
+                type="button"
+                onClick={() => {
+                  const formatted = formatDate();
+                  setSelectedDate(formatted);
+                  setIsModalOpen(false);
+                }}
+              >
+                OK
+              </button>
+
+              <button type="button" onClick={() => setIsModalOpen(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
-
-      <div className="security-form">
-        <label>
-          <span>Month:</span>
-          <select
-            name="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-          >
-            <option value="Every Month">Every Month</option>
-            {[
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December",
-            ].map((m, idx) => (
-              <option key={idx} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      <div className="security-form">
-        <label>
-          <span>Day:</span>
-          <select
-            name="day"
-            value={day}
-            onChange={(e) => setDay(e.target.value)}
-          >
-            <option value="Every Day">Every Day</option>
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      <div className="modal-buttons">
-        <button
-          type="button"
-          onClick={() => {
-            const formatted = formatDate();
-            setSelectedDate(formatted);
-            setIsModalOpen(false);
-          }}
-        >
-          OK
-        </button>
-
-        <button type="button" onClick={() => setIsModalOpen(false)}>
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-)}
 
       {/* TOOLBAR */}
       <div className="vertical-toolbar">
@@ -6748,8 +6963,8 @@ const FriendlyHolidays = () => {
 const Friendly = () => {
   const [activePage, setActivePage] = useState("periods");
 
-  
-   const tabs = [
+
+  const tabs = [
     { key: "periods", label: "Friendly Periods" },
     { key: "weekday", label: "Friendly Weekday" },
     { key: "holidays", label: "Friendly Holidays" },
@@ -6779,27 +6994,26 @@ const Friendly = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [activePage]);
-  
+
   return (
     <div className="">
       {/* Buttons to Switch Pages */}
       <div className="controlsGroup_tabs" ref={containerRef}>
-      {tabs.map((tab) => (
-        <button
-          key={tab.key}
-          ref={(el) => (buttonRefs.current[tab.key] = el)}
-          className={`tou_button ${
-            activePage === tab.key ? "activeButton" : ""
-          }`}
-          onClick={() => setActivePage(tab.key)}
-          type="button"
-        >
-          {tab.label}
-        </button>
-      ))}
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            ref={(el) => (buttonRefs.current[tab.key] = el)}
+            className={`tou_button ${activePage === tab.key ? "activeButton" : ""
+              }`}
+            onClick={() => setActivePage(tab.key)}
+            type="button"
+          >
+            {tab.label}
+          </button>
+        ))}
 
-      <div ref={underlineRef} className="underline" />
-    </div>
+        <div ref={underlineRef} className="underline" />
+      </div>
       {/* Rendering Components Based on Selected Page */}
       {activePage === "periods" && <FriendlyPeriods />}
       {activePage === "weekday" && <FriendlyWeekday />}
@@ -6829,7 +7043,7 @@ const AlarmOfCredit = () => {
   ]);
 
   const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
+
   useEffect(() => {
     const storedId = localStorage.getItem('selectedDeviceId');
     setDeviceId(storedId);
@@ -6840,7 +7054,7 @@ const AlarmOfCredit = () => {
       try {
         const response = await axios.get(`${BASE_URL}/api/alarmcredit/${deviceId}/`);
 
-        
+
         const updatedData = response.data;
 
         setAlarmData((prevData) =>
@@ -6860,7 +7074,7 @@ const AlarmOfCredit = () => {
   }, []);
 
   return (
-   <div>
+    <div>
       <table className="tableTariff1">
         <thead>
           <tr className="bg-gray-200">
@@ -6883,14 +7097,14 @@ const AlarmOfCredit = () => {
           ))}
         </tbody>
       </table>
-       </div>
-  
+    </div>
+
   );
 };
 
 
 
-const StepPrice1  = () => {
+const StepPrice1 = () => {
   const [rows, setRows] = useState([{ step: 1, price: 0 }]); // Initial row
   const [editingIndex, setEditingIndex] = useState(null);
   const [editValue, setEditValue] = useState("");
@@ -6965,7 +7179,7 @@ const StepPrice1  = () => {
 const StepPrice = () => {
   const [rows, setRows] = useState([]);
 
-  console.log("rows",rows)
+  console.log("rows", rows)
 
 
   const [editingIndex, setEditingIndex] = useState(null);
@@ -6973,25 +7187,25 @@ const StepPrice = () => {
   const [selectedRow, setSelectedRow] = useState(null);
 
   const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-   
+
   useEffect(() => {
     const storedId = localStorage.getItem('selectedDeviceId');
     setDeviceId(storedId);
   }, []);
-  
+
 
 
   const fetchStepPrices = async (deviceId, setRows) => {
     try {
       const response = await axios.get(`${BASE_URL}/api/step-price/${deviceId}/`);
-      
+
       console.log("Raw API Response:", response.data);  // Check what we get from API
-  
+
       // Extract step_prices array from response
       const stepPrices = response.data?.step_prices;
-  
+
       console.log("Extracted step_prices:", stepPrices);  // Ensure we extracted the array
-  
+
       if (Array.isArray(stepPrices)) {
         console.log("Setting rows:", stepPrices);  // Ensure we are setting the correct data
         setRows(stepPrices);
@@ -7004,10 +7218,10 @@ const StepPrice = () => {
       setRows([]); // Fallback to empty array on error
     }
   };
-  
-  
+
+
   useEffect(() => {
-    fetchStepPrices(deviceId,setRows);
+    fetchStepPrices(deviceId, setRows);
   }, [deviceId]); // Dependency on deviceId
 
   const addRow = async () => {
@@ -7015,14 +7229,14 @@ const StepPrice = () => {
       console.error("Device ID is missing!");
       return;
     }
-  
-    
+
+
     const newPrice = { price: 0, device_id: deviceId }; // ✅ Include device_id
-  
+
     try {
       const response = await axios.post(`${BASE_URL}/api/step-price/`, newPrice);
       console.log("API Response:", response.data); // Debugging
-  
+
       if (response.data) {
         setRows((prevRows) => [...prevRows, response.data]); // ✅ Update state
       }
@@ -7030,7 +7244,7 @@ const StepPrice = () => {
       console.error("Error adding row:", error.response?.data || error);
     }
   };
-  
+
 
 
   // Handle double-click to enable editing
@@ -7083,72 +7297,72 @@ const StepPrice = () => {
 
   return (
     <div>
-   
-      
-      <div className="table-container"> 
-    <table className="tableTariff1">
-  <thead>
-    <tr className="bg-gray-200">
-      <th className="border p-2">Step</th>
-      <th className="border p-2">Price</th>
-    </tr>
-  </thead>
 
-  <tbody>
-    {rows.map((row, index) => (
-      <tr
-        key={row.id}
-        className="text-center border"
-        onClick={() => handleRowClick(index)}
-        style={{
-          backgroundColor:
-            selectedRow === index ? "#ff5e00" : "",
-          cursor: "pointer",
-        }}
-      >
-        <td className="border p-2">{row.step}</td>
 
-        <td
-          className="border p-2"
-          onDoubleClick={() => handleDoubleClick(index)}
-        >
-          {editingIndex === index ? (
-            <input
-              type="number"
-              value={editValue}
-              onChange={handleInputChange}
-              onBlur={() => saveEdit(index)}
-              onKeyDown={(e) =>
-                e.key === "Enter" && saveEdit(index)
-              }
-              autoFocus
-              style={{ width: "100%" }}
-            />
-          ) : (
-            row.price
-          )}
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
+      <div className="table-container">
+        <table className="tableTariff1">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="border p-2">Step</th>
+              <th className="border p-2">Price</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.map((row, index) => (
+              <tr
+                key={row.id}
+                className="text-center border"
+                onClick={() => handleRowClick(index)}
+                style={{
+                  backgroundColor:
+                    selectedRow === index ? "#ff5e00" : "",
+                  cursor: "pointer",
+                }}
+              >
+                <td className="border p-2">{row.step}</td>
+
+                <td
+                  className="border p-2"
+                  onDoubleClick={() => handleDoubleClick(index)}
+                >
+                  {editingIndex === index ? (
+                    <input
+                      type="number"
+                      value={editValue}
+                      onChange={handleInputChange}
+                      onBlur={() => saveEdit(index)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && saveEdit(index)
+                      }
+                      autoFocus
+                      style={{ width: "100%" }}
+                    />
+                  ) : (
+                    row.price
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div >
-      <div  style={{
-    display: "flex",
-    gap: 12,
-    alignItems: "center",
-    flexWrap: "wrap",
-    marginLeft:'20%', 
-    // will wrap on very small screens
-  }}> 
-       <button className='scheduler-add-button' onClick={addRow}>Add Row</button>
-      <button  className='scheduler-delete-button' onClick={deleteRow} disabled={selectedRow === null}>
-        Delete Selected Row
-      </button>
+      <div style={{
+        display: "flex",
+        gap: 12,
+        alignItems: "center",
+        flexWrap: "wrap",
+        marginLeft: '20%',
+        // will wrap on very small screens
+      }}>
+        <button className='scheduler-add-button' onClick={addRow}>Add Row</button>
+        <button className='scheduler-delete-button' onClick={deleteRow} disabled={selectedRow === null}>
+          Delete Selected Row
+        </button>
       </div>
-   
-   
-   
+
+
+
     </div>
   );
 };
@@ -7158,137 +7372,129 @@ const StepPrice = () => {
 
 
 const Payment = () => {
-    const [activeComponent, setActiveComponent] = useState('AccountDetails');
-  
-    const renderComponent = () => {
-      switch (activeComponent) {
-        case 'AccountDetails':
-          return <AccountDetails />;
-        case 'Credit':
-          return <Credit />;
-        case 'Charge':
-          return <Charge/>
-        case 'TokenGateway':
-          return <TokenGateway/>
-        case 'PaymentInfoTable':
-          return <PaymentInfoTable/>
-        case 'Friendly':
-          return <Friendly/> 
-        case 'AlarmOfCredit':
-          return <AlarmOfCredit/>
-        case 'StepPrice':
-          return <StepPrice/>
-        default:
-          return <p>Please select a section to view the content.</p>;
-      }
-    };
-  
-    return (
-      <div>
-      <div
-  className="view-toggle"
-  role="tablist"
-  aria-label="Component selection"
->
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activeComponent === "AccountDetails"}
-    className={`view-btn ${
-      activeComponent === "AccountDetails" ? "active" : ""
-    }`}
-    onClick={() => setActiveComponent("AccountDetails")}
-  >
-    Account Details
-  </button>
+  const [activeComponent, setActiveComponent] = useState('AccountDetails');
 
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activeComponent === "Credit"}
-    className={`view-btn ${
-      activeComponent === "Credit" ? "active" : ""
-    }`}
-    onClick={() => setActiveComponent("Credit")}
-  >
-    Credit
-  </button>
-
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activeComponent === "Charge"}
-    className={`view-btn ${
-      activeComponent === "Charge" ? "active" : ""
-    }`}
-    onClick={() => setActiveComponent("Charge")}
-  >
-    Charge
-  </button>
-
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activeComponent === "TokenGateway"}
-    className={`view-btn ${
-      activeComponent === "TokenGateway" ? "active" : ""
-    }`}
-    onClick={() => setActiveComponent("TokenGateway")}
-  >
-    Token Gateway
-  </button>
-
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activeComponent === "PaymentInfoTable"}
-    className={`view-btn ${
-      activeComponent === "PaymentInfoTable" ? "active" : ""
-    }`}
-    onClick={() => setActiveComponent("PaymentInfoTable")}
-  >
-    Payment Information
-  </button>
-
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activeComponent === "Friendly"}
-    className={`view-btn ${
-      activeComponent === "Friendly" ? "active" : ""
-    }`}
-    onClick={() => setActiveComponent("Friendly")}
-  >
-    Friendly
-  </button>
-
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activeComponent === "AlarmOfCredit"}
-    className={`view-btn ${
-      activeComponent === "AlarmOfCredit" ? "active" : ""
-    }`}
-    onClick={() => setActiveComponent("AlarmOfCredit")}
-  >
-    Alarm Of Credit
-  </button>
-
-  <button
-    type="button"
-    role="tab"
-    aria-pressed={activeComponent === "StepPrice"}
-    className={`view-btn ${
-      activeComponent === "StepPrice" ? "active" : ""
-    }`}
-    onClick={() => setActiveComponent("StepPrice")}
-  >
-    Step Price
-  </button>
-</div>
-        <div className="load-control-container">{renderComponent()}</div>
-      </div>
-    );
+  const renderComponent = () => {
+    switch (activeComponent) {
+      case 'AccountDetails':
+        return <AccountDetails />;
+      case 'Credit':
+        return <Credit />;
+      case 'Charge':
+        return <Charge />
+      case 'TokenGateway':
+        return <TokenGateway />
+      case 'PaymentInfoTable':
+        return <PaymentInfoTable />
+      case 'Friendly':
+        return <Friendly />
+      case 'AlarmOfCredit':
+        return <AlarmOfCredit />
+      case 'StepPrice':
+        return <StepPrice />
+      default:
+        return <p>Please select a section to view the content.</p>;
+    }
   };
-  
-  export default Payment;
+
+  return (
+    <div>
+      <div
+        className="view-toggle"
+        role="tablist"
+        aria-label="Component selection"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activeComponent === "AccountDetails"}
+          className={`view-btn ${activeComponent === "AccountDetails" ? "active" : ""
+            }`}
+          onClick={() => setActiveComponent("AccountDetails")}
+        >
+          Account Details
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activeComponent === "Credit"}
+          className={`view-btn ${activeComponent === "Credit" ? "active" : ""
+            }`}
+          onClick={() => setActiveComponent("Credit")}
+        >
+          Credit
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activeComponent === "Charge"}
+          className={`view-btn ${activeComponent === "Charge" ? "active" : ""
+            }`}
+          onClick={() => setActiveComponent("Charge")}
+        >
+          Charge
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activeComponent === "TokenGateway"}
+          className={`view-btn ${activeComponent === "TokenGateway" ? "active" : ""
+            }`}
+          onClick={() => setActiveComponent("TokenGateway")}
+        >
+          Token Gateway
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activeComponent === "PaymentInfoTable"}
+          className={`view-btn ${activeComponent === "PaymentInfoTable" ? "active" : ""
+            }`}
+          onClick={() => setActiveComponent("PaymentInfoTable")}
+        >
+          Payment Information
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activeComponent === "Friendly"}
+          className={`view-btn ${activeComponent === "Friendly" ? "active" : ""
+            }`}
+          onClick={() => setActiveComponent("Friendly")}
+        >
+          Friendly
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activeComponent === "AlarmOfCredit"}
+          className={`view-btn ${activeComponent === "AlarmOfCredit" ? "active" : ""
+            }`}
+          onClick={() => setActiveComponent("AlarmOfCredit")}
+        >
+          Alarm Of Credit
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-pressed={activeComponent === "StepPrice"}
+          className={`view-btn ${activeComponent === "StepPrice" ? "active" : ""
+            }`}
+          onClick={() => setActiveComponent("StepPrice")}
+        >
+          Step Price
+        </button>
+      </div>
+      <div className="load-control-container">{renderComponent()}</div>
+    </div>
+  );
+};
+
+export default Payment;

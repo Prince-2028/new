@@ -1,5 +1,7 @@
 // App.js (Main Application File)
-import React, { useState, useRef, forwardRef, useImperativeHandle } from 'react';
+
+import React, { useState, useEffect,useRef, forwardRef, useImperativeHandle } from 'react';
+import axios from "axios";
 import './index.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBolt, faFileInvoiceDollar, faChartLine, faCheckSquare, faPowerOff } from '@fortawesome/free-solid-svg-icons';
@@ -352,7 +354,7 @@ const InstantaneousReadings = forwardRef((props, ref) => {
 
 
 
-function MonthlyBillingDashboard() {
+function MonthlyBillingDashboard1() {
   const [billingProfile, setBillingProfile] = useState('');
   const [selectMode, setSelectMode] = useState('');
   const [fromValue, setFromValue] = useState('');
@@ -526,7 +528,7 @@ function MonthlyBillingDashboard() {
 }
 
 
-function DailyBillingDashboard() {
+function DailyBillingDashboard1() {
   const [billingProfile, setBillingProfile] = useState("");
   const [selectMode, setSelectMode] = useState("");
   const [fromValue, setFromValue] = useState("");
@@ -656,6 +658,664 @@ function DailyBillingDashboard() {
 
 
 
+
+function MonthlyBillingDashboard() {
+  const [serialNumber, setSerialNumber] = useState("");
+  const [selectMode, setSelectMode] = useState("");
+  const [fromValue, setFromValue] = useState("");
+  const [toValue, setToValue] = useState("");
+  const [tableData, setTableData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const storedSerial = localStorage.getItem("selectedSerialNumber");
+    if (storedSerial) {
+      setSerialNumber(storedSerial);
+    }
+  }, []);
+
+  const handleSelectChange = (event) => {
+    const { value } = event.target;
+    setSelectMode(value);
+    setFromValue("");
+    setToValue("");
+  };
+
+  const formatDate = (value) => {
+    if (!value) return "";
+    try {
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return value;
+      return d.toLocaleString();
+    } catch {
+      return value;
+    }
+  };
+
+  const parseStreamItem = (block) => {
+    if (!block) return null;
+
+    const trimmed = block.trim();
+    if (!trimmed) return null;
+
+    const lines = trimmed
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    for (const line of lines) {
+      if (line.startsWith("data:")) {
+        const jsonText = line.replace(/^data:\s*/, "");
+        try {
+          return JSON.parse(jsonText);
+        } catch (e) {
+          console.error("Failed to parse SSE data line:", jsonText, e);
+        }
+      }
+
+      if (line.startsWith("message")) {
+        const jsonStart = line.indexOf("{");
+        if (jsonStart !== -1) {
+          const jsonText = line.slice(jsonStart);
+          try {
+            return JSON.parse(jsonText);
+          } catch (e) {
+            console.error("Failed to parse message line:", jsonText, e);
+          }
+        }
+      }
+    }
+
+    const jsonStart = trimmed.indexOf("{");
+    const jsonEnd = trimmed.lastIndexOf("}");
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      const jsonText = trimmed.slice(jsonStart, jsonEnd + 1);
+      try {
+        return JSON.parse(jsonText);
+      } catch (e) {
+        console.error("Failed to parse JSON block:", jsonText, e);
+      }
+    }
+
+    return null;
+  };
+
+  const handleRead = async () => {
+    console.log("Read button clicked");
+
+    try {
+      console.log("serialNumber:", serialNumber);
+      console.log("selectMode:", selectMode);
+      console.log("fromValue:", fromValue);
+      console.log("toValue:", toValue);
+
+      if (!serialNumber) {
+        alert("Please select a serial number");
+        return;
+      }
+
+      if (!selectMode) {
+        alert("Please select mode");
+        return;
+      }
+
+      const payload = {
+        serial_number: serialNumber,
+        mode: selectMode,
+        stream: true,
+      };
+
+      if (selectMode === "entry") {
+        if (!fromValue) {
+          alert("Please enter From Entry");
+          return;
+        }
+
+        payload.from_entry = parseInt(fromValue, 10);
+
+        if (toValue) {
+          payload.to_entry = parseInt(toValue, 10);
+        }
+      }
+
+      if (selectMode === "range") {
+        if (!fromValue || !toValue) {
+          alert("Please select both dates");
+          return;
+        }
+
+        payload.from_date = new Date(fromValue).toISOString();
+        payload.to_date = new Date(toValue).toISOString();
+      }
+
+      console.log("Payload before API:", payload);
+
+      setLoading(true);
+      setTableData([]);
+
+      const response = await fetch(
+        `${BASE_URL}/api/monthly_billing/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `HTTP ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error("Streaming response body is empty");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const blocks = buffer.split("\n\n");
+        buffer = blocks.pop() || "";
+
+        for (const block of blocks) {
+          const item = parseStreamItem(block);
+
+          if (item) {
+            setTableData((prev) => [...prev, item]);
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        const lastItem = parseStreamItem(buffer);
+        if (lastItem) {
+          setTableData((prev) => [...prev, lastItem]);
+        }
+      }
+    } catch (error) {
+      console.error("FULL ERROR:", error);
+      console.log("error.message", error.message);
+      alert(error.message || "Failed to read monthly billing data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="dashboard-container">
+      
+
+      <div style={{ width: "100%" }}>
+        <label htmlFor="select-mode">Select Mode Entries:</label>
+        <select
+          id="select-mode"
+          value={selectMode}
+          onChange={handleSelectChange}
+          style={{ width: "100%" }}
+        >
+          <option value="">-- Select --</option>
+          <option value="all">All</option>
+          <option value="entry">Entry</option>
+          <option value="range">Range</option>
+          <option value="latest">Latest</option>
+        </select>
+      </div>
+     
+
+       <div className="control-group">
+          <label htmlFor="entries-in-use">Entries: in use</label>
+          <input type="text" id="entries-in-use" value="13" readOnly />
+        </div>
+
+        <div className="control-group">
+          <label htmlFor="profile-entries">Profile Entries:</label>
+          <input type="text" id="profile-entries" value="13" readOnly />
+        </div>
+
+          
+        
+
+            <div className="button-group">
+        <button className="save" onClick={handleRead} disabled={loading}>
+          {loading ? "Reading..." : "Read"}
+        </button>
+      </div>
+
+       
+
+
+      <div className="controls-section">
+        {selectMode === "entry" && (
+          <>
+            <div className="control-group">
+              <label htmlFor="from-number">From Entry:</label>
+              <input
+                type="number"
+                id="from-number"
+                value={fromValue}
+                onChange={(e) => setFromValue(e.target.value)}
+              />
+            </div>
+
+            <div className="control-group">
+              <label htmlFor="to-number">To Entry:</label>
+              <input
+                type="number"
+                id="to-number"
+                value={toValue}
+                onChange={(e) => setToValue(e.target.value)}
+              />
+            </div>
+          </>
+        )}
+
+        {selectMode === "range" && (
+          <>
+            <div className="control-group">
+              <label htmlFor="from-date">From:</label>
+              <input
+                type="datetime-local"
+                id="from-date"
+                value={fromValue}
+                onChange={(e) => setFromValue(e.target.value)}
+              />
+            </div>
+
+            <div className="control-group">
+              <label htmlFor="to-date">To:</label>
+              <input
+                type="datetime-local"
+                id="to-date"
+                value={toValue}
+                onChange={(e) => setToValue(e.target.value)}
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="table-section1">
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Date</th>
+              <th>Active energy import (+A)</th>
+              <th>Active energy export (-A)</th>
+              <th>Reactive energy import (+R)</th>
+              <th>Reactive energy export (-R)</th>
+              <th>Residual</th>
+              <th>Energy used</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableData.length > 0 ? (
+              tableData.map((item, index) => (
+                <tr key={item.no || index}>
+                  <td>{item.no ?? index + 1}</td>
+                  <td>{formatDate(item.reading_datetime || item.date || item.time)}</td>
+                  <td>{item.active_import ?? ""}</td>
+                  <td>{item.active_export ?? ""}</td>
+                  <td>{item.reactive_import ?? ""}</td>
+                  <td>{item.reactive_export ?? ""}</td>
+                  <td>{item.residual ?? ""}</td>
+                  <td>{item.energy_used ?? ""}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center" }}>
+                  {loading ? "Reading..." : "No data available"}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+   
+    </div>
+  );
+}
+
+
+
+function DailyBillingDashboard() {
+  const [serialNumber, setSerialNumber] = useState("");
+  const [selectMode, setSelectMode] = useState("");
+  const [fromValue, setFromValue] = useState("");
+  const [toValue, setToValue] = useState("");
+  const [tableData, setTableData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const storedSerial = localStorage.getItem("selectedSerialNumber");
+    if (storedSerial) {
+      setSerialNumber(storedSerial);
+    }
+  }, []);
+
+  const handleSelectChange = (event) => {
+    const { value } = event.target;
+    setSelectMode(value);
+    setFromValue("");
+    setToValue("");
+  };
+
+  const formatDate = (value) => {
+    if (!value) return "";
+    try {
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return value;
+      return d.toLocaleString();
+    } catch {
+      return value;
+    }
+  };
+
+  const parseStreamItem = (block) => {
+    if (!block) return null;
+
+    const trimmed = block.trim();
+    if (!trimmed) return null;
+
+    const lines = trimmed
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    for (const line of lines) {
+      if (line.startsWith("data:")) {
+        const jsonText = line.replace(/^data:\s*/, "");
+        try {
+          return JSON.parse(jsonText);
+        } catch (e) {
+          console.error("Failed to parse SSE data line:", jsonText, e);
+        }
+      }
+
+      if (line.startsWith("message")) {
+        const jsonStart = line.indexOf("{");
+        if (jsonStart !== -1) {
+          const jsonText = line.slice(jsonStart);
+          try {
+            return JSON.parse(jsonText);
+          } catch (e) {
+            console.error("Failed to parse message line:", jsonText, e);
+          }
+        }
+      }
+    }
+
+    const jsonStart = trimmed.indexOf("{");
+    const jsonEnd = trimmed.lastIndexOf("}");
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      const jsonText = trimmed.slice(jsonStart, jsonEnd + 1);
+      try {
+        return JSON.parse(jsonText);
+      } catch (e) {
+        console.error("Failed to parse JSON block:", jsonText, e);
+      }
+    }
+
+    return null;
+  };
+
+  const handleRead = async () => {
+    console.log("Read button clicked");
+
+    try {
+      console.log("serialNumber:", serialNumber);
+      console.log("selectMode:", selectMode);
+      console.log("fromValue:", fromValue);
+      console.log("toValue:", toValue);
+
+      if (!serialNumber) {
+        alert("Please select a serial number");
+        return;
+      }
+
+      if (!selectMode) {
+        alert("Please select mode");
+        return;
+      }
+
+      const payload = {
+        serial_number: serialNumber,
+        mode: selectMode,
+        stream: true,
+      };
+
+      if (selectMode === "entry") {
+        if (!fromValue) {
+          alert("Please enter From Entry");
+          return;
+        }
+
+        payload.from_entry = parseInt(fromValue, 10);
+
+        if (toValue) {
+          payload.to_entry = parseInt(toValue, 10);
+        }
+      }
+
+      if (selectMode === "range") {
+        if (!fromValue || !toValue) {
+          alert("Please select both dates");
+          return;
+        }
+
+        payload.from_date = new Date(fromValue).toISOString();
+        payload.to_date = new Date(toValue).toISOString();
+      }
+
+      console.log("Payload before API:", payload);
+
+      setLoading(true);
+      setTableData([]);
+
+      const response = await fetch(
+        `${BASE_URL}/api/daily_billing/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `HTTP ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error("Streaming response body is empty");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const blocks = buffer.split("\n\n");
+        buffer = blocks.pop() || "";
+
+        for (const block of blocks) {
+          const item = parseStreamItem(block);
+
+          if (item) {
+            setTableData((prev) => [...prev, item]);
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        const lastItem = parseStreamItem(buffer);
+        if (lastItem) {
+          setTableData((prev) => [...prev, lastItem]);
+        }
+      }
+    } catch (error) {
+      console.error("FULL ERROR:", error);
+      console.log("error.message", error.message);
+      alert(error.message || "Failed to read monthly billing data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="dashboard-container">
+      
+
+      <div style={{ width: "100%" }}>
+        <label htmlFor="select-mode">Select Mode Entries:</label>
+        <select
+          id="select-mode"
+          value={selectMode}
+          onChange={handleSelectChange}
+          style={{ width: "100%" }}
+        >
+          <option value="">-- Select --</option>
+          <option value="all">All</option>
+          <option value="entry">Entry</option>
+          <option value="range">Range</option>
+          <option value="latest">Latest</option>
+        </select>
+      </div>
+     
+
+       <div className="control-group">
+          <label htmlFor="entries-in-use">Entries: in use</label>
+          <input type="text" id="entries-in-use" value="13" readOnly />
+        </div>
+
+        <div className="control-group">
+          <label htmlFor="profile-entries">Profile Entries:</label>
+          <input type="text" id="profile-entries" value="13" readOnly />
+        </div>
+
+          
+        
+
+            <div className="button-group">
+        <button className="save" onClick={handleRead} disabled={loading}>
+          {loading ? "Reading..." : "Read"}
+        </button>
+      </div>
+
+       
+
+
+      <div className="controls-section">
+        {selectMode === "entry" && (
+          <>
+            <div className="control-group">
+              <label htmlFor="from-number">From Entry:</label>
+              <input
+                type="number"
+                id="from-number"
+                value={fromValue}
+                onChange={(e) => setFromValue(e.target.value)}
+              />
+            </div>
+
+            <div className="control-group">
+              <label htmlFor="to-number">To Entry:</label>
+              <input
+                type="number"
+                id="to-number"
+                value={toValue}
+                onChange={(e) => setToValue(e.target.value)}
+              />
+            </div>
+          </>
+        )}
+
+        {selectMode === "range" && (
+          <>
+            <div className="control-group">
+              <label htmlFor="from-date">From:</label>
+              <input
+                type="datetime-local"
+                id="from-date"
+                value={fromValue}
+                onChange={(e) => setFromValue(e.target.value)}
+              />
+            </div>
+
+            <div className="control-group">
+              <label htmlFor="to-date">To:</label>
+              <input
+                type="datetime-local"
+                id="to-date"
+                value={toValue}
+                onChange={(e) => setToValue(e.target.value)}
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="table-section1">
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Date</th>
+              <th>Active energy import (+A)</th>
+              <th>Active energy export (-A)</th>
+              <th>Reactive energy import (+R)</th>
+              <th>Reactive energy export (-R)</th>
+              <th>Residual</th>
+              <th>Energy used</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableData.length > 0 ? (
+              tableData.map((item, index) => (
+                <tr key={item.no || index}>
+                  <td>{item.no ?? index + 1}</td>
+                  <td>{formatDate(item.reading_datetime || item.date || item.time)}</td>
+                  <td>{item.active_import ?? ""}</td>
+                  <td>{item.active_export ?? ""}</td>
+                  <td>{item.reactive_import ?? ""}</td>
+                  <td>{item.reactive_export ?? ""}</td>
+                  <td>{item.residual ?? ""}</td>
+                  <td>{item.energy_used ?? ""}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="8" style={{ textAlign: "center" }}>
+                  {loading ? "Reading..." : "No data available"}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+   
+    </div>
+  );
+}
 
 
 

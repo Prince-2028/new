@@ -1,3 +1,4 @@
+
 from django.urls import path
 from .views import *
 
@@ -278,6 +279,16 @@ urlpatterns = [
     #second part 
     path('api/Instantaneoustream_obis/', InstantaneousReadingsAPIView.as_view(), name='stream_obis'),
     path('api/monthly_billing/', MonthlyBillingAPIView.as_view(), name='monthly_billing'),
+    path('api/daily_billing/', DailyBillingAPIView.as_view(), name='daily-billing'),
+
+    path(
+        'api/monthly-rent-credit/',
+        MonthlyRentCreditAPIView.as_view(),
+        name='monthly-rent-credit'
+    ),
+
+
+
     path("api/energy_readings/", EnergyReadingsAPIView.as_view(), name="energy-readings-stream"),
     path("api/demand_readings/", DemandReadingsAPIView.as_view(), name="energy-readings-stream"),
     path("api/event_log_information/",EventLogAPIView.as_view(), name="energy-readings-stream"),
@@ -287,6 +298,7 @@ urlpatterns = [
     path("api/execute/", ExecuteRunAPIView.as_view(),name="Execute"),
     path('api/loadprofile-period/', LoadProfilePeriodAPIView.as_view(), name='loadprofile-period'),
     path('api/power-quality/', PowerQualityAPIView.as_view(), name='power-quality'),
+    path('api/instantaneous-read-snapshot/', InstantaneousReadSnapshotAPIView.as_view(), name='instantaneous-read'),
     
    
     path("api/monthly-billing/", MonthlyBillingView.as_view()),

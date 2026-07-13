@@ -18,6 +18,7 @@ from gurux_net import GXNet
 from gurux_common.io import Parity, StopBits # Corrected case
 from gurux_dlms.GXDateTime import GXDateTime
 from gurux_dlms.GXTimeZone import GXTimeZone
+from gurux_dlms.enums.ObjectType import ObjectType
 from gurux_dlms.objects import (
     GXDLMSObject, GXDLMSClock, GXDLMSRegister, GXDLMSProfileGeneric, GXDLMSData,
     GXDLMSExtendedRegister, GXDLMSDemandRegister, GXDLMSScript, GXDLMSScriptAction,
@@ -29,6 +30,8 @@ from gurux_dlms.internal._GXCommon import _GXCommon
 from enum import IntFlag
 from .GXDLMSReader import GXDLMSReader
 import logging
+
+
 
 
 logging.basicConfig(
@@ -720,6 +723,132 @@ def _convert_write_value(value_str, data_type: DataType):
         logger.error(f"Error converting value '{value_str}' to {data_type.name} for writing: {e}", exc_info=True)
         raise ValueError(f"Cannot convert '{value_str}' to {data_type.name}: {e}")
 
+
+def _convert_write_value_1(value_to_write):
+    """
+    Convert frontend JSON payload to Gurux structure.
+    """
+
+    # Handle Charge IC Attribute 6 payload
+    if (
+        isinstance(value_to_write, list)
+        and len(value_to_write) == 3
+    ):
+        try:
+            # -------------------------------
+            # Scaling
+            # -------------------------------
+            scaling = [
+                int(value_to_write[0][0]),
+                int(value_to_write[0][1])
+            ]
+
+            # -------------------------------
+            # Commodity
+            # Frontend:
+            # [3, [1,0,1,8,0,255], 2]
+            # Backend:
+            # [3, bytearray([1,0,1,8,0,255]), 2]
+            # -------------------------------
+            commodity_data = value_to_write[1]
+
+            commodity = [
+                int(commodity_data[0]),                    # classId
+                bytearray(commodity_data[1]),             # logical name
+                int(commodity_data[2])                    # attribute index
+            ]
+
+            # -------------------------------
+            # Charge Tables
+            # Frontend:
+            # [
+            #   [1,10000],
+            #   [2,6500]
+            # ]
+            #
+            # Backend:
+            # [
+            #   [bytearray([1]),10000]
+            # ]
+            # -------------------------------
+            charge_tables = []
+
+            for row in value_to_write[2]:
+                idx = int(row[0])
+                charge = int(row[1])
+
+                charge_tables.append([
+                    bytearray([idx]),
+                    charge
+                ])
+
+            converted_value = [
+                scaling,
+                commodity,
+                charge_tables
+            ]
+
+            print("converted_value", converted_value)
+
+            return converted_value
+
+        except Exception as ex:
+            raise ValueError(
+                f"Failed to convert Charge payload: {ex}"
+            )
+
+    # Existing conversion logic
+    return value_to_write
+
+
+
+
+from gurux_dlms.objects import GXChargeTable
+
+def build_gx_charge_tables(charge_tables):
+    """
+    Convert frontend payload to DLMS structure format.
+
+    Input:
+    [
+        {"index": "00", "charge_per_unit": 10000},
+        {"index": "00", "charge_per_unit": 27742}
+    ]
+
+    Output:
+    [
+        [bytearray(b''), 10000],
+        [bytearray(b''), 27742]
+    ]
+    """
+
+    print("Inside updated build_gx_charge_tables")
+
+    result = []
+
+    for item in charge_tables:
+
+        # Meter returns empty bytearray for index during read.
+        index_value = bytearray()
+
+        charge_value = int(
+            item.get("charge_per_unit", 0)
+        )
+
+        # Create DLMS structure
+        charge_structure = [
+            index_value,
+            charge_value
+        ]
+
+        result.append(charge_structure)
+
+    print("Final converted result:", result)
+
+    return result
+
+
+
 def get_access_rights(obj, attribute_index):
         """Get the access rights for a specific attribute"""
         try:
@@ -1091,7 +1220,18 @@ def execute_dlms_action( config, action_details):
             logger.info("Initializing DLMS connection (AARQ)...")
             reader.initializeConnection() # Sends AARQ, parses AARE
             logger.info("Connection established. Reading Association View...")
-            reader.getAssociationView()   # Get object list
+            reader.getAssociationView()   # Get object list 
+            print("\n===== ALL OBJECTS =====")
+
+            #for obj in client.objects:
+                #print(
+                        #f"LN={obj.logicalName} | "
+                        #f"Class={obj.objectType} | "
+                        #f"Type={type(obj).__name__}"
+                   # )
+
+               # print("========================")
+
             logger.info(f"Association View retrieved. Found {len(client.objects)} objects.")
             print(f"Association View retrieved. Found {len(client.objects)} objects.------------------------------------------------------------------")
             # Store a DEEP COPY of the objects to avoid reference issues
@@ -1108,6 +1248,7 @@ def execute_dlms_action( config, action_details):
                 time.sleep(2.5)
         else:
             # Subsequent actions - restore from memory
+            
             logger.info(f"Restoring Association View from memory for connection: {connection_key}")
             try:
                 # Restore a DEEP COPY to avoid modifying the stored version
@@ -1120,8 +1261,32 @@ def execute_dlms_action( config, action_details):
         # --- 6. Perform Action ---
         logger.info(f"Executing action: '{action}'")
         if action == "read_obis":
+           
             media.open()              #22222222222222222222222
-            reader.initializeConnection() 
+            reader.initializeConnection()
+
+            
+
+            print("=" * 80)
+            print("Class 63 Objects")
+
+            found = False
+
+            for obj in client.objects:
+                if obj.objectType == ObjectType.STATUS_MAPPING:
+                    found = True
+                    print("FOUND:", obj.logicalName, obj.objectType)
+
+            if not found:
+                print("No STATUS_MAPPING object found.")
+
+            print("=" * 80)
+
+            
+
+            
+             
+            
 
             # Handle multiple OBIS codes - collect all results
             results = []
@@ -1129,7 +1294,8 @@ def execute_dlms_action( config, action_details):
             for index, obis_item in enumerate(parameters):
                 if isinstance(obis_item, dict):
                     obis_code = obis_item.get('obis_code')
-                    attr_str = obis_item.get('attribute_index')
+                    attr_str = obis_item.get('attribute_index') 
+
                 else:
                     # If item is a plain string, treat it as obis code and require attribute separately
                     obis_code = obis_item
@@ -1156,8 +1322,30 @@ def execute_dlms_action( config, action_details):
                     }
                     results.append(error_result)
                     continue
+                print("vsssssss2")
+                print(f"Finding object for OBIS: {obis_code}")
+                print("=" * 80)
+                print("Requested OBIS:", repr(obis_code))
+                print("Object Type:", ObjectType.NONE)
+                print("Total Objects:", len(client.objects))
+                print("=" * 80)
+                print("\n===== ALL OBJECTS =====")
+
+                for obj in client.objects:
+                    print(
+                        f"LN={obj.logicalName} | "
+                        f"Class={obj.objectType} | "
+                        f"Type={type(obj).__name__}"
+                    )
+
+                print("========================")
 
                 target_obj = client.objects.findByLN(ObjectType.NONE, obis_code)
+
+                print("vsssssss3") 
+                print("target_obj",target_obj)
+
+               
 
                 if not target_obj:
                     error_result = {
@@ -1168,15 +1356,26 @@ def execute_dlms_action( config, action_details):
                     }
                     results.append(error_result)
                     continue
+                print("vsssssss4")
+                print("target_obj",target_obj)
 
-                access_rights = get_access_rights(target_obj, attr)
-                print(f"  Access Mode: {access_rights}")
-                
+                access_rights = get_access_rights(target_obj, attr) 
+
+                print("vsssssss5")
+                print("access_rights",access_rights)
+
                 if "Read" in access_rights:
                     try:
-                        logger.info(f"Reading OBIS: {obis_code}, Attribute: {attr}")
-                        value = reader.read(target_obj, attr)
+                        logger.info(f"Reading OBIS1: {obis_code}, Attribute: {attr}")
+                        print(f"Reading OBIS1: {obis_code}, Attribute: {attr}")
+                        value = reader.read(target_obj, attr) 
+                        print(f"Read value for {obis_code} attr {attr}: {value}")
+                        print("test 63////")
+                        print("TYPE =", type(value))
+                        print("VALUE =", value)
 
+
+                
 
                         from gurux_dlms.objects.GXUnitCharge import GXUnitCharge
 
@@ -1188,7 +1387,26 @@ def execute_dlms_action( config, action_details):
 
                         if obis_code in ["0.0.96.5.0.255", "0.0.96.5.1.255", "0.0.96.5.2.255", "0.0.96.5.3.255", "0.0.96.4.0.255", "0.0.96.4.1.255", "0.0.96.4.2.255","0.0.97.97.0.255", "0.0.97.97.1.255", "0.0.97.98.0.255", "0.0.97。98.1.255",  "0.0.97。98。10。255",  "0。0。97。98。11。255",  "0。0。97。98。20。255",  "0。0。97。98。21。255"]: # Special case for OBIS
                             value_serializable = _convert_read_value(value, obis_code)
+                        elif obis_code == "0.0.96.4.140.255":
+                            print("test 63////")
+                            print("TYPE =", type(value))
+                            print("VALUE =", value)
                         elif isinstance(value, GXUnitCharge):
+
+                            print("TYPE:", type(value))
+                            print("VALUE DICT:", vars(value))
+
+                            if value.chargePerUnitScaling:
+                                print("Scaling:", vars(value.chargePerUnitScaling))
+
+                            if value.commodity:
+                                print("Commodity:", vars(value.commodity))
+
+                            for row in value.chargeTables:
+                                print("ROW TYPE:", type(row))
+                                print("ROW DATA:", vars(row))
+
+
                             result = {
                                 "chargePerUnitScaling": {},
                                 "commodity": {},
@@ -1271,11 +1489,12 @@ def execute_dlms_action( config, action_details):
             }
 
         elif action == "write_obis":
-            print("  ...................write testing by............. vvs")
+            print(" 1  ....@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@55555...............write testing by............. vvs")
             media.open()  # Ensure media is open
             reader.initializeConnection()
             # Handle both single write and batch writes
             if isinstance(parameters, list):
+                print(" 2 ...................write testing by............. vvs")
                 # Batch write processing
                 results = []
                 for index, write_item in enumerate(parameters):
@@ -1302,7 +1521,8 @@ def execute_dlms_action( config, action_details):
                             "message": "Missing obis_code, attribute_index, or value for write operation."
                         }
                         results.append(error_result)
-                        continue
+                        continue 
+                    print(" 3 ...................write testing by............. vvs")
                     
                     try:
                         attr = int(attr_str)
@@ -1319,8 +1539,10 @@ def execute_dlms_action( config, action_details):
                     try:
                         # Process individual write operation
                         logger.info(f"Writing OBIS: {obis}, Attribute: {attr}, Value: {value_to_write_str}")
+                       
                         
                         # Find target object
+                        print(" 4 ...................write testing by............. vvs")
                         target_obj = client.objects.findByLN(ObjectType.NONE, obis)
                         if not target_obj:
                             error_result = {
@@ -1331,6 +1553,7 @@ def execute_dlms_action( config, action_details):
                             }
                             results.append(error_result)
                             continue
+                        print(" *****5 ...................write testing by............. vvs")
                         
                         # Read current value first (required for write operations)
                         reader.read(target_obj, attr)
@@ -1372,17 +1595,104 @@ def execute_dlms_action( config, action_details):
                                 continue
                         
                         # Convert value
-                        converted_value = _convert_write_value(value_to_write_str, data_type)
+                        print(" 6 ...................write testing by............. vvs")  
+                        print("value_to_write_str",value_to_write_str,"data_type",data_type) 
+
+                        if obis == "0.0.19.20.0.255" and attr == 6:
+                            import json 
+
+                            raw_tables = (json.loads(value_to_write_str) if isinstance(value_to_write_str, str)  else value_to_write_str)
+
+                           
+                            
+
+                            print("raw_tables", raw_tables) 
+                            print(value_to_write_str,"value_to_write_str")   
+                            converted_value = _convert_write_value_1(raw_tables) 
+                            print(converted_value,"converted_value")
+
+                           # converted_value = [
+                           # [-3, -3],
+                           # [3, bytearray([1, 0, 1, 8, 0, 255]), 2],
+                           # [
+                            #    [bytearray([1]), 10000],
+                            #    [bytearray([2]), 2500],
+                             #   [bytearray([3]), 3000],
+                            #    [bytearray([4]), 4000]
+                           # ]]
+
+                            print("converted_value", converted_value)
+
+
+                                                    
+
+                            
+                            print("converted_value",converted_value)
+                        else:
+                            converted_value = _convert_write_value(value_to_write_str, data_type)
                         logger.info(f"Converted write value: {converted_value} (Type: {type(converted_value)})")
                         
                         # Update local object value using setValue
+
+                      
                         e_args = ValueEventArgs(client.settings, target_obj, attr, 0, None)
                         e_args.value = converted_value
+
+                        import traceback
+
+                        try:
+                            target_obj.setValue(client.settings, e_args)
+                        except Exception as ex:
+                            print("FULL ERROR:", repr(ex))
+                            traceback.print_exc()
+                            raise
+
+
                         target_obj.setValue(client.settings, e_args)
                         
                         # Send write request
                         reader.write(target_obj, attr)
-                        logger.info(f"Write request sent successfully for {obis} attr {attr}.")
+                        logger.info(f"Write request sent successfully for {obis} attr {attr}.")   
+
+
+                        if target_obj.objectType == ObjectType.CHARGE and attr == 6:
+                            try:
+                                reader.method(
+                                    target_obj,
+                                    2,   # activate_passive_unit_charge
+                                    0,
+                                    DataType.INT8
+                                )
+                                logger.info("Passive unit charge activated successfully.")
+                            except Exception as ex:
+                                logger.error(f"Activation failed: {ex}")   
+                            
+                            updated_value = reader.read(target_obj, 6)
+                            logger.info(f"Updated meter value after activation: {updated_value}")
+
+                            print("TYPE:", type(updated_value))
+                            print("VALUE DICT:", updated_value.__dict__)
+
+                            print(
+                                "Scaling:",
+                                updated_value.chargePerUnitScaling.__dict__
+                            )
+
+                            print(
+                                "Commodity:",
+                                updated_value.commodity.__dict__
+                            )
+
+                            for row in updated_value.chargeTables:
+                                print("ROW:", row.__dict__)
+                            
+
+                        
+                         
+
+                        
+
+
                         
                         success_result = {
                             "status": "success",
@@ -1470,6 +1780,7 @@ def execute_dlms_action( config, action_details):
 
                 print("Media open:", reader.media.isOpen())
 
+                print(f"Attempting to read current value for {obis} attr {attr} {target_obj} before write...>>>>>>>>>>>>>>>>>>>>>>>>>>")
                 access_rights = get_access_rights(target_obj, attr)
 
                 can_write = access_rights in [

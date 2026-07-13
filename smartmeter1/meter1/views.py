@@ -1779,7 +1779,7 @@ class MeterDetailAPIView1(APIView):
 #         data={"data":[{"status":"success","message":"Read successful.","action":"read","obis_code":"1.0.32.7.0.255","attribute_index":"2","value":234.1173553466797},{"status":"success","message":"Read successful.","action":"read","obis_code":"1.0.14.7.0.255","attribute_index":"2","value":50.0671272277832},{"status":"success","message":"Read successful.","action":"read","obis_code":"1.0.31.7.0.255","attribute_index":"2","value":0.0},{"status":"success","message":"Read successful.","action":"read","obis_code":"1.0.13.7.0.255","attribute_index":"2","value":1.0},{"status":"success","message":"Read successful.","action":"read","obis_code":"1.0.15.7.0.255","attribute_index":"2","value":0.08401799947023392}]}
 #         return Response(data, status=status.HTTP_200_OK)
 
-class MeterDetailAPIView(OBISStreamingMixin, APIView):
+class  MeterDetailAPIView(OBISStreamingMixin, APIView):
     """
     Handles READ and WRITE DLMS operations via POST request.
     Reads update DB temporarily and clear after response.
@@ -1802,7 +1802,7 @@ class MeterDetailAPIView(OBISStreamingMixin, APIView):
         print("serial_number------@#$@#$@#$-------------", serial_number)
 
         if not serial_number:
-            return Response({"error": "serial_number is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "serial_number is required@@."}, status=status.HTTP_400_BAD_REQUEST)
 
         records_to_clear_after_response = [] # Only used for read actions
         final_response_data = {}
@@ -1871,18 +1871,22 @@ class MeterDetailAPIView(OBISStreamingMixin, APIView):
                     return Response(error_results, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             elif action == 'write_obis':
+                print("  ...................write testing by............. vvs11")
                 # --- Handle Write OBIS (both single and batch) ---
                 if not parameters:
                     return Response({"error": "Parameters required for write_obis"}, status=status.HTTP_400_BAD_REQUEST)
                 
                 # Check if parameters is a list (batch) or dict (single)
                 if isinstance(parameters, list):
+                    print("  ...................write testing by............. vvs22")
                     # Batch write - use streaming for real-time progress
                     logger.info(f"Executing batch write_obis for {len(parameters)} operations")
                     return self.stream_obis_writes(serial_number, parameters)
                 else:
                     # Single write - existing logic
                     logger.info(f"Executing single write_obis via helper.")
+                    print("  ...................write testing by............. vvs33")
+                    print(action,parameters,serial_number,"-19u123989208743902749739754273957495794759sumit")
                     result = execute_dlms_action(dlms_config, action_details={"action": action, "parameters": parameters, "serial_number": serial_number})
                     
                     if result.get("status") == "error":
@@ -2305,7 +2309,7 @@ class TariffParameterAPIView2(APIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class TariffParameterAPIView(APIView):
+class TariffParameterAPIView1(APIView):
 
     def get_random_value(self, name):
         # Optional: replace with your own logic if you want generated values
@@ -2385,7 +2389,130 @@ class TariffParameterAPIView(APIView):
             status=status.HTTP_200_OK
         )
 
+class TariffParameterAPIView(APIView): #sumit
 
+    # Maps OBIS code -> display name for TariffParameter storage.
+    OBIS_NAME_MAP = {
+    "1.0-0:96.14.0.255": "Currently active rate",
+    "1.0-128:96.2.8.2.255": "Active time of passive step tariff",
+    "3.0-0:96.14.1.255": "Currently active price",
+    "1.0-1:96.14.0.255": "Currently active step",
+    }
+
+    def post(self, request):
+        device_id = request.data.get("device_id")
+        action = request.data.get("action", "read_obis")
+        serial_number = request.data.get("serial_number")
+        parameters = request.data.get("parameters", [])
+
+        print("*******testing121111111111111111111111111111111111111111111111111111111111111@@@***********8")
+        print("device_id",device_id)
+        print("action",action)
+        print("serial_number",serial_number)
+        print("parameters",parameters)
+
+        if not device_id:
+            return Response(
+                {"error": "device_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not parameters or not isinstance(parameters, list):
+            return Response(
+                {"error": "parameters must be a non-empty list of OBIS codes"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # --- 1. Resolve Device ---
+        try:
+            device = Device.objects.select_related('addressing', 'security', 'user').get(id=device_id)
+        except Device.DoesNotExist:
+            return Response(
+                {"error": "Device not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # --- 2. Resolve active Media / DLMS config ---
+        media = Media.objects.filter(device=device, is_active=True).first()
+        if not media:
+            return Response(
+                {"error": "No active media connection configured for this device."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        print("*******testing12112222222222222222222222222222222222222222222222221111@@@***********8")
+
+
+        dlms_config = get_dlms_config_from_device(device, media)
+
+        # --- 3. Perform the actual meter read ---
+        try:
+            print("*******testing13333333333333333333333333333333333333333333321111@@@***********8")
+            result = execute_dlms_action(
+                dlms_config,
+                action_details={
+                    "action": "read_obis",
+                    "parameters": parameters,
+                    "serial_number": serial_number,
+                }
+            )
+        except Exception as e:
+            
+            logger.error(f"Error reading OBIS values for device {device_id}: {e}", exc_info=True)
+            return Response(
+                {"error": f"Internal error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        if result.get("status") == "error":
+            print("*******testing1211222222222244444444444444444444444errort22222222221111@@@***********8")
+            return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # --- 4. Save each successfully-read value into TariffParameter ---
+        response_data = []
+        skipped = []
+        print("*******new1231231231231@@@***********8")
+
+        for item in result.get("results", []):
+            # Defensive lookups — adjust key names once you confirm the real shape
+            item_status = item.get("status", "success")
+            obis_code = item.get("obis_code") or item.get("code")
+            value = item.get("value")
+
+            if item_status == "error" or not obis_code:
+                skipped.append(item)
+                continue
+
+            unit = item.get("unit", "")
+            name = self.OBIS_NAME_MAP.get(obis_code, obis_code)
+
+            obj, created = TariffParameter.objects.update_or_create(
+                device=device,
+                name=name,
+                defaults={
+                    "code": obis_code,
+                    "value": value,
+                    "unit": unit,
+                }
+            )
+            response_data.append({
+                "name": obj.name,
+                "code": obj.code,
+                "value": obj.value,
+                "unit": obj.unit,
+            })
+
+        return Response(
+            {
+                "device_id": device_id,
+                "action": action,
+                "serial_number": serial_number,
+                "data": response_data,
+                "skipped": skipped,  # remove once you're confident in the shape
+                "message": result.get("message"),
+            },
+            status=status.HTTP_200_OK
+        )
 
 
 class GetTariffParameterAPIView(APIView):
@@ -6201,13 +6328,13 @@ from django.utils.timezone import localtime
   "checked": true
 } '''
 
-class DemandConfigureView(APIView):
+class DemandConfigureView1(APIView):
 
 
     def post(self, request):
         try:
             data = request.data
-            print(data)
+            print(data,"thjis is ,ine dataaaaabhello oia  kjbdjbdebvbfdhjvsbfdhvbsfdbjh")
             response_data = []
             
             # Iterate over each item in the list
@@ -6266,6 +6393,164 @@ class DemandConfigureView(APIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
+class DemandConfigureView(APIView):
+    def post(self, request):
+        device_id = request.data.get("device_id")
+        action = request.data.get("action", "read_obis")
+        serial_number = request.data.get("serial_number", "")
+        parameters = request.data.get("parameters", [])
+
+        if not device_id:
+            return Response(
+                {"error": "device_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not parameters or not isinstance(parameters, list):
+            return Response(
+                {"error": "parameters must be a non-empty list"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+
+        print("sumit123qwertyui1234567892314241243243435435124562454543514354")
+        print("device_id", device_id)
+        for d in Device.objects.all():
+            print("device",d.id,d.serial_number)
+
+        # --- 1. Resolve Device ---
+        try:
+            device = Device.objects.select_related('addressing', 'security', 'user').get(id=device_id)
+        except Device.DoesNotExist:
+            return Response(
+                {"error": "Device not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # --- 2. Resolve active Media / DLMS config ---
+        media = Media.objects.filter(device=device, is_active=True).first()
+        if not media:
+            return Response(
+                {"error": "No active media connection configured for this device."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        dlms_config = get_dlms_config_from_device(device, media)
+
+        # --- 3. Build lookup + read params for execute_dlms_action ---
+        meta_by_code = {}
+        read_params = []
+        for item in parameters:
+            code = item.get("code")
+            name = item.get("name")
+            unit = item.get("unit", "")
+
+            if not code or not name:
+                continue
+
+            meta_by_code[code] = {"name": name, "unit": unit}
+            read_params.append({
+                "obis_code": code,
+                "attribute_index": item.get("attribute_index", 2),  # confirm this default
+            })
+
+        if not read_params:
+            return Response(
+                {"error": "No valid parameters with 'name' and 'code' provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        print("sumit123qwertyui1234567892314241243243435435124562454543514354")
+
+        # --- 4. Perform the actual meter read ---
+        try:
+            result = execute_dlms_action(
+                dlms_config,
+                action_details={
+                    "action": "read_obis",
+                    "parameters": read_params,
+                    "serial_number": serial_number,
+                }
+            )
+            
+            print(result,"------------------------------------------------------------------------------------------------------------------dlms")
+        except Exception as e:
+            logger.error(f"Error reading display parameters for device {device_id}: {e}", exc_info=True)
+            return Response(
+                {"error": f"Internal error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        if result.get("status") == "error":
+            return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # --- 5. Save each successfully-read value into DemandConfigure ---
+        response_data = []
+        skipped = []
+
+        for item in result.get("results", []):
+            item_status = item.get("status", "success")
+            obis_code = item.get("obis_code") or item.get("code")
+            value = item.get("value")
+
+            if item_status == "error" or not obis_code:
+                skipped.append(item)
+                continue
+
+            meta = meta_by_code.get(obis_code, {})
+            name = meta.get("name", obis_code)
+            unit = meta.get("unit", "")
+
+            demand_config, created = DemandConfigure.objects.update_or_create(
+                device=device,
+                code=obis_code,
+                defaults={
+                    "name": name,
+                    "value": value,
+                    "unit": unit,
+                }
+            )
+            response_data.append({
+                "id": demand_config.id,
+                "name": demand_config.name,
+                "code": demand_config.code,
+                "value": demand_config.value,
+                "unit": demand_config.unit,
+            })
+
+        return Response(
+            {
+                "device_id": device_id,
+                "action": action,
+                "serial_number": serial_number,
+                "data": response_data,
+                "skipped": skipped,
+                "message": result.get("message"),
+            },
+            status=status.HTTP_200_OK
+        )
+
+    def get(self, request, device_id):
+        try:
+            device = get_object_or_404(Device, id=device_id)
+            parameters = DemandConfigure.objects.filter(device=device)
+
+            response_data = [
+                {
+                    "device_id": device.id,
+                    "name": param.name,
+                    "code": param.code,
+                    "value": param.value,
+                    "unit": param.unit
+                }
+                for param in parameters
+                
+            ]
+
+            return JsonResponse(response_data, safe=False, status=200)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
 
 
 
@@ -10691,7 +10976,8 @@ from .models import DisplayParameter, Device
 
 
 
-class DisplayParameterListCreateUpdateView(APIView):
+
+class DisplayParameterListCreateUpdateView1(APIView):
 
     def post1(self, request):
         try:
@@ -10759,8 +11045,6 @@ class DisplayParameterListCreateUpdateView(APIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
-
-    
     def post(self, request):
         try:
             data = request.data
@@ -10819,10 +11103,6 @@ class DisplayParameterListCreateUpdateView(APIView):
                 "error": str(e)
             }, status=500)
 
-    
-    
-    
-    
     def get(self, request, device_id):
         try:
             device = get_object_or_404(Device, id=device_id)
@@ -10844,6 +11124,162 @@ class DisplayParameterListCreateUpdateView(APIView):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
+class DisplayParameterListCreateUpdateView(APIView):
+
+    def post(self, request):
+        device_id = request.data.get("device_id")
+        action = request.data.get("action", "read_obis")
+        serial_number = request.data.get("serial_number", "")
+        parameters = request.data.get("parameters", [])
+
+        if not device_id:
+            return Response(
+                {"error": "device_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not parameters or not isinstance(parameters, list):
+            return Response(
+                {"error": "parameters must be a non-empty list"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+
+        print("sumit123qwertyui1234567892314241243243435435124562454543514354")
+        print("device_id", device_id)
+        for d in Device.objects.all():
+            print("device",d.id,d.serial_number,d.addressing,d.security,d.user)
+
+        # --- 1. Resolve Device ---
+        try:
+            device = Device.objects.select_related('addressing', 'security', 'user').get(id=device_id)
+        except Device.DoesNotExist:
+            return Response(
+                {"error": "Device not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # --- 2. Resolve active Media / DLMS config ---
+        media = Media.objects.filter(device=device, is_active=True).first()
+        if not media:
+            return Response(
+                {"error": "No active media connection configured for this device."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        dlms_config = get_dlms_config_from_device(device, media)
+
+        # --- 3. Build lookup + read params for execute_dlms_action ---
+        meta_by_code = {}
+        read_params = []
+        for item in parameters:
+            code = item.get("code")
+            name = item.get("name")
+            unit = item.get("unit", "")
+
+            if not code or not name:
+                continue
+
+            meta_by_code[code] = {"name": name, "unit": unit}
+            read_params.append({
+                "obis_code": code,
+                "attribute_index": item.get("attribute_index", 2),  # confirm this default
+            })
+
+        if not read_params:
+            return Response(
+                {"error": "No valid parameters with 'name' and 'code' provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        print("sumit123qwertyui1234567892314241243243435435124562454543514354@")
+
+        # --- 4. Perform the actual meter read ---
+        try:
+            result = execute_dlms_action(
+                dlms_config,
+                action_details={
+                    "action": "read_obis",
+                    "parameters": read_params,
+                    "serial_number": serial_number,
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error reading display parameters for device {device_id}: {e}", exc_info=True)
+            return Response(
+                {"error": f"Internal error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        if result.get("status") == "error":
+            return Response(result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # --- 5. Save each successfully-read value into DisplayParameter ---
+        response_data = []
+        skipped = []
+
+        for item in result.get("results", []):
+            item_status = item.get("status", "success")
+            obis_code = item.get("obis_code") or item.get("code")
+            value = item.get("value")
+
+            if item_status == "error" or not obis_code:
+                skipped.append(item)
+                continue
+
+            meta = meta_by_code.get(obis_code, {})
+            name = meta.get("name", obis_code)
+            unit = meta.get("unit", "")
+
+            display_param, created = DisplayParameter.objects.update_or_create(
+                device=device,
+                code=obis_code,
+                defaults={
+                    "name": name,
+                    "value": value,
+                    "unit": unit,
+                }
+            )
+            response_data.append({
+                "id": display_param.id,
+                "name": display_param.name,
+                "code": display_param.code,
+                "value": display_param.value,
+                "unit": display_param.unit,
+            })
+
+        return Response(
+            {
+                "device_id": device_id,
+                "action": action,
+                "serial_number": serial_number,
+                "data": response_data,
+                "skipped": skipped,
+                "message": result.get("message"),
+            },
+            status=status.HTTP_200_OK
+        )
+
+    def get(self, request, device_id):
+        try:
+            device = get_object_or_404(Device, id=device_id)
+            parameters = DisplayParameter.objects.filter(device=device)
+
+            response_data = [
+                {
+                    "device_id": device.id,
+                    "name": param.name,
+                    "code": param.code,
+                    "value": param.value,
+                    "unit": param.unit
+                }
+                for param in parameters
+            ]
+
+            return JsonResponse(response_data, safe=False, status=200)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
 
 
 from django.shortcuts import get_object_or_404
@@ -11692,6 +12128,83 @@ def _filter_by_mode(readings: List[Dict[str, Any]],
     return readings
 
 # -------------------- Views --------------------
+def _filter_by_mode1(
+    readings: List[Dict[str, Any]],
+    mode: str,
+    from_entry: Optional[int] = None,
+    to_entry: Optional[int] = None,
+    from_date: Optional[datetime] = None,
+    to_date: Optional[datetime] = None
+) -> List[Dict[str, Any]]:
+
+    print("=== _filter_by_mode CALLED ===")
+    mode = (mode or "all").lower()
+
+    print(f"mode={mode}")
+    print(f"from_entry={from_entry}")
+    print(f"to_entry={to_entry}")
+    print(f"from_date={from_date}")
+    print(f"to_date={to_date}")
+
+    if readings:
+        print("Sample reading:")
+        print(readings[0])
+
+    # Entry mode
+    if mode == "entry":
+        if from_entry is None:
+            return []
+
+        if to_entry is None:
+            return [r for r in readings if r.get("no") == from_entry]
+
+        return [
+            r for r in readings
+            if from_entry <= r.get("no", 0) <= to_entry
+        ]
+
+    # Date range mode
+    if mode == "range":
+        print("=== RANGE MODE ===")
+
+        filtered = []
+
+        for r in readings:
+            try:
+                dt_value = r.get("reading_datetime") or r.get("date")
+
+                print("row datetime =", dt_value)
+
+                if not dt_value:
+                    continue
+
+                dt = _norm_parse_datetime(dt_value)
+
+                if not dt:
+                    continue
+
+                if from_date and dt < from_date:
+                    continue
+
+                if to_date and dt > to_date:
+                    continue
+
+                filtered.append(r)
+
+            except Exception as e:
+                print("Range filter error:", e)
+                print("Problem row:", r)
+
+        print("Filtered count =", len(filtered))
+        return filtered
+
+    # Latest mode
+    if mode == "latest":
+        return [readings[-1]] if readings else []
+
+    # All mode
+    return readings
+
 
 class MonthlyBillingAPIView(APIView):
     """
@@ -11747,7 +12260,7 @@ class MonthlyBillingAPIView(APIView):
         print("readings",readings)
         logger.info("total available readings: %d", len(readings))
 
-        selected = _filter_by_mode(
+        selected = _filter_by_mode1(
             readings,
             mode=mode,
             from_entry=from_entry_i,
@@ -13109,6 +13622,197 @@ class PowerQualityAPIView(APIView):
 
 
 
+from meter1.models import InstantaneousReadSnapshot
+print("Count of InstantaneousReadSnapshot records:", InstantaneousReadSnapshot.objects.count())
+print(InstantaneousReadSnapshot.objects.count())
+
+
+class InstantaneousReadSnapshotAPIView(APIView):
+    """
+    API to create/update and return Power Quality readings.
+    Behavior:
+      - If no records for device: create MAX_SLOTS records with random values.
+      - If some records exist: update existing (and create missing) to keep MAX_SLOTS.
+      - Return records according to filtering `mode`.
+      - Optionally stream results as SSE-like chunks (stream=True).
+    """
+    MAX_SLOTS = 13
+
+    # ----------------------------
+    # Helper functions
+    # ----------------------------
+
+    def _rand_decimal(self, low, high, places=3):
+        """Generate random Decimal value."""
+        return Decimal(f"{random.uniform(low, high):.{places}f}")
+
+    def _rand_state(self):
+        """Randomly pick a disconnect state."""
+        return random.choice(["(1) Connected", "(0) Disconnected"])
+
+    def _normalize_datetime(self, val):
+        """Convert ISO datetime string to aware datetime (if possible)."""
+        if not val:
+            return None
+        dt = parse_datetime(val)
+        if dt is None:
+            return None
+        if dj_timezone.is_naive(dt):
+            return dj_timezone.make_aware(dt, dj_timezone.get_default_timezone())
+        return dt
+
+    def _serialize_record(self, rec):
+        """Convert InstantaneousReadSnapshot to dict for frontend."""
+        return {
+            "entry_no": rec.entry_no,
+            "timestamp": rec.reading_datetime.isoformat() if rec.reading_datetime else None,
+            "disconnect_control_state": rec.disconnect_control_state,
+            "instantaneous_voltage_l1": str(rec.instantaneous_voltage_l1) if rec.instantaneous_voltage_l1 is not None else None,
+            "instantaneous_current_l1": str(rec.instantaneous_current_l1) if rec.instantaneous_current_l1 is not None else None,
+            "device_serial": rec.device.serial_number if hasattr(rec.device, "serial_number") else None,
+        }
+
+    def _get_stored_readings(self, device):
+        """Return all readings (serialized) for the device."""
+        qs = InstantaneousReadSnapshot.objects.filter(device=device).order_by("entry_no")
+        return [self._serialize_record(r) for r in qs]
+
+    # ----------------------------
+    # Main POST endpoint
+    # ----------------------------
+
+    def post(self, request, *args, **kwargs):
+        payload = request.data or {}
+        serial = payload.get("serial_number")
+        mode = payload.get("mode", "all")  # 'all', 'latest', 'entry', 'range', 'atleast'
+        from_entry = payload.get("from_entry")
+        to_entry = payload.get("to_entry")
+        from_date_raw = payload.get("from_date")
+        to_date_raw = payload.get("to_date")
+        stream = bool(payload.get("stream", True))
+
+        if not serial:
+            return Response({"error": "serial_number is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # get device
+        device = get_object_or_404(Device, serial_number=serial)
+
+        # ----------------------------
+        # Create or Update Data
+        # ----------------------------
+        with transaction.atomic():
+            qs = InstantaneousReadSnapshot.objects.filter(device=device).order_by("entry_no")
+            existing_count = qs.count()
+            now = dj_timezone.now()
+
+            if existing_count == 0:
+                objs = []
+                for i in range(1, self.MAX_SLOTS + 1):
+                    objs.append(InstantaneousReadSnapshot(
+                        device=device,
+                        entry_no=i,
+                        reading_datetime=now,
+                        disconnect_control_state=self._rand_state(),
+                        instantaneous_voltage_l1=self._rand_decimal(110, 140),
+                        instantaneous_current_l1=self._rand_decimal(0.1, 10.0),
+                    ))
+                InstantaneousReadSnapshot.objects.bulk_create(objs)
+            else:
+                existing_entries = {r.entry_no: r for r in qs}
+
+                # Update existing
+                for rec in existing_entries.values():
+                    rec.reading_datetime = now
+                    rec.disconnect_control_state = self._rand_state()
+                    rec.instantaneous_voltage_l1 = self._rand_decimal(110, 140)
+                    rec.instantaneous_current_l1 = self._rand_decimal(0.1, 10.0)
+                    rec.save(update_fields=[
+                        "reading_datetime",
+                        "disconnect_control_state",
+                        "instantaneous_voltage_l1",
+                        "instantaneous_current_l1",
+                    ])
+
+                # Create missing if any
+                if existing_count < self.MAX_SLOTS:
+                    to_create = []
+                    for i in range(1, self.MAX_SLOTS + 1):
+                        if i not in existing_entries:
+                            to_create.append(InstantaneousReadSnapshot(
+                                device=device,
+                                entry_no=i,
+                                reading_datetime=now,
+                                disconnect_control_state=self._rand_state(),
+                                instantaneous_voltage_l1=self._rand_decimal(110, 140),
+                                instantaneous_current_l1=self._rand_decimal(0.1, 10.0),
+                            ))
+                    if to_create:
+                        InstantaneousReadSnapshot.objects.bulk_create(to_create)
+
+        # ----------------------------
+        # Get All Records
+        # ----------------------------
+        all_reads = self._get_stored_readings(device)
+
+        # Parse filters
+        try:
+            from_entry_i = int(from_entry) if from_entry not in (None, "") else None
+            to_entry_i = int(to_entry) if to_entry not in (None, "") else None
+        except (ValueError, TypeError):
+            return Response({"error": "Invalid entry numbers"}, status=status.HTTP_400_BAD_REQUEST)
+
+        from_date = self._normalize_datetime(from_date_raw)
+        to_date = self._normalize_datetime(to_date_raw)
+
+        # ----------------------------
+        # Apply filters by mode
+        # ----------------------------
+        filtered = []
+        if mode == "entry":
+            if from_entry_i and to_entry_i:
+                filtered = [r for r in all_reads if from_entry_i <= r["entry_no"] <= to_entry_i]
+            elif from_entry_i:
+                filtered = [r for r in all_reads if r["entry_no"] == from_entry_i]
+        elif mode == "latest":
+            filtered = [all_reads[-1]] if all_reads else []
+        elif mode == "range" and from_date and to_date:
+            for r in all_reads:
+                t = self._normalize_datetime(r["timestamp"])
+                if t and from_date <= t <= to_date:
+                    filtered.append(r)
+        elif mode == "atleast":
+            try:
+                cnt = int(from_entry) if from_entry else self.MAX_SLOTS
+            except (ValueError, TypeError):
+                cnt = self.MAX_SLOTS
+            filtered = all_reads[-cnt:] if all_reads else []
+        else:
+            filtered = all_reads
+
+        if not filtered:
+            return Response({"data": []}, status=status.HTTP_200_OK)
+
+        # ----------------------------
+        # Streaming or Standard JSON
+        # ----------------------------
+        if stream:
+            def event_stream():
+                for item in filtered:
+                    yield f"data: {json.dumps(item)}\n\n"
+                    time.sleep(0.05)
+
+            resp = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+            resp["Cache-Control"] = "no-cache"
+            resp["X-Accel-Buffering"] = "no"
+            resp["Access-Control-Allow-Origin"] = "*"
+            return resp
+
+        return Response({"data": filtered}, status=status.HTTP_200_OK)
+
+
+
+
+
 
 
 
@@ -14040,3 +14744,387 @@ class LogoutAndClearCacheView(APIView):
                 "status": "error",
                 "message": f"Logout failed: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def _get_stored_daily_readings(device: Device) -> List[Dict[str, Any]]:
+    """
+    Read DB rows for device; fall back to simulator if no DB rows exist.
+    Ensures serialized reading_datetime includes offset.
+    """
+    qs = DailyBillingReading.objects.filter(device=device).order_by('entry_no')
+
+    if not qs.exists():
+        return _simulate_readings()
+
+    out = []
+
+    for r in qs:
+        dt = r.reading_datetime
+
+        if dt is None:
+            iso = None
+            pretty = None
+        else:
+            dt = _ensure_aware_utc(dt)
+            iso = dt.isoformat()
+            pretty = dt.strftime("%Y-%m-%d %H:%M:%S")
+
+        out.append({
+            "no": r.entry_no,
+            "date": pretty,
+            "reading_datetime": iso,
+            "active_import": r.active_import,
+            "active_export": r.active_export,
+            "reactive_import": r.reactive_import,
+            "reactive_export": r.reactive_export,
+            "residual": r.residual,
+            "energy_used": r.energy_used,
+        })
+
+    return out
+
+
+
+
+def _filter_daily_by_mode1(
+    readings: List[Dict[str, Any]],
+    mode: str,
+    from_entry: Optional[int] = None,
+    to_entry: Optional[int] = None,
+    from_date: Optional[datetime] = None,
+    to_date: Optional[datetime] = None
+) -> List[Dict[str, Any]]:
+
+    print("=== _filter_by_mode CALLED ===")
+    mode = (mode or "all").lower()
+
+    print(f"mode={mode}")
+    print(f"from_entry={from_entry}")
+    print(f"to_entry={to_entry}")
+    print(f"from_date={from_date}")
+    print(f"to_date={to_date}")
+
+    if readings:
+        print("Sample reading:")
+        print(readings[0])
+
+    # Entry mode
+    if mode == "entry":
+        if from_entry is None:
+            return []
+
+        if to_entry is None:
+            return [r for r in readings if r.get("no") == from_entry]
+
+        return [
+            r for r in readings
+            if from_entry <= r.get("no", 0) <= to_entry
+        ]
+
+    # Date range mode
+    if mode == "range":
+        print("=== RANGE MODE ===")
+
+        filtered = []
+
+        for r in readings:
+            try:
+                dt_value = r.get("reading_datetime") or r.get("date")
+
+                print("row datetime =", dt_value)
+
+                if not dt_value:
+                    continue
+
+                dt = _norm_parse_datetime(dt_value)
+
+                if not dt:
+                    continue
+
+                if from_date and dt < from_date:
+                    continue
+
+                if to_date and dt > to_date:
+                    continue
+
+                filtered.append(r)
+
+            except Exception as e:
+                print("Range filter error:", e)
+                print("Problem row:", r)
+
+        print("Filtered count =", len(filtered))
+        return filtered
+
+    # Latest mode
+    if mode == "latest":
+        return [readings[-1]] if readings else []
+
+    # All mode
+    return readings
+
+
+def _filter_daily_by_mode(
+    readings: List[Dict[str, Any]],
+    mode: str,
+    from_entry: Optional[int] = None,
+    to_entry: Optional[int] = None,
+    from_date: Optional[datetime] = None,
+    to_date: Optional[datetime] = None
+) -> List[Dict[str, Any]]:
+
+    print("=== _filter_by_mode CALLED ===")
+    mode = (mode or "all").lower()
+
+    print(f"mode={mode}")
+    print(f"from_entry={from_entry}")
+    print(f"to_entry={to_entry}")
+    print(f"from_date={from_date}")
+    print(f"to_date={to_date}")
+
+    if readings:
+        print("Sample reading:")
+        print(readings[0])
+
+    # Entry mode
+    if mode == "entry":
+        if from_entry is None:
+            return []
+
+        if to_entry is None:
+            return [r for r in readings if r.get("no") == from_entry]
+
+        return [
+            r for r in readings
+            if from_entry <= r.get("no", 0) <= to_entry
+        ]
+
+    # Date range mode
+    if mode == "range":
+        print("=== RANGE MODE ===")
+
+        filtered = []
+
+        for r in readings:
+            try:
+                dt_value = r.get("reading_datetime") or r.get("date")
+
+                print("row datetime =", dt_value)
+
+                if not dt_value:
+                    continue
+
+                dt = _norm_parse_datetime(dt_value)
+
+                if not dt:
+                    continue
+
+                if from_date and dt < from_date:
+                    continue
+
+                if to_date and dt > to_date:
+                    continue
+
+                filtered.append(r)
+
+            except Exception as e:
+                print("Range filter error:", e)
+                print("Problem row:", r)
+
+        print("Filtered count =", len(filtered))
+        return filtered
+
+    # Latest mode
+    if mode == "latest":
+        return [readings[-1]] if readings else []
+
+    # All mode
+    return readings
+
+
+
+
+
+
+class DailyBillingAPIView(APIView):
+    """
+    POST payload examples:
+      - All (streaming): {"serial_number":"MTR1","mode":"all","stream":true}
+      - Entry (single):  {"serial_number":"MTR1","mode":"entry","from_entry":5,"stream":true}
+      - Entry range:     {"serial_number":"MTR1","mode":"entry","from_entry":2,"to_entry":6,"stream":false}
+      - Date range:      {"serial_number":"MTR1","mode":"range","from_date":"2025-09-01T18:22:00.000Z","to_date":"2025-09-13T18:22:00.000Z","stream":true}
+      - Latest:          {"serial_number":"MTR1","mode":"latest","stream":true}
+    """
+
+    def post(self, request, *args, **kwargs):
+        payload = request.data or {}
+        print("payload", payload)
+        logger.info("daily_billing payload: %s", payload)
+
+        serial_number = payload.get("serial_number")
+        mode = payload.get("mode", "all")
+        from_entry = payload.get("from_entry")
+        to_entry = payload.get("to_entry")
+        from_date_raw = payload.get("from_date")
+        to_date_raw = payload.get("to_date")
+        stream = bool(payload.get("stream", True))
+        save_to_db = bool(payload.get("save_to_db", False))
+
+        if not serial_number:
+            return Response(
+                {"error": "serial_number is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        logger.info(
+            "mode=%s from_entry=%s to_entry=%s from_date=%s to_date=%s stream=%s",
+            mode, from_entry, to_entry, from_date_raw, to_date_raw, stream
+        )
+
+        device = get_object_or_404(Device, serial_number=serial_number)
+
+        try:
+            from_entry_i = int(from_entry) if from_entry is not None else None
+        except Exception:
+            from_entry_i = None
+
+        try:
+            to_entry_i = int(to_entry) if to_entry is not None else None
+        except Exception:
+            to_entry_i = None
+
+        from_date = _norm_parse_datetime(from_date_raw) if from_date_raw else None
+        to_date = _norm_parse_datetime(to_date_raw) if to_date_raw else None
+
+        logger.info(
+            "parsed from_entry=%s to_entry=%s from_date=%s to_date=%s",
+            from_entry_i, to_entry_i, from_date, to_date
+        )
+
+        readings = _get_stored_daily_readings(device)
+        print("readings", readings)
+        logger.info("total available readings: %d", len(readings))
+
+        selected = _filter_daily_by_mode(
+            readings,
+            mode=mode,
+            from_entry=from_entry_i,
+            to_entry=to_entry_i,
+            from_date=from_date,
+            to_date=to_date
+        )
+
+        print("selected", selected)
+        logger.info("selected count=%d for mode=%s", len(selected), mode)
+
+        if not selected:
+            debug = {
+                "data": [],
+                "debug": {
+                    "reason": "no matching readings",
+                    "total_available": len(readings),
+                    "mode": mode,
+                    "from_entry": from_entry_i,
+                    "to_entry": to_entry_i,
+                    "from_date_raw": from_date_raw,
+                    "to_date_raw": to_date_raw,
+                    "parsed_from_date": from_date.isoformat() if from_date else None,
+                    "parsed_to_date": to_date.isoformat() if to_date else None
+                }
+            }
+            return Response(debug, status=status.HTTP_200_OK)
+
+        if stream:
+            def generator():
+                for item in selected:
+                    if save_to_db:
+                        try:
+                            DailyBillingReading.objects.update_or_create(
+                                device=device,
+                                entry_no=item["no"],
+                                defaults={
+                                    "reading_datetime": _norm_parse_datetime(item.get("reading_datetime")) or dj_timezone.now(),
+                                    "active_import": item.get("active_import"),
+                                    "active_export": item.get("active_export"),
+                                    "reactive_import": item.get("reactive_import"),
+                                    "reactive_export": item.get("reactive_export"),
+                                    "residual": item.get("residual"),
+                                    "energy_used": item.get("energy_used"),
+                                }
+                            )
+                        except Exception:
+                            logger.exception("DB save error for item %s", item)
+
+                    yield f"data: {json.dumps(item)}\n\n"
+                    time.sleep(0.05)
+
+            resp = StreamingHttpResponse(generator(), content_type="text/event-stream")
+            resp["Cache-Control"] = "no-cache"
+            resp["X-Accel-Buffering"] = "no"
+            resp["Access-Control-Allow-Origin"] = "*"
+            return resp
+
+        return Response({"data": selected}, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+
+class MonthlyRentCreditAPIView(APIView):
+
+    def post(self, request):
+        try:
+            print("Request Data:", request.data)
+
+            device_id = request.data.get("device_id")
+            preset_credit_amount = request.data.get("presetCreditAmount")
+            period = request.data.get("period")
+
+            if not device_id:
+                return Response(
+                    {"error": "device_id is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            obj, created = MonthlyRentCredit.objects.update_or_create(
+                device_id=device_id,
+                defaults={
+                    "preset_credit_amount": preset_credit_amount,
+                    "period": period,
+                }
+            )
+
+            return Response(
+                {
+                    "message": "Created successfully" if created else "Updated successfully",
+                    "id": obj.id,
+                    "device_id": device_id
+                },
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            print("ERROR:", str(e))
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+

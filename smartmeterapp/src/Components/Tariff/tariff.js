@@ -119,7 +119,6 @@ const [data, setData] = useState([
 
 const TariffParameter = () => {
   const [apiData, setApiData] = useState([]);
-
   const [deviceId, setDeviceId] = useState(() =>
     localStorage.getItem("selectedDeviceId")
   );
@@ -129,7 +128,9 @@ const TariffParameter = () => {
       checked: false,
       no: 1,
       name: "Currently active rate",
-      code: "(1,0-0:96.14.0.255)",
+      codes: "(1,0-0:96.14.0.255)",
+      code: "0.0.96.14.0.255",
+      attribute_index: 2,
       value: "",
       unit: "kWh",
     },
@@ -137,7 +138,9 @@ const TariffParameter = () => {
       checked: false,
       no: 2,
       name: "Active time of passive step tariff",
-      code: "(1,0-128:96.2.8.2.255)",
+      codes: "(1,0-128:96.2.8.2.255)",
+      code: "0.128.96.2.8.255",
+      attribute_index: 2,
       value: "",
       unit: "hours",
     },
@@ -145,7 +148,9 @@ const TariffParameter = () => {
       checked: false,
       no: 3,
       name: "Currently active price",
-      code: "(3,0-0:96.14.1.255)",
+      codes: "(3,0-0:96.14.1.255)",
+      code: "0.0.96.14.1.255",
+      attribute_index: 2,
       value: "",
       unit: "Currency",
     },
@@ -153,7 +158,9 @@ const TariffParameter = () => {
       checked: false,
       no: 4,
       name: "Currently active step",
-      code: "(1,0-1:96.14.0.255)",
+      codes: "(1,0-1:96.14.0.255)",
+      code: "0.1.96.14.0.255",
+      attribute_index: 2,
       value: "",
       unit: "",
     },
@@ -186,10 +193,12 @@ const TariffParameter = () => {
       const payload = {
         device_id: deviceId,
         action: "read_obis",
-        serial_number: localStorage.getItem("serial_number"),
+        // serial_number: localStorage.getItem("serial_number"),
+        serial_number: localStorage.getItem("selectedSerialNumber"),
         parameters: selectedItems.map((item) => ({
           obis_code: item.code,
           name: item.name,
+          attribute_index: item.attribute_index
         })),
       };
 
@@ -208,11 +217,11 @@ const TariffParameter = () => {
     }
   };
 
-  const getValue = (name) => {
+  const getValue = (code) => {
     if (!apiData.length) return "";
 
     const item = apiData.find(
-      (data) => data.name === name
+      (data) => data.code === code
     );
 
     return item ? item.value : "";
@@ -258,10 +267,10 @@ const TariffParameter = () => {
 
               <td>{item.name}</td>
 
-              <td>{item.code}</td>
+              <td>{item.codes}</td>
 
               <td>
-                {getValue(item.name) || item.value}
+                {getValue(item.code)}
               </td>
 
               <td>{item.unit}</td>

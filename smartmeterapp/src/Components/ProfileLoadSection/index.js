@@ -1,6 +1,6 @@
-import React, { useState,useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {  faBolt, faChartBar, faClock, faCloud, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faBolt, faChartBar, faClock, faCloud, faEye } from '@fortawesome/free-solid-svg-icons';
 import './index.css'; // Assuming you have a CSS file for styling
 import { FaBookOpen, FaFileExport } from "react-icons/fa"; // Import icons
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
@@ -20,7 +20,7 @@ import BASE_URL from '../../apiConfig'; // Adjust path based on your file struct
 const LoadProfileWithPeriod1Dashboard = () => {
   const API_URL = `${BASE_URL}/api/loadprofile-period/`; // adjust if needed
 
-  const serial =  localStorage.getItem("selectedSerialNumber")||"sai1";
+  const serial = localStorage.getItem("selectedSerialNumber") || "sai1";
   const period = useState(1);
 
   const [selectMode, setSelectMode] = useState("");
@@ -209,7 +209,7 @@ const LoadProfileWithPeriod1Dashboard = () => {
             <th style={thStyle}>Active Export (kWh)</th>
             <th style={thStyle}>Reactive Import (kVArh)</th>
             <th style={thStyle}>Reactive Export (kVArh)</th>
-           
+
           </tr>
         </thead>
         <tbody>
@@ -221,7 +221,7 @@ const LoadProfileWithPeriod1Dashboard = () => {
               <td style={tdStyle}>{r.active_export ?? "-"}</td>
               <td style={tdStyle}>{r.reactive_import ?? "-"}</td>
               <td style={tdStyle}>{r.reactive_export ?? "-"}</td>
-            
+
             </tr>
           ))}
         </tbody>
@@ -231,11 +231,11 @@ const LoadProfileWithPeriod1Dashboard = () => {
 
   return (
     <div className="dashboard-container" style={{ padding: 12, fontFamily: "Arial, sans-serif" }}>
-     
-      <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-        
 
-       
+      <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+
+
+
 
         <div style={{ flex: 1 }}>
           <label htmlFor="select-mode">Select Mode Entries</label>
@@ -245,7 +245,7 @@ const LoadProfileWithPeriod1Dashboard = () => {
             <option value="entry">Entry</option>
             <option value="range">Range</option>
             <option value="atleast">Atleast</option>
-           
+
           </select>
         </div>
       </div>
@@ -261,7 +261,7 @@ const LoadProfileWithPeriod1Dashboard = () => {
           <input type="text" value="13" readOnly style={{ width: "100%" }} />
         </div>
 
-       
+
       </div>
 
       {/* conditional inputs */}
@@ -291,7 +291,7 @@ const LoadProfileWithPeriod1Dashboard = () => {
         </div>
       )}
 
-      
+
 
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         <button onClick={handleRead} disabled={loading} style={primaryBtnStyle}>
@@ -347,7 +347,7 @@ const secBtnStyle = { padding: "8px 12px", background: "#eee", border: "none", c
 const LoadProfileWithPeriod2Dashboard = () => {
   const API_URL = `${BASE_URL}/api/loadprofile-period/`; // adjust if needed
 
-  const serial =  localStorage.getItem("selectedSerialNumber")||"sai1";
+  const serial = localStorage.getItem("selectedSerialNumber") || "sai1";
   const period = 2;
 
   const [selectMode, setSelectMode] = useState("");
@@ -536,7 +536,7 @@ const LoadProfileWithPeriod2Dashboard = () => {
             <th style={thStyle}>Active Export (kWh)</th>
             <th style={thStyle}>Reactive Import (kVArh)</th>
             <th style={thStyle}>Reactive Export (kVArh)</th>
-           
+
           </tr>
         </thead>
         <tbody>
@@ -548,7 +548,7 @@ const LoadProfileWithPeriod2Dashboard = () => {
               <td style={tdStyle}>{r.active_export ?? "-"}</td>
               <td style={tdStyle}>{r.reactive_import ?? "-"}</td>
               <td style={tdStyle}>{r.reactive_export ?? "-"}</td>
-            
+
             </tr>
           ))}
         </tbody>
@@ -558,11 +558,11 @@ const LoadProfileWithPeriod2Dashboard = () => {
 
   return (
     <div className="dashboard-container" style={{ padding: 12, fontFamily: "Arial, sans-serif" }}>
-     
-      <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-        
 
-       
+      <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+
+
+
 
         <div style={{ flex: 1 }}>
           <label htmlFor="select-mode">Select Mode Entries</label>
@@ -572,7 +572,7 @@ const LoadProfileWithPeriod2Dashboard = () => {
             <option value="entry">Entry</option>
             <option value="range">Range</option>
             <option value="atleast">Atleast</option>
-           
+
           </select>
         </div>
       </div>
@@ -588,7 +588,7 @@ const LoadProfileWithPeriod2Dashboard = () => {
           <input type="text" value="13" readOnly style={{ width: "100%" }} />
         </div>
 
-       
+
       </div>
 
       {/* conditional inputs */}
@@ -618,7 +618,7 @@ const LoadProfileWithPeriod2Dashboard = () => {
         </div>
       )}
 
-      
+
 
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         <button onClick={handleRead} disabled={loading} style={primaryBtnStyle}>
@@ -767,7 +767,7 @@ const PowerQualityProfileDashboard = () => {
             const jsonText = m ? m[1] : buf.trim();
             const obj = JSON.parse(jsonText);
             setRecords((prev) => [...prev, obj]);
-          } catch {}
+          } catch { }
         }
 
         readerCancelRef.current = null;
@@ -807,6 +807,10 @@ const PowerQualityProfileDashboard = () => {
   const renderTable = () => {
     if (!records.length) return <div>No records to show</div>;
 
+
+
+
+
     return (
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
@@ -833,9 +837,13 @@ const PowerQualityProfileDashboard = () => {
     );
   };
 
+
+
+
+
   return (
     <div className="dashboard-container" style={{ padding: 12, fontFamily: "Arial, sans-serif" }}>
-    
+
 
       {/* Mode Selector */}
       <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
@@ -847,12 +855,12 @@ const PowerQualityProfileDashboard = () => {
             <option value="entry">Entry</option>
             <option value="range">Range</option>
             <option value="atleast">Atleast</option>
-          
+
           </select>
         </div>
       </div>
 
-       <div className="controls-section" style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+      <div className="controls-section" style={{ display: "flex", gap: 12, marginBottom: 12 }}>
         <div style={{ minWidth: 200 }}>
           <label>Entries: in use</label>
           <input type="text" value="13" readOnly style={{ width: "100%" }} />
@@ -863,7 +871,7 @@ const PowerQualityProfileDashboard = () => {
           <input type="text" value="13" readOnly style={{ width: "100%" }} />
         </div>
 
-       
+
       </div>
 
       {/* Control Inputs */}
@@ -935,13 +943,18 @@ const PowerQualityProfileDashboard = () => {
 
 
 
+
+
+
 const InstantaneousReadSnapshotDashboard = () => {
+  
+  const API_URL = `${BASE_URL}/api/instantaneous-read-snapshot/`;
   const [selectedMode, setSelectedMode] = useState("");
   const [fromValue, setFromValue] = useState("");
   const [toValue, setToValue] = useState("");
   const [inputData, setInputData] = useState({
-    entriesInUse: "13",
-    profileEntries: "25",
+    entriesInUse: "0",
+    profileEntries: "13",
   });
 
   const handleSave = () => {
@@ -962,6 +975,103 @@ const InstantaneousReadSnapshotDashboard = () => {
     setFromValue("");
     setToValue("");
   };
+
+
+
+  const [records, setRecords] = useState([""]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const readerCancelRef = useRef(null);
+
+  const resetRecords = () => setRecords([]);
+
+  const handleRead = async () => {
+    setError(null);
+    resetRecords();
+    setLoading(true);
+
+    const payload = {
+      serial_number: localStorage.getItem("selectedSerialNumber"),
+      mode: selectedMode || "all",
+    };
+
+    if (selectedMode === "entry") {
+      payload.from_entry = Number(fromValue);
+      payload.to_entry = Number(toValue);
+    } else if (selectedMode === "range") {
+      payload.from_date = fromValue;
+      payload.to_date = toValue;
+    } else if (selectedMode === "atleast") {
+      payload.from_entry = Number(fromValue);
+    }
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+
+      if (!response.ok) {
+        console.log("Error response:-------------", response);
+        const txt = await response.text();
+        throw new Error(`Server Error ${response.status}: ${txt}`);
+      }
+
+      const txt = await response.text();
+
+      const records = txt
+        .split("\n\n") // har SSE event alag karo
+        .filter(line => line.trim())
+        .map(line => line.replace(/^data:\s*/, ""))
+        .map(line => JSON.parse(line));
+
+      console.log(records);
+
+      setRecords(records);
+
+
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Unknown Error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderTable = ({ records }) => {
+    if (!records.length) return <div>No records to show</div>;
+
+    return (
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th style={thStyle}>No</th>
+            <th style={thStyle}>Timestamp</th>
+            <th style={thStyle}>Disconnect Control State</th>
+            <th style={thStyle}>Instantaneous Voltage L1 (V)</th>
+            <th style={thStyle}>Instantaneous Current L1 (A)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {records.map((r, i) => (
+            console.log("Record:----------------@#$-------------", r),
+            <tr key={`${r.entry_no}-${i}`}>
+              <td>{r.entry_no ?? i + 1}</td>
+              <td>{r.timestamp ? new Date(r.timestamp).toLocaleString() : "-"}</td>
+              <td>{r.disconnect_control_state ?? "-"}</td>
+              <td>{r.instantaneous_voltage_l1 ?? "-"}</td>
+              <td>{r.instantaneous_current_l1 ?? "-"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  };
+
 
   return (
     <div className="dashboard-container">
@@ -1052,7 +1162,7 @@ const InstantaneousReadSnapshotDashboard = () => {
 
             {/* Capture Object */}
             <div className="control-group capture-object">
-              <label htmlFor="capture-object-range">Capture Object:</label>
+              <label htmlFor="capture-object-range">Capture Ob9ject:</label>
               <input type="text" id="capture-object-range" value="" readOnly />
               <button onClick={handleCaptureRefresh} disabled>
                 Refresh
@@ -1061,13 +1171,21 @@ const InstantaneousReadSnapshotDashboard = () => {
           </>
         )}
 
-       
-       
       </div>
 
+
+      {/* Data Table */}
+      <div style={{ maxHeight: 420, overflow: "auto", border: "1px solid #ddd", padding: 8 }}>
+        {renderTable({ records })}
+      </div>
+
+
       {/* Buttons */}
-      
+
       <div className="button-group">
+        <button className='read' onClick={handleRead}>
+          Read
+        </button>
         <button className="save" onClick={handleSave}>
           Save
         </button>
@@ -1083,83 +1201,83 @@ const InstantaneousReadSnapshotDashboard = () => {
 
 
 function LoadProfileSection() {
-    const [activeSection, setActiveSection] = useState('loadProfile');
+  const [activeSection, setActiveSection] = useState('loadProfile');
 
-    const renderSection = () => {
-        switch (activeSection) {
-           
-            case 'loadProfileWithPeriod1':
-                return <LoadProfileWithPeriod1Dashboard />;
-            case 'loadProfileWithPeriod2':
-                return <LoadProfileWithPeriod2Dashboard />;
-            case 'powerQualityProfile':
-                return <PowerQualityProfileDashboard />;
-            case 'instantaneousReadSnapshot':
-                return <InstantaneousReadSnapshotDashboard />;
-            default:
-                return <LoadProfileWithPeriod1Dashboard />;
-        }
-    };
+  const renderSection = () => {
+    switch (activeSection) {
 
-    const handleItemClick = (section) => {
-        setActiveSection(section);
-    };
+      case 'loadProfileWithPeriod1':
+        return <LoadProfileWithPeriod1Dashboard />;
+      case 'loadProfileWithPeriod2':
+        return <LoadProfileWithPeriod2Dashboard />;
+      case 'powerQualityProfile':
+        return <PowerQualityProfileDashboard />;
+      case 'instantaneousReadSnapshot':
+        return <InstantaneousReadSnapshotDashboard />;
+      default:
+        return <LoadProfileWithPeriod1Dashboard />;
+    }
+  };
 
-    return (
+  const handleItemClick = (section) => {
+    setActiveSection(section);
+  };
 
-          <div className="header-dashboard">
-    <div className='header-container border-effect'>
-        
-            <nav className="sidebar1">
-              
-                <div className="billing-section-title">
-                      <FontAwesomeIcon icon={faChartBar} className="icon" />
-                    Load profile</div>
-                <ul>
-                   
-                    <li className={activeSection === 'loadProfileWithPeriod1' ? 'active' : ''}>
-                        <button onClick={() => handleItemClick('loadProfileWithPeriod1')} className="sidebar1-btn">
-                            <FontAwesomeIcon icon={faClock} className="icon" />
-                            Load profile with period 1
-                        </button>
-                    </li>
-                    <li className={activeSection === 'loadProfileWithPeriod2' ? 'active' : ''}>
-                        <button onClick={() => handleItemClick('loadProfileWithPeriod2')} className="sidebar1-btn">
-                            <FontAwesomeIcon icon={faCloud} className="icon" />
-                            Load profile with period 2
-                        </button>
-                    </li>
-                    <li className={activeSection === 'powerQualityProfile' ? 'active' : ''}>
-                        <button onClick={() => handleItemClick('powerQualityProfile')} className="sidebar1-btn">
-                            <FontAwesomeIcon icon={faEye} className="icon" />
-                            Power quality profile
-                        </button>
-                    </li>
-                    <li className={activeSection === 'instantaneousReadSnapshot' ? 'active' : ''}>
-                        <button onClick={() => handleItemClick('instantaneousReadSnapshot')} className="sidebar1-btn">
-                            <FontAwesomeIcon icon={faBolt} className="icon" />
-                            Instantaneous read snapshot
-                        </button>
-                    </li>
-                </ul>
-            </nav>
-            <main className="content">
-                 <div className="read-write-container">
-                  <button className="dashboard-btn">
-                    <FaBookOpen style={{ marginRight: "8px",color:"#ff4d00ff"}} />
-                    Read
-                  </button>
-                
-                  <button className="dashboard-btn">
-                    <FaFileExport style={{ marginRight: "8px",color:"#ff4d00ff" }} />
-                    Export
-                  </button>
-                </div>
-                {renderSection()}
-            </main>
-        </div>
-        </div>
-   );
+  return (
+
+    <div className="header-dashboard">
+      <div className='header-container border-effect'>
+
+        <nav className="sidebar1">
+
+          <div className="billing-section-title">
+            <FontAwesomeIcon icon={faChartBar} className="icon" />
+            Load profile</div>
+          <ul>
+
+            <li className={activeSection === 'loadProfileWithPeriod1' ? 'active' : ''}>
+              <button onClick={() => handleItemClick('loadProfileWithPeriod1')} className="sidebar1-btn">
+                <FontAwesomeIcon icon={faClock} className="icon" />
+                Load profile with period 1
+              </button>
+            </li>
+            <li className={activeSection === 'loadProfileWithPeriod2' ? 'active' : ''}>
+              <button onClick={() => handleItemClick('loadProfileWithPeriod2')} className="sidebar1-btn">
+                <FontAwesomeIcon icon={faCloud} className="icon" />
+                Load profile with period 2
+              </button>
+            </li>
+            <li className={activeSection === 'powerQualityProfile' ? 'active' : ''}>
+              <button onClick={() => handleItemClick('powerQualityProfile')} className="sidebar1-btn">
+                <FontAwesomeIcon icon={faEye} className="icon" />
+                Power quality profile
+              </button>
+            </li>
+            <li className={activeSection === 'instantaneousReadSnapshot' ? 'active' : ''}>
+              <button onClick={() => handleItemClick('instantaneousReadSnapshot')} className="sidebar1-btn">
+                <FontAwesomeIcon icon={faBolt} className="icon" />
+                Instantaneous read snapshot
+              </button>
+            </li>
+          </ul>
+        </nav>
+        <main className="content">
+          <div className="read-write-container">
+            <button className="dashboard-btn">
+              <FaBookOpen style={{ marginRight: "8px", color: "#ff4d00ff" }} />
+              Read
+            </button>
+
+            <button className="dashboard-btn">
+              <FaFileExport style={{ marginRight: "8px", color: "#ff4d00ff" }} />
+              Export
+            </button>
+          </div>
+          {renderSection()}
+        </main>
+      </div>
+    </div>
+  );
 }
 
 export default LoadProfileSection;

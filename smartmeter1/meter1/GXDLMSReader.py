@@ -139,9 +139,11 @@ class GXDLMSReader:
         self.logFile.flush()  # Flush immediately for real-time updates
 
     def readDLMSPacket(self, data, reply=None):
+       
         if not reply:
             reply = GXReplyData()
         if isinstance(data, bytearray):
+           
             self.readDLMSPacket2(data, reply)
         elif data:
             for it in data:
@@ -190,6 +192,14 @@ class GXDLMSReader:
                         print("Data send failed.  Try to resend " + str(pos) + "/3")
                         self.media.send(data, None)
                     rd.set(p.reply)
+                   
+
+
+
+                    
+
+
+
                     p.reply = None
             except Exception as e:
                 self.writeTrace("RX: " + self.now() + "\t" + str(rd), TraceLevel.ERROR)
