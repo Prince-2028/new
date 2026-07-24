@@ -15,15 +15,15 @@ const EventReportFilter = () => {
     const [activeFilter, setActiveFilter] = useState(filters[0].id);
     const [filterData, setFilterData] = useState([]);
     const [loading, setLoading] = useState(false);
-    
-    
+
+
       const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
-     
+
       useEffect(() => {
         const storedId = localStorage.getItem('selectedDeviceId');
         setDeviceId(storedId);
       }, []);
-    
+
 
     const handleFilterClick = (id) => {
         setActiveFilter(id);
@@ -42,7 +42,7 @@ const EventReportFilter = () => {
                     5: 'communication',
                     6: 'custom'
                 };
-                
+
                 const filterType = filterTypes[activeFilter];
                 const url = `${BASE_URL}/api/get-event-report-filter/${deviceId}/${filterType}/`;
 

@@ -13623,8 +13623,8 @@ class PowerQualityAPIView(APIView):
 
 
 from meter1.models import InstantaneousReadSnapshot
-print("Count of InstantaneousReadSnapshot records:", InstantaneousReadSnapshot.objects.count())
-print(InstantaneousReadSnapshot.objects.count())
+# print("Count of InstantaneousReadSnapshot records:", InstantaneousReadSnapshot.objects.count())
+# print(InstantaneousReadSnapshot.objects.count())
 
 
 class InstantaneousReadSnapshotAPIView(APIView):
@@ -15127,4 +15127,91 @@ class MonthlyRentCreditAPIView(APIView):
                 {"error": str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+
+
+
+
+
+
+
+
+
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class TestChargeStreamView(View):
+
+    def post(self, request):
+        print("hellooooooo")
+
+        events = [
+
+           #{"message": "Read Successfully", "status": "success", "action": "read", "obis_code": "0.0.19.20.0.255", "attribute_index": 5, "value": {"chargePerUnitScaling": {"commodityScale": -1, "priceScale": -2}, "commodity": {"classId": 3, "logicalName": "1.0.1.8.0.255", "attributeIndex": 2}, "chargeTables": [{"index": 1, "chargePerUnit": 1000}, {"index": 2, "chargePerUnit": 2500}, {"index": 3, "chargePerUnit": 8000}, {"index": 4, "chargePerUnit": 5000}]}, "db_record_found": False, "db_updated": False, "db_model": None, "progress": {"current": 1, "total": 1, "percentage": 100.0, "successful": 1, "failed": 0}, "timestamp": "2026-06-03T11:37:43.850546+00:00"}
+
+#{"message": "Read Successfully", "status": "success", "action": "read", "obis_code": "0.0.19.20.0.255", "attribute_index": 6, "value": {"chargePerUnitScaling": {"commodityScale": -3, "priceScale": -3}, "commodity": {"classId": 3, "logicalName": "1.0.1.8.0.255", "attributeIndex": 2}, "chargeTables": [{"index": 1, "chargePerUnit": 4000}, {"index": 2, "chargePerUnit": 6500}, {"index": 3, "chargePerUnit": 8000}, {"index": 4, "chargePerUnit": 5000}]}, "db_record_found": False, "db_updated": False, "db_model": None, "progress": {"current": 1, "total": 2, "percentage": 50.0, "successful": 2, "failed": 0}, "timestamp": "2026-06-03T11:43:10.799326+00:00"}
+#,{"message": "Read Successfully", "status": "success", "action": "read", "obis_code": "0.0.19.20.0.255", "attribute_index": 7, "value": {"Date": "Friday, 02/01/2026", "Time": "12:00:00 (Deviation: Z)", "Clock Status": "0"}, "db_record_found": False, "db_updated": False, "db_model": None, "progress": {"current": 2, "total": 2, "percentage": 100.0, "successful": 2, "failed": 0}, "timestamp": "2026-05-29T08:59:45.529620+00:00"}
+#	{"message": "Read Successfully", "status": "success", "action": "read", "obis_code": "0.0.96.5.3.255", "attribute_index": 2, "value": ["StrongMagneticDisturbance"], "db_record_found": False, "db_updated": False, "db_model": None, "progress": {"current": 1, "total": 1, "percentage": 100.0, "successful": 1, "failed": 0}, "timestamp": "2026-06-13T11:55:33.074649+00:00"}	
+  
+
+{
+    "message": "Read Successfully",
+    "status": "success",
+    "action": "read",
+    "obis_code": "0.0.96.5.3.255",
+    "attribute_index": 2,
+    "value": [
+        "FactoryMode",
+        "NonBusinessMode",
+        "MainRelayOpen",
+        "HighTemperature",
+        "NeutralMeasure",
+        "PunishMeasure",
+        "PrepayMode",
+        "LowCredit",
+        "FriendlyInUse",
+        "NoCredit",
+        "ExternalBatteryLow",
+        "TerminalCoverOpen",
+        "ModuleCoverOpen",
+        "StrongMagneticDisturbance",
+        "TopCoverOpen",
+        "SIMCardRemovedORException"
+    ],
+    "db_record_found": False,
+    "db_updated": False,
+    "db_model": None,
+    "progress": {
+        "current": 1,
+        "total": 1,
+        "percentage": 100.0,
+        "successful": 1,
+        "failed": 0
+    },
+    "timestamp": "2026-07-13T07:37:14.441252+00:00"
+}
+          
+   
+        ]
+
+        def event_stream():
+            for item in events:
+                yield f"data: {json.dumps(item)}\n\n"
+                time.sleep(0.5)
+
+        response = StreamingHttpResponse(
+            event_stream(),
+            content_type="text/event-stream"
+        )
+
+        response["Cache-Control"] = "no-cache"
+        return response
+   
+
+
+
+
+
+
 

@@ -914,52 +914,153 @@ function Diagnose() {
     }));
   };
 
+ 
+
   // Read handlers (populate sub-checkboxes)
-  const readStateOfInternalControl = async () => {
-    const payload = {
-      serial_number: serialNumber,
-      action: "read_obis",
-      parameters: [{ obis_code: "0.0.96.5.0.255", attribute_index: "2" }],
-    };
-    try {
-      const resp = await axios.post(
-        `${BASE_URL}/api/create-state-of-internal-control/`,
-        payload
-      );
-      const returned = resp.data.data?.[0]?.value || [];
-      const mapping = {
-        factory_mode: "FactoryMode",
-        non_business_mode: "NonBusinessMode",
-        main_relay_open: "MainRelayOpen",
-        high_temperature: "HighTemperature",
-        punish_measure: "PunishMeasure",
-        prepay_mode: "PrepayMode",
-        low_credit: "LowCredit",
-        friendly_in_use: "FriendlyInUse",
-        no_credit: "NoCredit",
-        top_cover_open: "TopCoverOpen",
-        terminal_cover_open: "TerminalCoverOpen",
-        module_cover_open: "ModuleCoverOpen",
-        strong_magnetic_disturbance: "StrongMagneticDisturbance",
-        external_battery_low: "ExternalBatteryLow",
-      };
-      const newState = Object.keys(pageStates.stateOfInternalControl).reduce(
-        (acc, key) => {
-          acc[key] = returned.includes(mapping[key]);
-          return acc;
-        },
-        {}
-      );
-      setPageStates((prev) => ({
-        ...prev,
-        stateOfInternalControl: newState,
-      }));
-    } catch {
-      alert("Failed to read State Of Internal Control.");
-    }
+const readStateOfInternalControl = async () => {
+  console.log("====================================");
+  console.log("Starting readStateOfInternalControl");
+  console.log("====================================");
+
+  const payload = {
+    serial_number: serialNumber,
+    action: "read_obis",
+    parameters: [
+      {
+        obis_code: "0.0.96.5.0.255",
+        attribute_index: "2",
+      },
+    ],
   };
 
-  const readInternalOperatingStatus = async () => {
+  console.log("Payload:");
+  console.log(payload);
+
+  try {
+    const resp = await axios.post(
+      `${BASE_URL}/api/create-tamper-indicate-status/`,
+      payload
+    );
+
+    console.log("====================================");
+    console.log("FULL API RESPONSE");
+    console.log("====================================");
+    console.log(resp);
+
+    // Handle SSE response
+    const cleanData = resp.data.replace(/^data:\s*/, "").trim();
+    const parsedData = JSON.parse(cleanData);
+
+    let returned = parsedData.value || [];
+
+    console.log("Step 1 - Raw returned value:");
+    console.log(returned);
+    console.log("Type:", typeof returned);
+    console.log("Is Array:", Array.isArray(returned));
+
+    // Convert string response to array if needed
+    if (typeof returned === "string") {
+      console.log("Response is string, converting...");
+
+      try {
+        returned = JSON.parse(returned);
+        console.log("After JSON.parse:", returned);
+      } catch (err) {
+        returned = [returned];
+        console.log("Converted to array:", returned);
+      }
+    }
+
+    console.log("Step 2 - Final returned array:");
+    console.log(returned);
+
+    const mapping = {
+      factory_mode: "FactoryMode",
+      non_business_mode: "NonBusinessMode",
+      main_relay_open: "MainRelayOpen",
+      high_temperature: "HighTemperature",
+      punish_measure: "PunishMeasure",
+      prepay_mode: "PrepayMode",
+      low_credit: "LowCredit",
+      friendly_in_use: "FriendlyInUse",
+      no_credit: "NoCredit",
+      top_cover_open: "TopCoverOpen",
+      terminal_cover_open: "TerminalCoverOpen",
+      module_cover_open: "ModuleCoverOpen",
+      strong_magnetic_disturbance: "StrongMagneticDisturbance",
+      external_battery_low: "ExternalBatteryLow",
+    };
+
+    console.log("====================================");
+    console.log("CHECKING MAPPINGS");
+    console.log("====================================");
+
+    Object.entries(mapping).forEach(([key, value]) => {
+      console.log(
+        key,
+        "=>",
+        value,
+        "Result:",
+        returned.some(
+          (item) =>
+            String(item).trim().toLowerCase() ===
+            String(value).trim().toLowerCase()
+        )
+      );
+    });
+
+    const newState = Object.keys(
+      pageStates.stateOfInternalControl
+    ).reduce((acc, key) => {
+      const expectedValue = mapping[key];
+
+      const exists = returned.some(
+        (item) =>
+          String(item).trim().toLowerCase() ===
+          String(expectedValue).trim().toLowerCase()
+      );
+
+      console.log("----------------");
+      console.log("State Key:", key);
+      console.log("Expected:", expectedValue);
+      console.log("Exists:", exists);
+
+      acc[key] = exists;
+
+      return acc;
+    }, {});
+
+    console.log("====================================");
+    console.log("FINAL STATE");
+    console.log("====================================");
+    console.log(newState);
+
+    setPageStates((prev) => ({
+      ...prev,
+      stateOfInternalControl: newState,
+    }));
+
+    console.log("State Updated Successfully");
+  } catch (error) {
+    console.log("====================================");
+    console.log("API ERROR");
+    console.log("====================================");
+
+    console.error(error);
+
+    if (error.response) {
+      console.log("Response Data:");
+      console.log(error.response.data);
+    }
+
+    alert("Failed to read State Of Internal Control.");
+  }
+};
+
+
+
+
+  const readInternalOperatingStatus1 = async () => {
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
@@ -1001,7 +1102,149 @@ function Diagnose() {
     }
   };
 
-  const readPowerQualityStatus = async () => {
+
+
+   const readInternalOperatingStatus = async () => {
+  console.log("====================================");
+  console.log("Starting readInternalOperatingStatus");
+  console.log("====================================");
+
+  const payload = {
+    serial_number: serialNumber,
+    action: "read_obis",
+    parameters: [
+      {
+        obis_code: "0.0.96.5.1.255",
+        attribute_index: "2",
+      },
+    ],
+  };
+
+  console.log("Payload:");
+  console.log(payload);
+
+  try {
+    const resp = await axios.post(
+      `${BASE_URL}/api/create-tamper-indicate-status/`,
+      payload
+    );
+
+    console.log("====================================");
+    console.log("FULL API RESPONSE");
+    console.log("====================================");
+    console.log(resp);
+
+    // Handle SSE response
+    const cleanData = resp.data.replace(/^data:\s*/, "").trim();
+    const parsedData = JSON.parse(cleanData);
+
+    let returned = parsedData.value || [];
+
+    console.log("Step 1 - Raw returned value:");
+    console.log(returned);
+    console.log("Type:", typeof returned);
+    console.log("Is Array:", Array.isArray(returned));
+
+    // Convert string response to array if needed
+    if (typeof returned === "string") {
+      console.log("Response is string, converting...");
+
+      try {
+        returned = JSON.parse(returned);
+        console.log("After JSON.parse:", returned);
+      } catch (err) {
+        returned = [returned];
+        console.log("Converted to array:", returned);
+      }
+    }
+
+    console.log("Step 2 - Final returned array:");
+    console.log(returned);
+
+    const mapping = {
+      uncalibration: "Uncalibration",
+      measure_error: "MeasureError",
+      program_store_error: "ProgramStoreError",
+      nvm_error: "NVM_Error",
+      ram_error: "RAM_Error",
+      abnormal_reset: "AbnormalReset",
+      module_fault: "ModuleFault",
+      rtc_osc_fault: "RTC_OSC_Fault",
+      mcu_osc_fault: "MCU_OSC_Fault",
+      main_relay_fault: "MainRelayFault",
+      clock_invalid: "ClockInvalid",
+      ppm_fault: "PPM_Fault",
+    };
+
+    console.log("====================================");
+    console.log("CHECKING MAPPINGS");
+    console.log("====================================");
+
+    Object.entries(mapping).forEach(([key, value]) => {
+      console.log(
+        key,
+        "=>",
+        value,
+        "Result:",
+        returned.some(
+          (item) =>
+            String(item).trim().toLowerCase() ===
+            String(value).trim().toLowerCase()
+        )
+      );
+    });
+
+    const newState = Object.keys(
+      pageStates.internalOperatingStatus
+    ).reduce((acc, key) => {
+      const expectedValue = mapping[key];
+
+      const exists = returned.some(
+        (item) =>
+          String(item).trim().toLowerCase() ===
+          String(expectedValue).trim().toLowerCase()
+      );
+
+      console.log("----------------");
+      console.log("State Key:", key);
+      console.log("Expected:", expectedValue);
+      console.log("Exists:", exists);
+
+      acc[key] = exists;
+
+      return acc;
+    }, {});
+
+    console.log("====================================");
+    console.log("FINAL STATE");
+    console.log("====================================");
+    console.log(newState);
+
+    setPageStates((prev) => ({
+      ...prev,
+      internalOperatingStatus: newState,
+    }));
+
+    console.log("State Updated Successfully");
+  } catch (error) {
+    console.log("====================================");
+    console.log("API ERROR");
+    console.log("====================================");
+
+    console.error(error);
+
+    if (error.response) {
+      console.log("Response Data:");
+      console.log(error.response.data);
+    }
+
+    alert("Failed to read Internal Operating Status.");
+  }
+};
+
+
+
+  const readPowerQualityStatus1 = async () => {
     const payload = {
       serial_number: serialNumber,
       action: "read_obis",
@@ -1036,6 +1279,142 @@ function Diagnose() {
       alert("Failed to read Power Quality Status.");
     }
   };
+
+
+
+  const readPowerQualityStatus = async () => {
+  console.log("====================================");
+  console.log("Starting readPowerQualityStatus");
+  console.log("====================================");
+
+  const payload = {
+    serial_number: serialNumber,
+    action: "read_obis",
+    parameters: [
+      {
+        obis_code: "0.0.96.5.2.255",
+        attribute_index: "2",
+      },
+    ],
+  };
+
+  console.log("Payload:");
+  console.log(payload);
+
+  try {
+    const resp = await axios.post(
+      `${BASE_URL}/api/create-tamper-indicate-status/`,
+      payload
+    );
+
+    console.log("====================================");
+    console.log("FULL API RESPONSE");
+    console.log("====================================");
+    console.log(resp);
+
+    // Handle SSE response
+    const cleanData = resp.data.replace(/^data:\s*/, "").trim();
+    const parsedData = JSON.parse(cleanData);
+
+    let returned = parsedData.value || [];
+
+    console.log("Step 1 - Raw returned value:");
+    console.log(returned);
+    console.log("Type:", typeof returned);
+    console.log("Is Array:", Array.isArray(returned));
+
+    // Convert string response to array if needed
+    if (typeof returned === "string") {
+      console.log("Response is string, converting...");
+
+      try {
+        returned = JSON.parse(returned);
+        console.log("After JSON.parse:", returned);
+      } catch (err) {
+        returned = [returned];
+        console.log("Converted to array:", returned);
+      }
+    }
+
+    console.log("Step 2 - Final returned array:");
+    console.log(returned);
+
+    const mapping = {
+      a_phase_miss_voltage: "A_phase_miss_voltage",
+      a_phase_low_voltage: "A_phase_low_voltage",
+      a_phase_high_voltage: "A_phase_high_voltage",
+      a_phase_abnormal: "A_phase_abnormal",
+      low_frequency: "LowFrequency",
+      high_frequency: "HighFrequency",
+    };
+
+    console.log("====================================");
+    console.log("CHECKING MAPPINGS");
+    console.log("====================================");
+
+    Object.entries(mapping).forEach(([key, value]) => {
+      console.log(
+        key,
+        "=>",
+        value,
+        "Result:",
+        returned.some(
+          (item) =>
+            String(item).trim().toLowerCase() ===
+            String(value).trim().toLowerCase()
+        )
+      );
+    });
+
+    const newState = Object.keys(
+      pageStates.powerQualityStatus
+    ).reduce((acc, key) => {
+      const expectedValue = mapping[key];
+
+      const exists = returned.some(
+        (item) =>
+          String(item).trim().toLowerCase() ===
+          String(expectedValue).trim().toLowerCase()
+      );
+
+      console.log("----------------");
+      console.log("State Key:", key);
+      console.log("Expected:", expectedValue);
+      console.log("Exists:", exists);
+
+      acc[key] = exists;
+
+      return acc;
+    }, {});
+
+    console.log("====================================");
+    console.log("FINAL STATE");
+    console.log("====================================");
+    console.log(newState);
+
+    setPageStates((prev) => ({
+      ...prev,
+      powerQualityStatus: newState,
+    }));
+
+    console.log("State Updated Successfully");
+  } catch (error) {
+    console.log("====================================");
+    console.log("API ERROR");
+    console.log("====================================");
+
+    console.error(error);
+
+    if (error.response) {
+      console.log("Response Data:");
+      console.log(error.response.data);
+    }
+
+    alert("Failed to read Power Quality Status.");
+  }
+};
+
+
 
   const readTamperIndicateStatus1 = async () => {
     const payload = {
@@ -1094,6 +1473,9 @@ const readTamperIndicateStatus = async () => {
 
   console.log("Payload:");
   console.log(payload);
+
+  ///api/create-tamper-indicate-status/ this meter api 
+//  api/test-charge-stream/   test api 
 
   try {
     const resp = await axios.post(

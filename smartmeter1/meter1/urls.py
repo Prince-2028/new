@@ -348,6 +348,21 @@ urlpatterns = [
     path('api/logfile/', get_log_file, name='get-log-file'),
     path('api/logfile/clear/', clear_log_file, name='clear-log-file'),
     path('api/logfile/separator/', add_log_separator, name='add-log-separator'),
+
+
+
+
+    path(
+    "api/test-charge-stream/",
+    TestChargeStreamView.as_view(),
+    name="test-charge-stream"
+),
+
+
+
+
+
+
 ]
 
 

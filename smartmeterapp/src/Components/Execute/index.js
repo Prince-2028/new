@@ -8,7 +8,7 @@ import './index.css';
 const ExecuteListDashboard = ({ serialNumber: propSerialNumber = null }) => {
   // static list (you can replace with fetch from backend later)
   const [executeListData, setExecuteListData] = useState([
-    { id: 1, checked: false, no: 1, name: 'MDI reset / End of billing period', code: '[0, 0-10.0.1.255.0001]' },
+    { id: 1, checked: false, no: 1, name: 'MDI reset / End of billing period', code: '[9, 0-0.10.0.1.255.0001]' },
     { id: 2, checked: false, no: 2, name: 'Standard event log reset', code: '[7, 0-0.99.98.0.255]' },
     { id: 3, checked: false, no: 3, name: 'Fraud detection log reset', code: '[7, 0-0.99.98.1.255]' },
     { id: 4, checked: false, no: 4, name: 'Disconnector control log reset', code: '[7, 0-0.99.98.2.255]' },

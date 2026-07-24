@@ -5800,10 +5800,10 @@ const PaymentInfoTable = () => {
     }
   };
 
-const getValueByCode = (code) => {
-  const found = apiData.find((item) => item.obis_code === code);
-  return found ? found.value : "";
-};
+  const getValueByCode = (code) => {
+    const found = apiData.find((item) => item.obis_code === code);
+    return found ? found.value : "";
+  };
 
   return (
     <div className="tou_container">
@@ -7030,14 +7030,14 @@ const AlarmOfCredit = () => {
       no: 1,
       name: "Low Credit Alarm Threshold 1",
       code: "{112,0-0:19.10.0.255}",
-      value: 0,
+      value: "",
       unit: "GHC",
     },
     {
       no: 2,
       name: "Low Credit Alarm Threshold 2",
       code: "{3,0-0:96.14.129.255}",
-      value: 0,
+      value: "",
       unit: "GHC",
     },
   ]);
@@ -7045,25 +7045,59 @@ const AlarmOfCredit = () => {
   const [deviceId, setDeviceId] = useState(() => localStorage.getItem('selectedDeviceId'));
 
   useEffect(() => {
-    const storedId = localStorage.getItem('selectedDeviceId');
-    setDeviceId(storedId);
-  }, []);
-
-  useEffect(() => {
     const fetchAlarmData = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/api/alarmcredit/${deviceId}/`);
+        const payload = {
+          action: "read_obis",
+          serial_number: "Avc",
+          parameters: [
+            {
+              obis_code: "0.0.19.10.0.255",
+              attribute_index: 5,
+            },
+            {
+              obis_code: "0.0.96.14.129.255",
+              attribute_index: 2,
+            },
+          ],
+        };
 
+        const response = await axios.post(
+          `${BASE_URL}/api/getmeterinfo/`,
+          payload
+        );
 
-        const updatedData = response.data;
+        const rawData = response.data;
 
-        setAlarmData((prevData) =>
-          prevData.map((alarm) => {
-            const match = updatedData.find(
-              (item) => item.name === alarm.name && item.code === alarm.code
-            );
-            return match ? { ...alarm, value: match.value } : alarm;
-          })
+        const events = rawData
+          .split("\n\n")
+          .filter((item) => item.trim() !== "");
+
+        const updatedValues = {};
+
+        events.forEach((event) => {
+          const json = JSON.parse(event.replace("data:", "").trim());
+
+          if (
+            json.obis_code === "0.0.19.10.0.255" &&
+            json.attribute_index === 5
+          ) {
+            updatedValues["Low Credit Alarm Threshold 1"] = json.value;
+          }
+
+          if (
+            json.obis_code === "0.0.96.14.129.255" &&
+            json.attribute_index === 2
+          ) {
+            updatedValues["Low Credit Alarm Threshold 2"] = json.value;
+          }
+        });
+
+        setAlarmData((prev) =>
+          prev.map((item) => ({
+            ...item,
+            value: updatedValues[item.name] ?? item.value,
+          }))
         );
       } catch (error) {
         console.error("Error fetching alarm data:", error);
@@ -7074,30 +7108,32 @@ const AlarmOfCredit = () => {
   }, []);
 
   return (
-    <div>
-      <table className="tableTariff1">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border p-2">No</th>
-            <th className="border p-2">Name</th>
-            <th className="border p-2">Code</th>
-            <th className="border p-2">Value</th>
-            <th className="border p-2">Unit</th>
-          </tr>
-        </thead>
-        <tbody>
-          {alarmData.map((item) => (
-            <tr key={item.no} className="text-center border">
-              <td className="border p-2">{item.no}</td>
-              <td className="border p-2">{item.name}</td>
-              <td className="border p-2">{item.code}</td>
-              <td className="border p-2">{item.value}</td>
-              <td className="border p-2">{item.unit}</td>
+    <>
+      <div>
+        <table className="tableTariff1">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="border p-2">No</th>
+              <th className="border p-2">Name</th>
+              <th className="border p-2">Code</th>
+              <th className="border p-2">Value</th>
+              <th className="border p-2">Unit</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {alarmData.map((item) => (
+              <tr key={item.no} className="text-center border">
+                <td className="border p-2">{item.no}</td>
+                <td className="border p-2">{item.name}</td>
+                <td className="border p-2">{item.code}</td>
+                <td className="border p-2">{item.value}</td>
+                <td className="border p-2">{item.unit}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
 
   );
 };

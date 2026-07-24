@@ -22,7 +22,7 @@ from gurux_dlms.enums.ObjectType import ObjectType
 from gurux_dlms.objects import (
     GXDLMSObject, GXDLMSClock, GXDLMSRegister, GXDLMSProfileGeneric, GXDLMSData,
     GXDLMSExtendedRegister, GXDLMSDemandRegister, GXDLMSScript, GXDLMSScriptAction,
-    GXDLMSImageActivateInfo, GXDLMSQualityOfService, GXDLMSActionItem, GXDLMSScript,
+    GXDLMSImageActivateInfo, GXDLMSQualityOfService, GXDLMSActionItem, GXDLMSScript,GXDLMSStatusMapping
 )
 from gurux_dlms.GXByteBuffer import GXByteBuffer
 from gurux_dlms.GXFloat32 import GXFloat32
@@ -30,7 +30,7 @@ from gurux_dlms.internal._GXCommon import _GXCommon
 from enum import IntFlag
 from .GXDLMSReader import GXDLMSReader
 import logging
-
+from gurux_dlms.objects import GXDLMSObject
 
 
 
@@ -86,6 +86,25 @@ def clear_association_cache(connection_key=None):
             "message": f"Cleared entire Association View cache",
             "cleared_connections": cache_size
         }
+    
+
+
+
+
+def convert_push_setup_attr3(payload):
+    """
+    Convert Push Setup Attribute 3 payload.
+    """
+
+    if not isinstance(payload, list) or len(payload) != 3:
+        raise ValueError("Push Setup Attribute 3 requires exactly 3 elements.")
+
+    return [
+        int(payload[0]),
+        bytearray(payload[1], "ascii"),
+        int(payload[2])
+    ]
+
 
 
 def datetime_to_dlms_octet_string(iso_string: str) -> bytes:
@@ -359,11 +378,15 @@ def _convert_read_value(value, obis=None):
                     result.append(b)
                 else:
                     break 
+            decoded = result.decode()
+            if not decoded:                       # <-- NAYA CHECK
+                return value.hex()          # binary data → hex fallback
 
-            return result.decode()
+            return decoded
+            # return result.decode()
             # return f"{value[0]:02X}"
 
-        except Exception: return "0x" + value.hex()
+        except Exception: return value.hex()
     
     elif isinstance(value, (list, tuple)):
         print("We are going list or tuple")
@@ -1282,7 +1305,8 @@ def execute_dlms_action( config, action_details):
 
             print("=" * 80)
 
-            
+
+
 
             
              
@@ -1338,6 +1362,21 @@ def execute_dlms_action( config, action_details):
                         f"Type={type(obj).__name__}"
                     )
 
+                # print("====----------------------------------------------sumit-----------------------=====")
+                # print("Available ObjectTypes:")
+
+                # for obj_type in ObjectType:
+                #     print(f"{obj_type.name} = {obj_type.value}")
+
+                # print("\nObjects in meter:")
+                # for obj in client.objects:
+                #     print(
+                #         f"LN={obj.logicalName} | " f"Class={obj.objectType.name} ({obj.objectType.value}) | "f"Python Class={type(obj).__name__}"
+                # )
+
+
+                
+
                 print("========================")
 
                 target_obj = client.objects.findByLN(ObjectType.NONE, obis_code)
@@ -1387,10 +1426,6 @@ def execute_dlms_action( config, action_details):
 
                         if obis_code in ["0.0.96.5.0.255", "0.0.96.5.1.255", "0.0.96.5.2.255", "0.0.96.5.3.255", "0.0.96.4.0.255", "0.0.96.4.1.255", "0.0.96.4.2.255","0.0.97.97.0.255", "0.0.97.97.1.255", "0.0.97.98.0.255", "0.0.97。98.1.255",  "0.0.97。98。10。255",  "0。0。97。98。11。255",  "0。0。97。98。20。255",  "0。0。97。98。21。255"]: # Special case for OBIS
                             value_serializable = _convert_read_value(value, obis_code)
-                        elif obis_code == "0.0.96.4.140.255":
-                            print("test 63////")
-                            print("TYPE =", type(value))
-                            print("VALUE =", value)
                         elif isinstance(value, GXUnitCharge):
 
                             print("TYPE:", type(value))
@@ -1628,16 +1663,26 @@ def execute_dlms_action( config, action_details):
 
                             
                             print("converted_value",converted_value)
+                        
+                        elif obis == "0.4.25.9.0.255" and attr == 3:
+                            print("inside condition ***") 
+                            print(value_to_write_str)
+                            converted_value=convert_push_setup_attr3(value_to_write_str)
+
                         else:
                             converted_value = _convert_write_value(value_to_write_str, data_type)
                         logger.info(f"Converted write value: {converted_value} (Type: {type(converted_value)})")
                         
                         # Update local object value using setValue
 
-                      
+                        print(" 7 ...................write testing by............. vvs")
+ 
+                                               
                         e_args = ValueEventArgs(client.settings, target_obj, attr, 0, None)
-                        e_args.value = converted_value
+                        e_args.value = converted_value      
 
+
+                        
                         import traceback
 
                         try:
@@ -1688,7 +1733,7 @@ def execute_dlms_action( config, action_details):
                             
 
                         
-                         
+                                  
 
                         
 
