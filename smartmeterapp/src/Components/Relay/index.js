@@ -1415,6 +1415,7 @@ const LoadControlRelated = () => {
 
 
 const StatusOfRelay1Configuration = ({ deviceId }) => {
+   const serialNumber = localStorage.getItem('selectedSerialNumber');
   const [statusValue, setStatusValue] = useState(false); // Boolean for status control signals
   const [checkboxes, setCheckboxes] = useState([
     { id: 1, name: "Top cover open", key: "top_cover_open", checked: false },
@@ -1452,11 +1453,7 @@ const StatusOfRelay1Configuration = ({ deviceId }) => {
     }
   };
 
-  useEffect(() => {
-    if (deviceId) {
-      handleGetData();
-    }
-  }, [deviceId]);
+  
 
   // Send data to API
   const handleSendData = async () => {
@@ -1474,6 +1471,113 @@ const StatusOfRelay1Configuration = ({ deviceId }) => {
       alert("Failed to send data.");
     }
   };
+
+   
+     const relayKeyMap = {
+  TopCoverOpen: "top_cover_open",
+  TerminalCoverOpen: "terminal_cover_open",
+  MOduleCoverOpen: "module_cover_open",
+  DC_FieldDetected: "dc_field_detected",
+  OverVolatge: "over_voltage",
+  CurrentReverse: "current_reverse",
+  NoCredit: "no_credit",
+  UnderVoltage: "under_voltage",
+  CT_Bypass: "ct_bypass",
+  LowCredit2: "low_credit_2",
+  _0_Price: "o_price",
+};
+
+
+const handleCurrentHistoryRelay = (backendResponse) => {
+  console.log("data",backendResponse)
+  const selectedKeys = backendResponse.map(
+    (item) => relayKeyMap[item]
+  );
+
+
+
+  
+setCheckboxes((prev) =>
+    prev.map((checkbox) => ({
+      ...checkbox,
+      checked: selectedKeys.includes(checkbox.key),
+    }))
+  );
+};
+
+
+
+const ReadData = async () => {
+    
+    const payload={
+      serial_number:serialNumber,// 
+      action:"read_obis",
+      parameters:[{obis_code: "0.0.96.4.0.255", attribute_index: "2"}]
+    }
+
+
+    ///api/create-tamper-indicate-status/
+
+    const url=`${BASE_URL}/api/create-tamper-indicate-status/`
+
+    try {
+
+     // const response = await axios.post(url,payload) 
+        const response = await fetch(url,
+          {
+            method:'POST',
+            headers: { "Content-Type":'application/json'},
+            body:JSON.stringify(payload)
+          }, )
+
+        console.log("111")
+          
+        const reader = response.body.getReader(); 
+
+        console.log("reader",reader)
+
+        console.log("22")
+        const decoder = new TextDecoder();
+        console.log("decoder",decoder)
+        
+
+        while (true) {
+
+          console.log("33")
+
+              const { done, value } = await reader.read(); 
+              console.log(done,value)
+
+              if (done) {
+                  console.log("Stream Finished");
+                  break;
+              }
+
+              const chunk = decoder.decode(value, { stream: true });
+
+              console.log("chunk",chunk);
+              const jsonString = chunk.replace("data:", "").trim();
+              console.log("jsonString",jsonString)
+              const data = JSON.parse(jsonString);
+              handleCurrentHistoryRelay(data.value)
+             
+            }
+
+    
+
+     
+
+    }
+    catch (error) 
+    {
+      alert('failed to read the data ')
+    }
+
+   
+  };
+
+
+  
 
   // Handle checkbox change
   const handleCheckboxChange = (index) => {
@@ -1505,14 +1609,14 @@ const StatusOfRelay1Configuration = ({ deviceId }) => {
             </td>
             <td>1</td>
             <td>Status of relay 1 control signals - current status</td>
-            <td>{`{1,0-0.96.50.12.255}`}</td>
+            <td>{`{1,0-0.96.4.0.255}`}</td>
           </tr>
         </tbody>
       </table>
 
       {/* Buttons to Get & Send Data */}
 
-      <button onClick={handleSendData}>Send Data</button>
+      <button onClick={ReadData}>Read </button>
 
       {/* Checkboxes for additional status options */}
 
@@ -1547,6 +1651,7 @@ const StatusOfRelay1Configuration = ({ deviceId }) => {
 
 
 const StatusOfRelay2Configuration = ({ deviceId }) => {
+  const serialNumber = localStorage.getItem('selectedSerialNumber');
   const [statusValue, setStatusValue] = useState(false); // Boolean for status control signals
   const [checkboxes, setCheckboxes] = useState([
     { id: 1, name: "Top cover open", key: "top_cover_open", checked: false },
@@ -1563,48 +1668,131 @@ const StatusOfRelay2Configuration = ({ deviceId }) => {
   ]);
 
   // Fetch data from API
-  const handleGetData = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/relay2-status/${deviceId}`);
 
-      setStatusValue(response.data.status_of_control_signals === true); // Ensure boolean
 
-      // Update checkboxes based on API response
-      setCheckboxes(prevCheckboxes =>
-        prevCheckboxes.map(item => ({
-          ...item,
-          checked: response.data[item.key] || false
-        }))
-      );
-    } catch (error) {
-      console.error("Error fetching data:", error);
 
-    }
-  };
 
-  useEffect(() => {
-    if (deviceId) {
-      handleGetData();
-    }
-  }, [deviceId]);
+  
+ const relayKeyMap = {
+  TopCoverOpen: "top_cover_open",
+  TerminalCoverOpen: "terminal_cover_open",
+  MOduleCoverOpen: "module_cover_open",
+  DC_FieldDetected: "dc_field_detected",
+  OverVolatge: "over_voltage",
+  CurrentReverse: "current_reverse",
+  NoCredit: "no_credit",
+  UnderVoltage: "under_voltage",
+  CT_Bypass: "ct_bypass",
+  LowCredit2: "low_credit_2",
+  _0_Price: "o_price",
+};
+
+
+const handleCurrentHistoryRelay = (backendResponse) => {
+  console.log("data",backendResponse)
+  const selectedKeys = backendResponse.map(
+    (item) => relayKeyMap[item]
+  );
+
+
+
+  
+setCheckboxes((prev) =>
+    prev.map((checkbox) => ({
+      ...checkbox,
+      checked: selectedKeys.includes(checkbox.key),
+    }))
+  );
+};
+
+
+
+ 
+
 
   // Send data to API
-  const handleSendData = async () => {
-    const requestData = {
-      device_id: deviceId,
-      status_of_control_signals: statusValue,
-      ...checkboxes.reduce((acc, item) => ({ ...acc, [item.key]: item.checked }), {})
-    };
+
+  //{serial_number: "avc123", action: "read_obis",…}
+//action:"read_obis"
+//serial_number: "avc123"
+//parameters: 
+//[{obis_code: "0.0.96.5.0.255", attribute_index: "2"}]
+
+
+ 
+
+
+  
+
+  const ReadData = async () => {
+    
+    const payload={
+      serial_number:serialNumber,// 
+      action:"read_obis",
+      parameters:[{obis_code: "0.0.96.4.1.255", attribute_index: "2"}]
+    }
+
+    const url=`${BASE_URL}/api/create-tamper-indicate-status/`
 
     try {
-      await axios.post(`${BASE_URL}/api/relay2-status/`, requestData);
-      alert("Data sent successfully!");
-    } catch (error) {
-      console.error("Error sending data:", error.response?.data || error.message);
-      alert("Failed to send data.");
+
+     // const response = await axios.post(url,payload) 
+        const response = await fetch(url,
+          {
+            method:'POST',
+            headers: { "Content-Type":'application/json'},
+            body:JSON.stringify(payload)
+          }, )
+
+        console.log("111")
+          
+        const reader = response.body.getReader(); 
+
+        console.log("reader",reader)
+
+        console.log("22")
+        const decoder = new TextDecoder();
+        console.log("decoder",decoder)
+        
+
+        while (true) {
+
+          console.log("33")
+
+              const { done, value } = await reader.read(); 
+              console.log(done,value)
+
+              if (done) {
+                  console.log("Stream Finished");
+                  break;
+              }
+
+              const chunk = decoder.decode(value, { stream: true });
+
+              console.log("chunk",chunk);
+              const jsonString = chunk.replace("data:", "").trim();
+              console.log("jsonString",jsonString)
+              const data = JSON.parse(jsonString);
+              handleCurrentHistoryRelay(data.value)
+             
+            }
+
+    
+
+     
+
     }
+    catch (error) 
+    {
+      alert('failed to read the data ')
+    }
+
+   
   };
 
+
+
+ 
   // Handle checkbox change
   const handleCheckboxChange = (index) => {
     setCheckboxes(prevCheckboxes =>
@@ -1642,7 +1830,7 @@ const StatusOfRelay2Configuration = ({ deviceId }) => {
 
       {/* Buttons to Get & Send Data */}
 
-      <button onClick={handleSendData}>Send Data</button>
+      <button onClick={ReadData}>Send Data</button>
 
       <div className="options-grid1">
 

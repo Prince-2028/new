@@ -200,7 +200,7 @@ const RegisterData = () => {
       "serial_number": "Avc",
       "parameters": [
         {
-          "obis_code": "0.0.97.98.21.255",
+          "obis_code": "0.0.97.97.0.255",
           "attribute_index": 2
         }
 
@@ -209,11 +209,29 @@ const RegisterData = () => {
 
     console.log(dataToSend);
 
-    axios.post(`${BASE_URL}/api/create-tamper-indicate-status/`, dataToSend)
+    axios.post(`${BASE_URL}/api/getmeterinfo/`, dataToSend)
       .then(response => {
         console.log('Error Register 1 data sent successfully:', response.data);
+        const rawData = response.data;
+        const json = JSON.parse(rawData.replace("data:", "").trim());
+
+        const events = json.value || []
+
+        setCheckboxStates((prev) => ({
+          ...prev,
+          clockInvalid: events.includes("Clock_Invalid"),
+          batteryReplace: events.includes("battery_Replace"),
+          programMemoryError: events.includes("Program_Memory_Error"),
+          ramError: events.includes("ram_Error"),
+          nvMemoryError: events.includes("nvMemory_Error"),
+          measurementSystemError: events.includes("measurement_System_Error"),
+          watchdogError: events.includes("watch_dog_Error"),
+          fraudAttempt: events.includes("fraud_Attempt")
+
+        }));
+
       })
-      
+
       .catch(error => {
         console.error('Error sending Error Register 1 data:', error.response || error);
       });
@@ -344,16 +362,42 @@ const RegisterData = () => {
       measurement_system_error: checkboxStates.measurementSystemError || false,
       watchdog_error: checkboxStates.watchdogError || false,
       fraud_attempt: checkboxStates.fraudAttempt || false,
+      "action": "read_obis",
+      "serial_number": "Avc",
+      "parameters": [
+        {
+          "obis_code": "0.0.97.98.0.255",
+          "attribute_index": 2
+        }
+
+      ]
     };
 
     console.log(dataToSend);
 
-    axios.post(`${BASE_URL}/api/create-alarm-register1/`, dataToSend)
+    axios.post(`${BASE_URL}/api/getmeterinfo/`, dataToSend)
       .then(response => {
         console.log('Alarm Register 1 data sent successfully:', response.data);
+        const rawData = response.data;
+        const json = JSON.parse(rawData.replace("data:", "").trim());
+
+        const events = json.value || []
+        setCheckboxStates((prev) => ({
+          ...prev,
+          clockInvalid: events.includes("Clock_Invalid"),
+          batteryReplace: events.includes("battery_Replace"),
+          programMemoryError: events.includes("Program_Memory_Error"),
+          ramError: events.includes("ram_Error"),
+          nvMemoryError: events.includes("nvMemory_Error"),
+          measurementSystemError: events.includes("measurement_System_Error"),
+          watchdogError: events.includes("watch_dog_Error"),
+          fraudAttempt: events.includes("fraud_Attempt")
+
+        }));
       })
       .catch(error => {
         console.error('Error sending Alarm Register 1 data:', error.response || error);
+
       });
   };
 
@@ -378,11 +422,41 @@ const RegisterData = () => {
       external_alert: checkboxStates.externalAlert || false,
       local_communication_attempt: checkboxStates.localCommunicationAttempt || false,
       disconnect_reconnect_failure: checkboxStates.disconnectReconnectFailure || false,
+      "action": "read_obis",
+      "serial_number": "Avc",
+      "parameters": [
+        {
+          "obis_code": "0.0.97.98.1.255",
+          "attribute_index": 2
+        }
+
+      ]
     };
 
-    axios.post(`${BASE_URL}/api/create-alarm-register2/`, dataToSend)
+    axios.post(`${BASE_URL}/api/getmeterinfo/`, dataToSend)
       .then(response => {
         console.log('Alarm Register 2 data sent successfully:', response.data);
+        const rawData = response.data;
+        const json = JSON.parse(rawData.replace("data:", "").trim());
+
+        const events = json.value || [];
+
+        setCheckboxStates((prev) => ({
+          ...prev,
+          totalPowerFailure: events.includes("TotalPowerFailure"),
+          powerResume: events.includes("PowerResume"),
+          voltageMissingL1: events.includes("VoltageMissingL1"),
+          voltageNormalL1: events.includes("VoltageNormalL1"),
+          missingNeutral: events.includes("MissingNeutral"),
+          phaseAsymmetry: events.includes("PhaseAsymmetry"),
+          currentReversal: events.includes("CurrentReversal"),
+          unexpectedConsumption: events.includes("UnexpectedConsumption"),
+          keyExchanged: events.includes("KeyExchanged"),
+          badVoltageQualityL1: events.includes("BadVoltageQualityL1"),
+          externalAlert: events.includes("ExternalAlert"),
+          localCommunicationAttempt: events.includes("LocalCommunicationAttempt"),
+          disconnectReconnectFail: events.includes("DisconnectReconnectFail"),
+        }));
       })
       .catch(error => {
         console.error('Error sending Alarm Register 2 data:', error.response || error);
@@ -397,7 +471,7 @@ const RegisterData = () => {
 
     const dataToSend = {
       device_id: deviceId,  // Replace with actual device ID
-      code: '{1,0-0:97.98.1.255}',  // Default or dynamic code
+      code: '{1,0-0:97.98.10.255}',  // Default or dynamic code
       clock_invalid: checkboxStates.clockInvalid || false,
       battery_replace: checkboxStates.batteryReplace || false,
       program_memory_error: checkboxStates.programMemoryError || false,
@@ -406,11 +480,37 @@ const RegisterData = () => {
       measurement_system_error: checkboxStates.measurementSystemError || false,
       watchdog_error: checkboxStates.watchdogError || false,
       fraud_attempt: checkboxStates.fraudAttempt || false,
+      "action": "read_obis",
+      "serial_number": "Avc",
+      "parameters": [
+        {
+          "obis_code": "0.0.97.98.10.255",
+          "attribute_index": 2
+        }
+
+      ]
     };
 
-    axios.post(`${BASE_URL}/api/create-alarm-filter1/`, dataToSend)
+    axios.post(`${BASE_URL}/api/getmeterinfo/`, dataToSend)
       .then(response => {
         console.log('Alarm Filter 1 data sent successfully:', response.data);
+        const rawData = response.data;
+        const json = JSON.parse(rawData.replace("data:", "").trim());
+
+        const events = json.value || []
+
+        setCheckboxStates((prev) => ({
+          ...prev,
+          clockInvalid: events.includes("Clock_Invalid"),
+          batteryReplace: events.includes("battery_Replace"),
+          programMemoryError: events.includes("Program_Memory_Error"),
+          ramError: events.includes("ram_Error"),
+          nvMemoryError: events.includes("nvMemory_Error"),
+          measurementSystemError: events.includes("measurement_System_Error"),
+          watchdogError: events.includes("watch_dog_Error"),
+          fraudAttempt: events.includes("fraud_Attempt")
+
+        }));
       })
       .catch(error => {
         console.error('Error sending Alarm Filter 1 data:', error.response || error);
@@ -425,7 +525,7 @@ const RegisterData = () => {
 
     const dataToSend = {
       device_id: deviceId,  // Replace with actual device ID
-      code: '{1,0-0:97.98.1.255}',  // Default or dynamic code
+      code: '{1,0-0:97.98.11.255}',  // Default or dynamic code
       total_power_failure: checkboxStates.totalPowerFailure || false,
       power_resume: checkboxStates.powerResume || false,
       voltage_missing_L1: checkboxStates.voltageMissingL1 || false,
@@ -439,11 +539,41 @@ const RegisterData = () => {
       external_alert: checkboxStates.externalAlert || false,
       local_communication_attempt: checkboxStates.localCommunicationAttempt || false,
       disconnect_reconnect_failure: checkboxStates.disconnectReconnectFailure || false,
+      "action": "read_obis",
+      "serial_number": "Avc",
+      "parameters": [
+        {
+          "obis_code": "0.0.97.98.11.255",
+          "attribute_index": 2
+        }
+
+      ]
     };
 
-    axios.post(`${BASE_URL}/api/create-alarm-filter2/`, dataToSend)
+    axios.post(`${BASE_URL}/api/getmeterinfo/`, dataToSend)
       .then(response => {
         console.log('Alarm Filter 2 data sent successfully:', response.data);
+        const rawData = response.data;
+        const json = JSON.parse(rawData.replace("data:", "").trim());
+
+        const events = json.value || [];
+
+        setCheckboxStates((prev) => ({
+          ...prev,
+          totalPowerFailure: events.includes("TotalPowerFailure"),
+          powerResume: events.includes("PowerResume"),
+          voltageMissingL1: events.includes("VoltageMissingL1"),
+          voltageNormalL1: events.includes("VoltageNormalL1"),
+          missingNeutral: events.includes("MissingNeutral"),
+          phaseAsymmetry: events.includes("PhaseAsymmetry"),
+          currentReversal: events.includes("CurrentReversal"),
+          unexpectedConsumption: events.includes("UnexpectedConsumption"),
+          keyExchanged: events.includes("KeyExchanged"),
+          badVoltageQualityL1: events.includes("BadVoltageQualityL1"),
+          externalAlert: events.includes("ExternalAlert"),
+          localCommunicationAttempt: events.includes("LocalCommunicationAttempt"),
+          disconnectReconnectFail: events.includes("DisconnectReconnectFail"),
+        }));
       })
       .catch(error => {
         console.error('Error sending Alarm Filter 2 data:', error.response || error);
@@ -470,13 +600,39 @@ const RegisterData = () => {
       measurement_system_error: checkboxStates.measurementSystemError || false,
       watchdog_error: checkboxStates.watchdogError || false,
       fraud_attempt: checkboxStates.fraudAttempt || false,
+      "action": "read_obis",
+      "serial_number": "Avc",
+      "parameters": [
+        {
+          "obis_code": "0.0.97.98.20.255",
+          "attribute_index": 2
+        }
+
+      ]
     };
 
     console.log(dataToSend)
 
-    axios.post(`${BASE_URL}/api/create-alarm-descriptor1/`, dataToSend)
+    axios.post(`${BASE_URL}/api/getmeterinfo/`, dataToSend)
       .then(response => {
         console.log('Alarm Descriptor 1 data sent successfully:', response.data);
+        const rawData = response.data;
+        const json = JSON.parse(rawData.replace("data:", "").trim());
+
+        const events = json.value || []
+
+        setCheckboxStates((prev) => ({
+          ...prev,
+          clockInvalid: events.includes("Clock_Invalid"),
+          batteryReplace: events.includes("battery_Replace"),
+          programMemoryError: events.includes("Program_Memory_Error"),
+          ramError: events.includes("ram_Error"),
+          nvMemoryError: events.includes("nvMemory_Error"),
+          measurementSystemError: events.includes("measurement_System_Error"),
+          watchdogError: events.includes("watch_dog_Error"),
+          fraudAttempt: events.includes("fraud_Attempt")
+
+        }));
       })
       .catch(error => {
         console.error('Error sending Alarm Descriptor 1 data:', error.response || error);
@@ -492,7 +648,7 @@ const RegisterData = () => {
 
     const dataToSend = {
       device_id: deviceId,  // Replace with actual device ID
-      code: '{1,0-0:97.98.1.255}',  // Default or dynamic code
+      code: '{1,0-0:97.98.21.255}',  // Default or dynamic code
       total_power_failure: checkboxStates.totalPowerFailure || false,
       power_resume: checkboxStates.powerResume || false,
       voltage_missing_l1: checkboxStates.voltageMissingL1 || false,
@@ -506,11 +662,41 @@ const RegisterData = () => {
       external_alert: checkboxStates.externalAlert || false,
       local_communication_attempt: checkboxStates.localCommunicationAttempt || false,
       disconnect_reconnect_failure: checkboxStates.disconnectReconnectFailure || false,
+      "action": "read_obis",
+      "serial_number": "Avc",
+      "parameters": [
+        {
+          "obis_code": "0.0.97.98.21.255",
+          "attribute_index": 2
+        }
+
+      ]
     };
 
-    axios.post(`${BASE_URL}/api/create-alarm-descriptor2/`, dataToSend)
+    axios.post(`${BASE_URL}/api/getmeterinfo/`, dataToSend)
       .then(response => {
         console.log('Alarm Descriptor 2 data sent successfully:', response.data);
+        const rawData = response.data;
+        const json = JSON.parse(rawData.replace("data:", "").trim());
+
+        const events = json.value || [];
+
+        setCheckboxStates((prev) => ({
+          ...prev,
+          totalPowerFailure: events.includes("TotalPowerFailure"),
+          powerResume: events.includes("PowerResume"),
+          voltageMissingL1: events.includes("VoltageMissingL1"),
+          voltageNormalL1: events.includes("VoltageNormalL1"),
+          missingNeutral: events.includes("MissingNeutral"),
+          phaseAsymmetry: events.includes("PhaseAsymmetry"),
+          currentReversal: events.includes("CurrentReversal"),
+          unexpectedConsumption: events.includes("UnexpectedConsumption"),
+          keyExchanged: events.includes("KeyExchanged"),
+          badVoltageQualityL1: events.includes("BadVolatageQuality_L1"),
+          externalAlert: events.includes("ExternalAlert"),
+          localCommunicationAttempt: events.includes("LocalCommunicationAttempt"),
+          disconnectReconnectFail: events.includes("DisconnectReconnectFail"),
+        }));
       })
       .catch(error => {
         console.error('Error sending Alarm Descriptor 2 data:', error.response || error);
@@ -557,8 +743,7 @@ const RegisterData = () => {
                   <label className="option-label">
                     <input
                       type="checkbox"
-                      checked={item.checked}
-
+                      checked={checkboxStates[item]}
                       className="option-checkbox"
                     />
                     <span className="option-text">
@@ -649,7 +834,7 @@ const RegisterData = () => {
                   <label className="option-label">
                     <input
                       type="checkbox"
-                      checked={item.checked}
+                      checked={checkboxStates[item]}
 
                       className="option-checkbox"
                     />
@@ -695,7 +880,7 @@ const RegisterData = () => {
                   <label className="option-label">
                     <input
                       type="checkbox"
-                      checked={item.checked}
+                      checked={checkboxStates[item]}
 
                       className="option-checkbox"
                     />
@@ -741,7 +926,7 @@ const RegisterData = () => {
                   <label className="option-label">
                     <input
                       type="checkbox"
-                      checked={item.checked}
+                      checked={checkboxStates[item]}
 
                       className="option-checkbox"
                     />
@@ -788,7 +973,7 @@ const RegisterData = () => {
                   <label className="option-label">
                     <input
                       type="checkbox"
-                      checked={item.checked}
+                      checked={checkboxStates[item]}
 
                       className="option-checkbox"
                     />
@@ -832,7 +1017,7 @@ const RegisterData = () => {
                   <label className="option-label">
                     <input
                       type="checkbox"
-                      checked={item.checked}
+                      checked={checkboxStates[item]}
 
                       className="option-checkbox"
                     />
@@ -878,7 +1063,7 @@ const RegisterData = () => {
                   <label className="option-label">
                     <input
                       type="checkbox"
-                      checked={item.checked}
+                      checked={checkboxStates[item]}
 
                       className="option-checkbox"
                     />

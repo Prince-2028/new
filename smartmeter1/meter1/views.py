@@ -15159,26 +15159,9 @@ class TestChargeStreamView(View):
     "message": "Read Successfully",
     "status": "success",
     "action": "read",
-    "obis_code": "0.0.96.5.3.255",
+    "obis_code": "0.0.97.98.1.255",
     "attribute_index": 2,
-    "value": [
-        "FactoryMode",
-        "NonBusinessMode",
-        "MainRelayOpen",
-        "HighTemperature",
-        "NeutralMeasure",
-        "PunishMeasure",
-        "PrepayMode",
-        "LowCredit",
-        "FriendlyInUse",
-        "NoCredit",
-        "ExternalBatteryLow",
-        "TerminalCoverOpen",
-        "ModuleCoverOpen",
-        "StrongMagneticDisturbance",
-        "TopCoverOpen",
-        "SIMCardRemovedORException"
-    ],
+    "value": ["nvMemory_Error","battery_Replace"],
     "db_record_found": False,
     "db_updated": False,
     "db_model": None,
@@ -15189,9 +15172,9 @@ class TestChargeStreamView(View):
         "successful": 1,
         "failed": 0
     },
-    "timestamp": "2026-07-13T07:37:14.441252+00:00"
+    "timestamp": "2026-07-25T09:21:32.605787+00:00"
 }
-          
+       
    
         ]
 

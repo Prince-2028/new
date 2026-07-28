@@ -45,7 +45,6 @@ const MeterInfo = () => {
   
   // Progress modal state
   const [showProgressModal, setShowProgressModal] = useState(false);
-
    // stores streamed values by obis_code  #11111111111111
   const [streamValues, setStreamValues] = useState({});
   console.log("streamValues",streamValues)

@@ -378,9 +378,11 @@ def _convert_read_value(value, obis=None):
                     result.append(b)
                 else:
                     break 
+
             decoded = result.decode()
-            if not decoded:                       # <-- NAYA CHECK
-                return value.hex()          # binary data → hex fallback
+
+            if not decoded:     
+                return value.hex()          # binary data → hex fallback //
 
             return decoded
             # return result.decode()
@@ -1424,7 +1426,7 @@ def execute_dlms_action( config, action_details):
                         
 
 
-                        if obis_code in ["0.0.96.5.0.255", "0.0.96.5.1.255", "0.0.96.5.2.255", "0.0.96.5.3.255", "0.0.96.4.0.255", "0.0.96.4.1.255", "0.0.96.4.2.255","0.0.97.97.0.255", "0.0.97.97.1.255", "0.0.97.98.0.255", "0.0.97。98.1.255",  "0.0.97。98。10。255",  "0。0。97。98。11。255",  "0。0。97。98。20。255",  "0。0。97。98。21。255"]: # Special case for OBIS
+                        if obis_code in ["0.0.96.5.0.255", "0.0.96.5.1.255", "0.0.96.5.2.255", "0.0.96.5.3.255", "0.0.96.4.0.255", "0.0.96.4.1.255", "0.0.96.4.2.255","0.0.97.97.0.255", "0.0.97.97.1.255", "0.0.97.98.0.255", "0.0.97.98.1.255",  "0.0.97.98.10.255",  "0.0.97.98.11.255",  "0.0.97.98.20.255",  "0.0.97.98.21.255"]: # Special case for OBIS
                             value_serializable = _convert_read_value(value, obis_code)
                         elif isinstance(value, GXUnitCharge):
 
