@@ -1860,6 +1860,8 @@ setCheckboxes((prev) =>
 
 
 const BeepControlFilter = ({ deviceId }) => {
+
+   const serialNumber = localStorage.getItem('selectedSerialNumber');
   const [statusValue, setStatusValue] = useState(false); // Boolean for beep control status
   const [checkboxes, setCheckboxes] = useState([
     { id: 1, name: "Step 1 close deductions", key: "step_1_close", checked: false },
@@ -1874,63 +1876,107 @@ const BeepControlFilter = ({ deviceId }) => {
     { id: 10, name: "Step 10 close deductions", key: "step_10_close", checked: false },
     { id: 11, name: "Disenable buzzer alarm", key: "disable_buzzer", checked: false }
   ]);
-  const handleGetData = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}/api/beep-control/${deviceId}`);
+ 
 
-      console.log("API Response:", response.data);
+    const deductionKeyMap = {
+  Step1_CloseDeductions: "step_1_close",
+  Step2_CloseDeductions: "step_2_close",
+  Step3_CloseDeductions: "step_3_close",
+  Step4_CloseDeductions: "step_4_close",
+  Step5_CloseDeductions: "step_5_close",
+  Step6_CloseDeductions: "step_6_close",
+  Step7_CloseDeductions: "step_7_close",
+  Step8_CloseDeductions: "step_8_close",
+  Step9_CloseDeductions: "step_9_close",
+  Step10_CloseDeductions: "step_10_close",
+  Disenable_Buzzer_Alarm: "disable_buzzer",
+};
 
-      setStatusValue(response.data.beep_control_filter); // Map correct key
 
-      const apiData = {
-        step_1_close: response.data.step_1,
-        step_2_close: response.data.step_2,
-        step_3_close: response.data.step_3,
-        step_4_close: response.data.step_4,
-        step_5_close: response.data.step_5,
-        step_6_close: response.data.step_6,
-        step_7_close: response.data.step_7,
-        step_8_close: response.data.step_8,
-        step_9_close: response.data.step_9,
-        step_10_close: response.data.step_10,
-        disable_buzzer: response.data.disenable_buzzer_alarm, // Correct key mapping
-      };
+const handleDeductionAlarm = (backendResponse) => {
+  console.log("Backend Response:", backendResponse);
 
-      setCheckboxes(prevCheckboxes =>
-        prevCheckboxes.map(item => ({
-          ...item,
-          checked: apiData[item.key] || false
-        }))
-      );
-    } catch (error) {
-      console.error("Error fetching data:", error);
+  const selectedKeys = backendResponse.map(
+    (item) => deductionKeyMap[item]
+  );
 
+  setCheckboxes((prev) =>
+    prev.map((checkbox) => ({
+      ...checkbox,
+      checked: selectedKeys.includes(checkbox.key),
+    }))
+  );
+};
+
+
+const ReadData = async () => {
+    
+    const payload={
+      serial_number:serialNumber,// 
+      action:"read_obis",
+      parameters:[{obis_code: "0.0.96.4.2.255", attribute_index: "2"}]
     }
-  };
 
-
-  useEffect(() => {
-    if (deviceId) {
-      handleGetData();
-    }
-  }, [deviceId]);
-
-  // Send data to API
-  const handleSendData = async () => {
-    const requestData = {
-      device_id: deviceId,
-      status_of_beep_control: statusValue,
-      ...checkboxes.reduce((acc, item) => ({ ...acc, [item.key]: item.checked }), {})
-    };
+    //const url=`${BASE_URL}/api/test-charge-stream/`
+    const url=`${BASE_URL}/api/create-tamper-indicate-status/`
 
     try {
-      await axios.post(`${BASE_URL}/api/beep-control/`, requestData);
-      alert("Data sent successfully!");
-    } catch (error) {
-      console.error("Error sending data:", error.response?.data || error.message);
-      alert("Failed to send data.");
+
+     // const response = await axios.post(url,payload) 
+        const response = await fetch(url,
+          {
+            method:'POST',
+            headers: { "Content-Type":'application/json'},
+            body:JSON.stringify(payload)
+          }, )
+
+        console.log("111")
+          
+        const reader = response.body.getReader(); 
+
+        console.log("reader",reader)
+
+        console.log("22")
+        const decoder = new TextDecoder();
+        console.log("decoder",decoder)
+        
+
+        while (true) {
+
+          console.log("33")
+
+              const { done, value } = await reader.read(); 
+              console.log(done,value)
+
+              if (done) {
+                  console.log("Stream Finished");
+                  break;
+              }
+
+              const chunk = decoder.decode(value, { stream: true });
+
+              console.log("chunk",chunk);
+              const jsonString = chunk.replace("data:", "").trim();
+              console.log("jsonString",jsonString)
+              const data = JSON.parse(jsonString);
+              handleDeductionAlarm(data.value)
+             
+            }
+
+    
+
+     
+
     }
+    catch (error) 
+    {
+      alert('failed to read the data ')
+    }
+
+   
   };
+
+  
 
   // Handle checkbox change
   const handleCheckboxChange = (index) => {
@@ -1969,7 +2015,7 @@ const BeepControlFilter = ({ deviceId }) => {
 
       {/* Buttons to Get & Send Data */}
 
-      <button onClick={handleSendData}>Send Data</button>
+      <button onClick={ReadData}>Read </button>
 
       {/* Checkboxes for additional Beep Control options */}
       <div className="options-grid1">

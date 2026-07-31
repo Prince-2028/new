@@ -15161,7 +15161,7 @@ class TestChargeStreamView(View):
     "action": "read",
     "obis_code": "0.0.97.98.1.255",
     "attribute_index": 2,
-    "value": ["nvMemory_Error","battery_Replace"],
+    "value": "0x1234",
     "db_record_found": False,
     "db_updated": False,
     "db_model": None,

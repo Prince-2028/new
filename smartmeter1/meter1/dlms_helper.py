@@ -9,7 +9,7 @@ import traceback # For detailed error logging
 import copy  # For deep copying objects
 from django.utils.dateparse import parse_datetime 
 from typing import Union, List
-
+from gurux_dlms.GXUInt16 import GXUInt16
 from gurux_dlms import GXDLMSClient, GXDLMSException, ValueEventArgs
 from gurux_dlms.enums import InterfaceType, Authentication, Security, ObjectType, DataType, ClockStatus, AccessMode
 from gurux_dlms.secure import GXDLMSSecureClient
@@ -1413,7 +1413,15 @@ def execute_dlms_action( config, action_details):
                         print(f"Read value for {obis_code} attr {attr}: {value}")
                         print("test 63////")
                         print("TYPE =", type(value))
-                        print("VALUE =", value)
+                        print("VALUE************=", value) 
+
+
+                        if obis_code == "0.0.96.4.2.255" and isinstance(value, GXUInt16):
+
+                            data = bytearray(value.to_bytes(2, byteorder="big"))
+                            value=data
+                            
+
 
 
                 
