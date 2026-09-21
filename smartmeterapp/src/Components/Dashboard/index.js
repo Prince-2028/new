@@ -28,9 +28,9 @@ const Dashboard = () => {
     const [isPopupOpen, setIsPopupOpen] = useState(false);
     const [isPortPopupOpen, setIsPortPopupOpen] = useState(false);
     const [isLogsPopupOpen, setIsLogsPopupOpen] = useState(false);
-    const [isMessagePopupOpen ,setIsMessagePopupOpen]=useState(false)
+    const [isMessagePopupOpen, setIsMessagePopupOpen] = useState(false)
     const [isAddDevicePopupOpen, setIsAddDevicePopupOpen] = useState(false);
-    const [isOptionPopupOpen , setIsOptionPopupOpen] = useState(false);
+    const [isOptionPopupOpen, setIsOptionPopupOpen] = useState(false);
     const [isCopyPopupOpen, setIsCopyPopupOpen] = useState(false);
     const [isICModalOpen, setIsICModalOpen] = useState(false);
     const [currentIC, setCurrentIC] = useState(null);
@@ -40,12 +40,12 @@ const Dashboard = () => {
     const navigate = useNavigate();
 
     const userId = localStorage.getItem('userId');
-    console.log("selectedDeviceData",selectedDeviceId)
+    console.log("selectedDeviceData", selectedDeviceId)
 
     // Ensure fullscreen on Dashboard mount and maintain it
     useEffect(() => {
         console.log('Dashboard mounted, setting up fullscreen handler...');
-        
+
         let hasEnteredFullscreen = false;
 
         // Function to enter fullscreen on first user interaction
@@ -72,7 +72,7 @@ const Dashboard = () => {
                     document.mozFullScreenElement ||
                     document.msFullscreenElement
                 );
-                
+
                 if (!isInFullscreen) {
                     console.log('Not in fullscreen, re-entering...');
                     enterFullscreen().catch(err => {
@@ -84,7 +84,7 @@ const Dashboard = () => {
 
         // Listen for first click to enter fullscreen
         document.addEventListener('click', handleFirstInteraction, { once: true, capture: true });
-        
+
         // Listen for subsequent clicks to maintain fullscreen
         document.addEventListener('click', maintainFullscreen, { capture: true });
 
@@ -95,39 +95,39 @@ const Dashboard = () => {
     }, []);
 
     const openPortPopup = () => {
-    if (!selectedDeviceId) {
-      return alert('Please select a device first!');
-    }
-    
-    // Find the selected device and save its serial number to localStorage
-    const device = data.find(d => d.id === selectedDeviceId);
-    if (device) {
-      localStorage.setItem('selectedSerialNumber', device.serial_number);
-      console.log('Saved serial number to localStorage:', device.serial_number);
-    }
-    
-    setIsPortPopupOpen(true);
-  };
+        if (!selectedDeviceId) {
+            return alert('Please select a device first!');
+        }
+
+        // Find the selected device and save its serial number to localStorage
+        const device = data.find(d => d.id === selectedDeviceId);
+        if (device) {
+            localStorage.setItem('selectedSerialNumber', device.serial_number);
+            console.log('Saved serial number to localStorage:', device.serial_number);
+        }
+
+        setIsPortPopupOpen(true);
+    };
 
     const role = localStorage.getItem('userRole');
     const perms = PERMISSIONS[role] || {};
-  
+
     console.log(perms)
 
 
 
-  useEffect(() => {
-    const selectedDeviceId = localStorage.getItem('selectedDeviceId');
-    if (selectedDeviceId) {
-      // Small delay to ensure React Router is fully initialized
-      const timer = setTimeout(() => {
-        console.log('Auto-navigating to /dashboard/header with device:', selectedDeviceId);
-        navigate('/dashboard/header', { replace: true });
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [navigate]);
+    useEffect(() => {
+        const selectedDeviceId = localStorage.getItem('selectedDeviceId');
+        if (selectedDeviceId) {
+            // Small delay to ensure React Router is fully initialized
+            const timer = setTimeout(() => {
+                console.log('Auto-navigating to /dashboard/header with device:', selectedDeviceId);
+                navigate('/dashboard/header', { replace: true });
+            }, 100);
+
+            return () => clearTimeout(timer);
+        }
+    }, [navigate]);
 
 
     const fetchUserDevices = async () => {
@@ -158,8 +158,8 @@ const Dashboard = () => {
     };
     const closePopup = () => setIsPopupOpen(false);
     const closeLogPopup = () => setIsLogsPopupOpen(false);
-    const closeMessagePopup = ()=> setIsMessagePopupOpen(false)
-    const closeOptionPopup = ()=> setIsOptionPopupOpen(false) 
+    const closeMessagePopup = () => setIsMessagePopupOpen(false)
+    const closeOptionPopup = () => setIsOptionPopupOpen(false)
 
     const handleDelete = async () => {
         if (!selectedDeviceId) {
@@ -201,7 +201,7 @@ const Dashboard = () => {
         setIsAddDevicePopupOpen(true); // Open the popup for adding a new device
     };
 
-    const handleCopy = async() => {
+    const handleCopy = async () => {
         if (!selectedDeviceId) {
             alert('No device selected for copying.');
             return;
@@ -220,9 +220,9 @@ const Dashboard = () => {
                 device_id: selectedDeviceId,
                 user_id: userId
             });
-            
+
             console.log(response.data)
-            
+
             if (response.data.message === 'Device copied successfully') {
                 fetchUserDevices(); // Refresh the device list
                 alert('Device copied successfully.');
@@ -242,7 +242,7 @@ const Dashboard = () => {
             // First, get the current IC value
             const getResponse = await axios.get(`${BASE_URL}/invocation-counter/`);
             const currentICValue = getResponse.data.current_ic;
-            
+
             // Open custom modal instead of window.prompt
             setCurrentIC(currentICValue);
             setIsICModalOpen(true);
@@ -253,22 +253,22 @@ const Dashboard = () => {
     };
 
     const handleIC = async (deviceId) => {
-    try {
-        const response = await axios.get(`${BASE_URL}/invocation-counter/`, {
-            params: { device_id: selectedDeviceId }
-        });
+        try {
+            const response = await axios.get(`${BASE_URL}/invocation-counter/`, {
+                params: { device_id: selectedDeviceId }
+            });
 
-        const currentICValue = response.data.current_ic;
+            const currentICValue = response.data.current_ic;
 
-        setCurrentIC(currentICValue);
-        setSelectedDeviceId(selectedDeviceId);   // store for POST
-        setIsICModalOpen(true);
+            setCurrentIC(currentICValue);
+            setSelectedDeviceId(selectedDeviceId);   // store for POST
+            setIsICModalOpen(true);
 
-    } catch (err) {
-        console.error('Error getting IC:', err);
-        alert('Error: ' + (err.response?.data?.error || 'Failed to get IC value.'));
-    }
-};
+        } catch (err) {
+            console.error('Error getting IC:', err);
+            alert('Error: ' + (err.response?.data?.error || 'Failed to get IC value.'));
+        }
+    };
 
     const handleICSubmit1 = async (icValue) => {
         try {
@@ -276,7 +276,7 @@ const Dashboard = () => {
             const postResponse = await axios.post(`${BASE_URL}/invocation-counter/`, {
                 ic_value: icValue
             });
-            
+
             alert(postResponse.data.message);
             setIsICModalOpen(false);
         } catch (err) {
@@ -285,24 +285,24 @@ const Dashboard = () => {
         }
     };
 
-  
-  
-  
+
+
+
     const handleICSubmit = async (icValue) => {
-    try {
-        const response = await axios.post(`${BASE_URL}/invocation-counter/`, {
-            device_id: selectedDeviceId,   // 🔥 IMPORTANT
-            ic_value: icValue
-        });
+        try {
+            const response = await axios.post(`${BASE_URL}/invocation-counter/`, {
+                device_id: selectedDeviceId,   // 🔥 IMPORTANT
+                ic_value: icValue
+            });
 
-        alert(response.data.message);
-        setIsICModalOpen(false);
+            alert(response.data.message);
+            setIsICModalOpen(false);
 
-    } catch (err) {
-        console.error('Error updating IC:', err);
-        alert('Error: ' + (err.response?.data?.error || 'Failed to update IC value.'));
-    }
-};
+        } catch (err) {
+            console.error('Error updating IC:', err);
+            alert('Error: ' + (err.response?.data?.error || 'Failed to update IC value.'));
+        }
+    };
 
 
 
@@ -318,34 +318,34 @@ const Dashboard = () => {
         localStorage.setItem('selectedDeviceId', item.id);
         localStorage.setItem('selectedSerialNumber', item.serial_number);
 
-        
-    
+
+
         // Navigate to /dashboard/header
         navigate('/dashboard/header');
-      };
+    };
 
-     
+
 
 
 
     const handleLogout = async () => {
         try {
             console.log("Logging out and clearing cache...");
-            
+
             // Call the backend logout endpoint
             const response = await axios.post(`${BASE_URL}/api/logout/`, {}, {
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (response.data.status === 'success') {
                 console.log("Logout successful:", response.data);
                 console.log("Cache cleared:", response.data.cache_cleared);
-                
+
                 // Clear local storage
                 localStorage.removeItem('userId');
-                
+
                 // Redirect to login
                 navigate('/');
             } else {
@@ -362,150 +362,178 @@ const Dashboard = () => {
         }
     };
 
-    
- 
 
 
-     
-    
+
+
+
+
 
     return (
         <div className='dashboardContainer'>
-             
+
             <div className='HeaderOption'>
 
-                
-             <div className='logo-wrap'> 
-                <img 
-                    src={logo}
-                    alt="Aviconn"
-                    className="aviconn-logo"
-                    
-                />
-                </div>
-        
-      
-               
 
-               
+                <div className='logo-wrap'>
+                    <img
+                        src={logo}
+                        alt="Aviconn"
+                        className="aviconn-logo"
 
-                {perms.manageAccounts && (
-
-
-
-
-               
-               
-               
-               <div className="action-item" onClick={() => setIsPopupOpen(true)}>
-                    <RiAccountCircleFill style={{ fontSize: '25px', backgroundColor: '#739deb', borderRadius: '10px', color: 'white' }} className="icon" />
-                    <span style={{ marginLeft: '3px', fontWeight: '600' }}>Account</span>
-                </div>
-                 )}
-
-                <div className="action-item" onClick={openPortPopup}>
-                    <IoOptionsOutline style={{ fontSize: '27px' }} className="icon" />
-                    <span style={{ marginLeft: '3px', fontWeight: '600' }}>Port</span>
+                    />
                 </div>
 
-                
 
-                
+
+
+
+
+                {(perms.manageAccounts || perms.changePassword) && (
+                    <div
+                        className="action-item"
+                        onClick={() => setIsPopupOpen(true)}
+                    >
+                        <RiAccountCircleFill
+                            style={{
+                                fontSize: '25px',
+                                backgroundColor: '#739deb',
+                                borderRadius: '10px',
+                                color: 'white'
+                            }}
+                            className="icon"
+                        />
+
+                        <span style={{ marginLeft: '3px', fontWeight: '600' }}>
+                            Account
+                        </span>
+                    </div>
+                )}
+
+                {perms.portSetting && (
+                    <div className="action-item" onClick={openPortPopup}>
+                        <IoOptionsOutline
+                            style={{ fontSize: '27px' }}
+                            className="icon"
+                        />
+                        <span style={{ marginLeft: '3px', fontWeight: '600' }}>
+                            Port
+                        </span>
+                    </div>
+                )}
+
+
+
+
 
 
                 <div className="action-item" style={{ cursor: 'pointer' }}>
                     <MdOutlineMessage style={{ fontSize: '25px' }} className="icon" onClick={() => setIsMessagePopupOpen(true)} />
                     <span style={{ marginLeft: '3px', fontWeight: '600' }}>Message</span>
                 </div>
-                <div className="action-item" style={{ cursor: 'pointer' }} onClick={() => setIsLogsPopupOpen(true)}>
-                    <TiDelete style={{ fontSize: '20px', color: 'red' }} className="icon" />
-                    <span style={{ marginLeft: '3px', fontWeight: '600' }}>Logs</span>
-                </div>
-                <div className="action-item" style={{ cursor: 'pointer'   }} onClick={() => setIsOptionPopupOpen(true)}>
+                {perms.logs && (
+                    <div
+                        className="action-item"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setIsLogsPopupOpen(true)}
+                    >
+                        <TiDelete
+                            style={{ fontSize: '20px', color: 'red' }}
+                            className="icon"
+                        />
+                        <span style={{ marginLeft: '3px', fontWeight: '600' }}>
+                            Logs
+                        </span>
+                    </div>
+                )}
+                <div className="action-item" style={{ cursor: 'pointer' }} onClick={() => setIsOptionPopupOpen(true)}>
                     <TbFileSettings style={{ fontSize: '25px' }} className="icon" />
                     <span style={{ marginLeft: '3px', fontWeight: '600' }}>Options</span>
                 </div>
                 <div onClick={handleLogout} className="action-item" style={{ cursor: 'pointer' }}>
-                    <IoLogOut   style={{ fontSize: '27px', color: 'red' }} className="icon" />
+                    <IoLogOut style={{ fontSize: '27px', color: 'red' }} className="icon" />
                     <span style={{ marginLeft: '3px', fontWeight: '600' }}> Logout </span>
                 </div>
             </div>
 
 
 
-   
+
 
 
 
 
 
             <div className='iconTableContainer border-effect'>
-              
-             
+
+
                 <div id='addDeviceContainer'>
                     <h2>Device List</h2>
-                     {(role === 'Programmer' || role === 'Administrator') && (
-                    <div className='addDeviceOption'>
+                    {(role === 'Programmer' || role === 'Administrator') && (
+                        <div className='addDeviceOption'>
 
-                        {perms.addDevice && (
-              
-                
-                        <div id="device_action" className="action-item" onClick={handleAddClick}>
-                            <CiCirclePlus className="icon add-icon" style={{ fontSize: '20px' }} />
-                            <span>Add</span>
-                        </div>
-                         )}
+                            {perms.addDevice && (
 
-                         {perms.copyDevice && (
-                        <div id="device_action" className="action-item" onClick={handleCopy}>
-                            <VscCopy className="icon copy-icon" style={{ fontSize: '20px' }} />
-                            <span>Copy</span>
-                        </div>
-                         )}
 
-                         {perms.editDevice && (
-                        <div id="device_action" className="action-item" onClick={handleEdit}>
-                            <MdEditDocument className="icon edit-icon" style={{ fontSize: '20px' }} />
-                            <span>Edit</span>
-                        </div>
-                         )}
+                                <div id="device_action" className="action-item" onClick={handleAddClick}>
+                                    <CiCirclePlus className="icon add-icon" style={{ fontSize: '20px' }} />
+                                    <span>Add</span>
+                                </div>
+                            )}
 
-                          {perms.deleteDevice && (
+                            {perms.copyDevice && (
+                                <div id="device_action" className="action-item" onClick={handleCopy}>
+                                    <VscCopy className="icon copy-icon" style={{ fontSize: '20px' }} />
+                                    <span>Copy</span>
+                                </div>
+                            )}
 
-                        <div id="device_action" className="action-item" onClick={handleDelete}>
-                            <TiDelete className="icon delete-icon" style={{ fontSize: '20px' }} />
-                            <span>Remove</span>
+                            {perms.editDevice && (
+                                <div id="device_action" className="action-item" onClick={handleEdit}>
+                                    <MdEditDocument className="icon edit-icon" style={{ fontSize: '20px' }} />
+                                    <span>Edit</span>
+                                </div>
+                            )}
+
+                            {perms.deleteDevice && (
+
+                                <div id="device_action" className="action-item" onClick={handleDelete}>
+                                    <TiDelete className="icon delete-icon" style={{ fontSize: '20px' }} />
+                                    <span>Remove</span>
+                                </div>
+                            )}
+
+                            <div id="device_action" className="action-item" onClick={handleIC}>
+                                <TbFileSettings className="icon" style={{ fontSize: '20px', color: '#4CAF50' }} />
+                                <span>IC</span>
+                            </div>
                         </div>
-                          )}
-                        
-                        <div id="device_action" className="action-item" onClick={handleIC}>
-                            <TbFileSettings className="icon" style={{ fontSize: '20px', color: '#4CAF50' }} />
-                            <span>IC</span>
-                        </div>
-                    </div>
-                     )}
+                    )}
                 </div>
-             
+
 
                 {isPopupOpen && <Account closePopup={closePopup} />}
-               
 
-                 {isPortPopupOpen && (<Port deviceId={selectedDeviceId} 
-                 closePortPopup={closePortPopup}
-                 /> )}
+
+                {perms.portSetting && isPortPopupOpen && (
+                    <Port
+                        deviceId={selectedDeviceId}
+                        closePortPopup={closePortPopup}
+                    />
+                )}
 
 
                 {isLogsPopupOpen && <Logs closeLogPopup={closeLogPopup} />}
-                {isMessagePopupOpen && <MessageLog closeMessagePopup={closeMessagePopup}/>}
+                {isMessagePopupOpen && <MessageLog closeMessagePopup={closeMessagePopup} />}
                 {isAddDevicePopupOpen && <AddDevice closeAdddevicePopup={closeAddDevicePopup} deviceData={selectedDeviceData} />}
-                {isOptionPopupOpen && <Options onClose={closeOptionPopup}/>}
-                <ICModal 
+                {isOptionPopupOpen && <Options onClose={closeOptionPopup} />}
+                <ICModal
                     isOpen={isICModalOpen}
                     onClose={() => setIsICModalOpen(false)}
                     currentIC={currentIC}
                     onSubmit={handleICSubmit}
                 />
-        
+
 
                 <table className="dashboardTable">
                     <thead>
@@ -518,23 +546,23 @@ const Dashboard = () => {
                     </thead>
                     <tbody>
                         {data.map((item, index) => (
-                           
-                                                    <tr
-                            key={item.id}
-                            
-                            onClick={() => setSelectedDeviceId(item.id)} // Single click: only select row
-                            onDoubleClick={() => handleRowClick(item)}  // Double click: save to localStorage and navigate
-                            id={selectedDeviceId === item.id ? 'selected_item' : ''}
+
+                            <tr
+                                key={item.id}
+
+                                onClick={() => setSelectedDeviceId(item.id)} // Single click: only select row
+                                onDoubleClick={() => handleRowClick(item)}  // Double click: save to localStorage and navigate
+                                id={selectedDeviceId === item.id ? 'selected_item' : ''}
                             >
-                            <td> </td>
-                            <td>{index + 1}.</td>
-                            <td>{item.meter_type}</td>
-                            <td>{item.serial_number}</td>
+                                <td> </td>
+                                <td>{index + 1}.</td>
+                                <td>{item.meter_type}</td>
+                                <td>{item.serial_number}</td>
                             </tr>
 
 
 
-                            
+
                         ))}
                     </tbody>
                 </table>
