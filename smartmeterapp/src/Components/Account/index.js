@@ -4,6 +4,7 @@ import { IoIosCloseCircle } from "react-icons/io";
 import axios from 'axios';
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
+import { PERMISSIONS } from '../../permissions';
 
 const Account = ({ closePopup }) => {
   const [isAddPopupOpen, setIsAddPopupOpen] = useState(false);
@@ -11,8 +12,11 @@ const Account = ({ closePopup }) => {
   const [isChangePasswordPopupOpen, setIsChangePasswordPopupOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [roles, setRoles] = useState([]); 
-  let userId=localStorage.getItem('userId') 
+  const [roles, setRoles] = useState([]);
+  const role = localStorage.getItem('userRole');
+  const perms = PERMISSIONS[role] || {};
+  let userId = localStorage.getItem('userId')
+
   const [newUser, setNewUser] = useState({
     id: userId,
     username: '',
@@ -32,23 +36,23 @@ const Account = ({ closePopup }) => {
     password: '',
     confirmPassword: ''
   });
-  const baseUrl = BASE_URL;  
+  const baseUrl = BASE_URL;
 
-  
-  
+
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
 
 
-  
+
 
   useEffect(() => {
     GetUsers();
     fetchRoles();
   }, []);
 
-    // <-- 2. NEW FUNCTION TO FETCH ROLES -->
+  // <-- 2. NEW FUNCTION TO FETCH ROLES -->
   const fetchRoles = async () => {
     try {
       const response = await axios.get(`${baseUrl}/roles/`);
@@ -65,7 +69,7 @@ const Account = ({ closePopup }) => {
   const GetUsers = async () => {
     try {
       const response = await axios.get(`${baseUrl}/get_users/`, {
-        params: { id:userId  }
+        params: { id: userId }
       });
 
       if (response.status === 200) {
@@ -98,23 +102,20 @@ const Account = ({ closePopup }) => {
 
   const closePopupOutside = (e) => {
     if (e.target.className === 'popup') {
-     
+
       closePopup()
-    } 
-    if (e.target.className==='adduser-popup') 
-    {
-      setIsAddPopupOpen(false)
-      
     }
-    if (e.target.className==='modifyuser-popup')
-    {
+    if (e.target.className === 'adduser-popup') {
+      setIsAddPopupOpen(false)
+
+    }
+    if (e.target.className === 'modifyuser-popup') {
       setIsModifyPopupOpen(false)
     }
-    if (e.target.className==="changepassword-popup") 
-    {
+    if (e.target.className === "changepassword-popup") {
       setIsChangePasswordPopupOpen(false)
     }
-    
+
   };
 
   const handleRowClick = (user) => {
@@ -138,7 +139,7 @@ const Account = ({ closePopup }) => {
     setIsModifyPopupOpen(true);
   };
 
-  const handleChangePasswordButtonClick = () => {
+  const handleChangePasswordButtonClick1 = () => {
     if (!selectedUser) {
       alert("Please select a user to change password.");
       return;
@@ -150,7 +151,33 @@ const Account = ({ closePopup }) => {
     });
     setIsChangePasswordPopupOpen(true);
   };
+  const handleChangePasswordButtonClick = () => {
+    // Programmer changes their own password
+    if (role === 'Programmer') {
+      setPasswordData({
+        id: userId,
+        password: '',
+        confirmPassword: ''
+      });
 
+      setIsChangePasswordPopupOpen(true);
+      return;
+    }
+
+    // Administrator changes selected user's password
+    if (!selectedUser) {
+      alert("Please select a user to change password.");
+      return;
+    }
+
+    setPasswordData({
+      id: selectedUser.id,
+      password: '',
+      confirmPassword: ''
+    });
+
+    setIsChangePasswordPopupOpen(true);
+  };
   const handleInputChange = (e, setter) => {
     const { name, value } = e.target;
     setter(prevState => ({ ...prevState, [name]: value }));
@@ -277,18 +304,51 @@ const Account = ({ closePopup }) => {
             </table>
           </div>
           <div className="user-actions">
-            <div>
-              <button className='Account_button' onClick={handleAddButtonClick}>Add</button>
-            </div>
-            <div>
-              <button className='Account_button' onClick={handleModifyButtonClick}>Modify</button>
-            </div>
-            <div>
-              <button className='Account_button' onClick={handleChangePasswordButtonClick}>Change Password</button>
-            </div>
-            <div>
-              <button className='Account_button' onClick={handleDeleteUser}>Delete</button>
-            </div>
+
+            {perms.manageAccounts && (
+              <>
+                <div>
+                  <button
+                    className="Account_button"
+                    onClick={handleAddButtonClick}
+                  >
+                    Add
+                  </button>
+                </div>
+
+                <div>
+                  <button
+                    className="Account_button"
+                    onClick={handleModifyButtonClick}
+                  >
+                    Modify
+                  </button>
+                </div>
+              </>
+            )}
+
+            {perms.changePassword && (
+              <div>
+                <button
+                  className="Account_button"
+                  onClick={handleChangePasswordButtonClick}
+                >
+                  Change Password
+                </button>
+              </div>
+            )}
+
+            {perms.manageAccounts && (
+              <div>
+                <button
+                  className="Account_button"
+                  onClick={handleDeleteUser}
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+
           </div>
         </div>
       </div>
@@ -296,45 +356,45 @@ const Account = ({ closePopup }) => {
       {isAddPopupOpen && (
         <div className='adduser-popup' onClick={closePopupOutside}>
           <div className='popup-form'>
-          <h2 className='Add_account_heading'>Add Account</h2>
-          
-          <form className='form' onSubmit={handleAddUser}>
-            <label id="label_password"> Enter your Username:</label>
+            <h2 className='Add_account_heading'>Add Account</h2>
+
+            <form className='form' onSubmit={handleAddUser}>
+              <label id="label_password"> Enter your Username:</label>
 
 
               <input placeholder='Username' type="text" name="username" value={newUser.username} onChange={(e) => handleInputChange(e, setNewUser)} required />
-              
+
               <label id="label_password">Enter the Password:</label>
               <div className='password-wrapper'>
 
 
-              <input  inputMode="text"  placeholder='password'  type={showPassword ? "text" : "password"} name="password" value={newUser.password} onChange={(e) => handleInputChange(e, setNewUser)} required />
-               <span className="password-toggle-icon" onClick={() => setShowPassword(!showPassword)}>
-                 {showPassword ?  <IoMdEye />:<IoMdEyeOff />}
-                 </span>
-                 
-                 </div>
-              
-              
-              
+                <input inputMode="text" placeholder='password' type={showPassword ? "text" : "password"} name="password" value={newUser.password} onChange={(e) => handleInputChange(e, setNewUser)} required />
+                <span className="password-toggle-icon" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <IoMdEye /> : <IoMdEyeOff />}
+                </span>
+
+              </div>
+
+
+
               <label id="label_password">Confirm Password:</label>
-              
-            
+
+
 
 
               <div className="password-input-container">
-                
-              <input  inputMode="text"  type={showConfirmPassword ? "text" : "password"}  placeholder='confirmPassword' name="confirmPassword" value={newUser.confirmPassword} onChange={(e) => handleInputChange(e, setNewUser)} required />
-               <span className="password-toggle-icon-Adduser" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                 {showConfirmPassword ?  <IoMdEye />:<IoMdEyeOff />}
-               </span>
-             </div>
+
+                <input inputMode="text" type={showConfirmPassword ? "text" : "password"} placeholder='confirmPassword' name="confirmPassword" value={newUser.confirmPassword} onChange={(e) => handleInputChange(e, setNewUser)} required />
+                <span className="password-toggle-icon-Adduser" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  {showConfirmPassword ? <IoMdEye /> : <IoMdEyeOff />}
+                </span>
+              </div>
 
 
 
-            
+
               <label id="label_password" >Role:</label>
-             
+
 
               <select name="role" value={newUser.role} onChange={(e) => handleInputChange(e, setNewUser)} required>
                 <option value="">Select Role</option>
@@ -360,15 +420,15 @@ const Account = ({ closePopup }) => {
       {isModifyPopupOpen && (
         <div className='modifyuser-popup' onClick={closePopupOutside}>
           <div className="popup-form">
-          <h2 className='Add_account_heading'>Modify User</h2>
-            <form  className='form' onSubmit={handleModifyUser}>
-             
+            <h2 className='Add_account_heading'>Modify User</h2>
+            <form className='form' onSubmit={handleModifyUser}>
+
               <label id="label_password" > Enter your Username:</label>
               <input type="text" name="username" value={modifyUser.username} onChange={(e) => handleInputChange(e, setModifyUser)} required />
               <label id="label_password" >Role:</label>
-              
+
               <select name="role" value={modifyUser.role} onChange={(e) => handleInputChange(e, setModifyUser)} required>
-                
+
                 <option value="">Select Role</option>
                 {roles.map(role => (
                   <option key={role.id} value={role.id}>
@@ -388,32 +448,32 @@ const Account = ({ closePopup }) => {
       {isChangePasswordPopupOpen && (
         <div className='changepassword-popup' onClick={closePopupOutside}>
           <div className="popup-form">
-          <h2 className='Add_account_heading'> Change Password</h2>
+            <h2 className='Add_account_heading'> Change Password</h2>
             <form className='form' onSubmit={handleChangePassword}>
 
-           
-             
+
+
               <label id="label_password" >  Password:</label>
-              <div className='password-wrapper'> 
+              <div className='password-wrapper'>
 
-              <input placeholder='Password'  type={showPassword ? "text" : "password"} name="password" value={passwordData.password} onChange={(e) => handleInputChange(e, setPasswordData)} required />
+                <input placeholder='Password' type={showPassword ? "text" : "password"} name="password" value={passwordData.password} onChange={(e) => handleInputChange(e, setPasswordData)} required />
 
-       
-             
+
+
                 <span className="password-toggle-icon" onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ?  <IoMdEye /> : <IoMdEyeOff /> }
+                  {showPassword ? <IoMdEye /> : <IoMdEyeOff />}
                 </span>
-                </div>
+              </div>
 
 
 
 
-                <label id="label_password">Confirm Password:</label>
+              <label id="label_password">Confirm Password:</label>
               <div className="password-input-container">
-                
-                 <input   type={showConfirmPassword ? "text" : "password"} placeholder='Confirm Password'  name="confirmPassword" value={passwordData.confirmPassword} onChange={(e) => handleInputChange(e, setPasswordData)} required />
+
+                <input type={showConfirmPassword ? "text" : "password"} placeholder='Confirm Password' name="confirmPassword" value={passwordData.confirmPassword} onChange={(e) => handleInputChange(e, setPasswordData)} required />
                 <span className="password-toggle-icon2" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                  {showConfirmPassword ?  <IoMdEye /> : <IoMdEyeOff /> }
+                  {showConfirmPassword ? <IoMdEye /> : <IoMdEyeOff />}
                 </span>
               </div>
 
@@ -427,11 +487,11 @@ const Account = ({ closePopup }) => {
 
 
 
-              
-             
+
+
               <div className='buttonsContainer'>
                 <button className='save_cancel_button' type="submit">Save</button>
-                <button  className='save_cancel_button' type="button" onClick={() => setIsChangePasswordPopupOpen(false)}>Cancel</button>
+                <button className='save_cancel_button' type="button" onClick={() => setIsChangePasswordPopupOpen(false)}>Cancel</button>
               </div>
             </form>
           </div>
