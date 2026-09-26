@@ -3,6 +3,8 @@ import axios from 'axios';
 import BASE_URL from '../../apiConfig';
 import ProgressModal from '../ProgressModal';
 import './index.css'
+import { PERMISSIONS } from '../../permissions';
+
 const monthNames = [
   "Every Month", "January","February","March","April","May","June",
   "July","August","September","October","November","December"
@@ -10,7 +12,10 @@ const monthNames = [
 
 const LoadControlNew = () => {
   const serialNumber = localStorage.getItem('selectedSerialNumber');
-  
+
+  const role = localStorage.getItem('userRole');
+  const perms = PERMISSIONS[role] || {};
+
   // OBIS Code for Class 71 Limiter
   const OBIS_CODE = "0.0.17.0.0.255";
   
@@ -585,9 +590,11 @@ const LoadControlNew = () => {
   {isReading ? "Reading..." : "Read"}
 </button>
 
-<button  className="lc-btn lc-btn-write" onClick={handleWrite} disabled={isReading || isWriting}>
-  {isWriting ? "Writing..." : "Write"}
-</button>
+{ perms.writeMeter && (
+  <button  className="lc-btn lc-btn-write" onClick={handleWrite} disabled={isReading || isWriting}>
+    {isWriting ? "Writing..." : "Write"}
+  </button>
+)}
   </div>
 
 

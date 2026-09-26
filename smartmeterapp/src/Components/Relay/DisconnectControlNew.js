@@ -3,29 +3,33 @@ import axios from 'axios';
 import BASE_URL from '../../apiConfig';
 import ProgressModal from '../ProgressModal';
 import './index.css'
+import { PERMISSIONS } from '../../permissions';
 
 const DisconnectControlNew = () => {
   const serialNumber = localStorage.getItem('selectedSerialNumber');
-  
+
+  const role = localStorage.getItem('userRole');
+  const perms = PERMISSIONS[role] || {};
+
   // Checkbox selections
   const [selected, setSelected] = useState(new Set());
-  
+
   // Dropdown values
   const [relaySelect, setRelaySelect] = useState("Disconnect control (Main relay)");
   const [outputState, setOutputState] = useState("0");
   const [controlState, setControlState] = useState("0");
   const [controlMode, setControlMode] = useState("0");
   const [method, setMethod] = useState("2");
-  
+
   // Relay test values
   const [testTimes, setTestTimes] = useState(1);
   const [holdConnection, setHoldConnection] = useState(5000);
   const [holdDisconnection, setHoldDisconnection] = useState(5000);
-  
+
   // UI state
   const [loading, setLoading] = useState(false);
-    const [isReading, setIsReading] = useState(false);
-const [isWriting, setIsWriting] = useState(false);
+  const [isReading, setIsReading] = useState(false);
+  const [isWriting, setIsWriting] = useState(false);
   const [error, setError] = useState(null);
   const [showProgressModal, setShowProgressModal] = useState(false);
 
@@ -161,7 +165,7 @@ const [isWriting, setIsWriting] = useState(false);
     setLoading(true);
     setShowProgressModal(true);
     setRelayTestLog([]); // Clear previous log
-    
+
     let totalTests = 0;
     let failedTests = 0;
     let successfulTests = 0;
@@ -214,7 +218,7 @@ const [isWriting, setIsWriting] = useState(false);
       // Perform the relay test cycles
       for (let i = 0; i < testTimes; i++) {
         totalTests++;
-        
+
         // Determine current action (alternate between disconnect and reconnect)
         let currentAction;
         if (i === 0) {
@@ -225,7 +229,7 @@ const [isWriting, setIsWriting] = useState(false);
         }
 
         const actionName = currentAction === "1" ? "Remote Disconnect" : "Remote Reconnect";
-        
+
         try {
           // Execute the method
           await axios.post(`${BASE_URL}/api/getmeterinfo/`, {
@@ -314,7 +318,7 @@ const [isWriting, setIsWriting] = useState(false);
       if (typeof actualData === 'string') {
         const lines = actualData.split('\n');
         const parsedResults = [];
-        
+
         for (const line of lines) {
           if (line.trim().startsWith('data:')) {
             try {
@@ -328,7 +332,7 @@ const [isWriting, setIsWriting] = useState(false);
             }
           }
         }
-        
+
         // Update dropdown values
         parsedResults.forEach(item => {
           const attrIdx = parseInt(item.attribute_index);
@@ -336,20 +340,20 @@ const [isWriting, setIsWriting] = useState(false);
           if (typeof value === 'boolean') {
             value = value ? 1 : 0;
           }
-          
+
           if (attrIdx === 2) setOutputState(String(value));
           if (attrIdx === 3) setControlState(String(value));
           if (attrIdx === 4) setControlMode(String(value));
         });
       }
-      
+
       alert('Read completed successfully');
     } catch (e) {
       setError(`Read failed: ${e.message}`);
       setTimeout(() => setError(null), 3000);
     } finally {
       //setLoading(false);
-       setIsReading(false);
+      setIsReading(false);
       setShowProgressModal(false);
     }
   };
@@ -452,356 +456,358 @@ const [isWriting, setIsWriting] = useState(false);
   };
 
   return (
-   <div className="relay-container1">
+    <div className="relay-container1">
 
-  {/* LEFT PANEL */}
+      {/* LEFT PANEL */}
   <div  className="relay-left">
 
-    {/* Top Icons */}
-    <div className="relay-icons">
+        {/* Top Icons */}
+        <div className="relay-icons">
 
-      <button
-        onClick={handleRemoteConnect}
-        disabled={loading}
-        className="relay-icon-btn connect"
-        title="Remote Connect"
-      >
-        🔗
-      </button>
+          <button
+            onClick={handleRemoteConnect}
+            disabled={loading}
+            className="relay-icon-btn connect"
+            title="Remote Connect"
+          >
+            🔗
+          </button>
 
-      <button
-        onClick={handleRemoteDisconnect}
-        disabled={loading}
-        className="relay-icon-btn disconnect"
-        title="Remote Disconnect"
-      >
-        ⚡
-      </button>
+          <button
+            onClick={handleRemoteDisconnect}
+            disabled={loading}
+            className="relay-icon-btn disconnect"
+            title="Remote Disconnect"
+          >
+            ⚡
+          </button>
 
-      <button
-        onClick={handleRefresh}
-        disabled={loading}
-        className="relay-icon-btn refresh"
-        title="Refresh"
-      >
-        🔄
-      </button>
-
-    </div>
-
-
-    {/* Image Area */}
-    <div className="relay-image-area">
-
-      {CONTROL_MODE_IMAGES[controlMode] ? (
-        <img
-          src={CONTROL_MODE_IMAGES[controlMode]}
-          alt={`Control Mode ${controlMode}`}
-          className="relay-image"
-        />
-      ) : (
-        <div className="relay-placeholder">
-
-          <div className="relay-placeholder-icon">⚡</div>
-
-          <div>Control Mode {controlMode}</div>
-
-          <div className="relay-placeholder-text">
-            Image placeholder - Add image path to CONTROL_MODE_IMAGES
-          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="relay-icon-btn refresh"
+            title="Refresh"
+          >
+            🔄
+          </button>
 
         </div>
-      )}
-
-    </div>
-
-  </div>
 
 
+        {/* Image Area */}
+        <div className="relay-image-area">
 
-  {/* RIGHT PANEL */}
+          {CONTROL_MODE_IMAGES[controlMode] ? (
+            <img
+              src={CONTROL_MODE_IMAGES[controlMode]}
+              alt={`Control Mode ${controlMode}`}
+              className="relay-image"
+            />
+          ) : (
+            <div className="relay-placeholder">
+
+              <div className="relay-placeholder-icon">⚡</div>
+
+              <div>Control Mode {controlMode}</div>
+
+              <div className="relay-placeholder-text">
+                Image placeholder - Add image path to CONTROL_MODE_IMAGES
+              </div>
+
+            </div>
+          )}
+
+        </div>
+
+      </div>
+
+
+
+      {/* RIGHT PANEL */}
   <div  className="relay-right">
 
 
-     <div className="relay-btn-group">
-
-        
-
-
-        <button className="lc-btn lc-btn-read" onClick={handleRead} disabled={isReading || isWriting}>
-  {isReading ? "Reading..." : "Read"}
-</button>
-
-<button  className="lc-btn lc-btn-write" onClick={handleWrite} disabled={isReading || isWriting}>
-  {isWriting ? "Writing..." : "Write"}
-</button>
-
-      </div>
-
-
-    {/* Relay Select */}
-    <div className="relay-top">
-
-
-      <div className="relay-select-box">
-
-        <label className="relay-label">
-          Relay select
-        </label>
-
-        <select
-          value={relaySelect}
-          onChange={(e) => setRelaySelect(e.target.value)}
-          className="relay-select"
-        >
-          <option value="Disconnect control (Main relay)">
-            Disconnect control(main relay)
-          </option>
-        </select>
-
-      </div>
+        <div className="relay-btn-group">
 
 
 
-     
 
-    </div>
+          <button className="lc-btn lc-btn-read" onClick={handleRead} disabled={isReading || isWriting}>
+            {isReading ? "Reading..." : "Read"}
+          </button>
 
+          {perms.writeMeter && (
+            <button className="lc-btn lc-btn-write" onClick={handleWrite} disabled={isReading || isWriting}>
+              {isWriting ? "Writing..." : "Write"}
+            </button>
+          )}
 
-
-    {/* Output state */}
-    <div className="relay-row">
-
-      <input
-        type="checkbox"
-        checked={selected.has(2)}
-        onChange={() => toggleCheckbox(2)}
-      />
-
-      <label className="relay-field-label">
-        Output state
-      </label>
-
-      <select
-        value={outputState}
-        disabled
-        className="relay-select disabled"
-      >
-        {OUTPUT_STATE_OPTIONS.map(opt => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-
-    </div>
-
-
-
-    {/* Control state */}
-    <div className="relay-row">
-
-      <input
-        type="checkbox"
-        checked={selected.has(3)}
-        onChange={() => toggleCheckbox(3)}
-      />
-
-      <label className="relay-field-label">
-        Control state
-      </label>
-
-      <select
-        value={controlState}
-        disabled
-        className="relay-select disabled"
-      >
-        {CONTROL_STATE_OPTIONS.map(opt => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-
-    </div>
-
-
-
-    {/* Control mode */}
-    <div className="relay-row">
-
-      <input
-        type="checkbox"
-        checked={selected.has(4)}
-        onChange={() => toggleCheckbox(4)}
-      />
-
-      <label className="relay-field-label">
-        Control mode
-      </label>
-
-      <select
-        value={controlMode}
-        onChange={(e) => setControlMode(e.target.value)}
-        className="relay-select"
-      >
-        {CONTROL_MODE_OPTIONS.map(opt => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-
-    </div>
-
-
-
-    {/* Method */}
-    <div className="relay-row">
-
-      <input
-        type="checkbox"
-        checked={selected.has(5)}
-        onChange={() => toggleCheckbox(5)}
-      />
-
-      <label className="relay-field-label">
-        Method
-      </label>
-
-      <select
-        value={method}
-        onChange={(e) => setMethod(e.target.value)}
-        className="relay-select"
-      >
-        {METHOD_OPTIONS.map(opt => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-
-    </div>
-
-
-
-    {/* Test Times */}
-    <div className="relay-row">
-      <label className="relay-field-label">
-        Test Times
-      </label>
-
-      <input
-        type="number"
-        value={testTimes}
-        onChange={(e) => setTestTimes(parseInt(e.target.value) || 1)}
-        className="relay-input"
-      />
-    </div>
-
-
-
-    {/* Hold Connection */}
-    <div className="relay-row">
-      <label className="relay-field-label">
-        Hold Connection(ms)
-      </label>
-
-      <input
-        type="number"
-        value={holdConnection}
-        onChange={(e) => setHoldConnection(parseInt(e.target.value) || 5000)}
-        className="relay-input"
-      />
-    </div>
-
-
-
-    {/* Hold Disconnection */}
-    <div className="relay-row">
-      <label className="relay-field-label">
-        Hold Disconnection(ms)
-      </label>
-
-      <input
-        type="number"
-        value={holdDisconnection}
-        onChange={(e) => setHoldDisconnection(parseInt(e.target.value) || 5000)}
-        className="relay-input"
-      />
-    </div>
-
-
-
-    {/* Log Area */}
-    <div className="relay-log">
-
-      {relayTestLog.length === 0 ? (
-
-        <div className="relay-log-empty">
-          No test results yet
         </div>
 
-      ) : (
 
-        relayTestLog.map((entry, index) => (
+        {/* Relay Select */}
+        <div className="relay-top">
 
-          <div key={index} className="relay-log-item">
 
-            <span className="relay-log-icon">
-              {entry.success ? "✅" : "❌"}
-            </span>
+          <div className="relay-select-box">
 
-            <span className={entry.success ? "success" : "fail"}>
-              {entry.action}
-            </span>
+            <label className="relay-label">
+              Relay select
+            </label>
+
+            <select
+              value={relaySelect}
+              onChange={(e) => setRelaySelect(e.target.value)}
+              className="relay-select"
+            >
+              <option value="Disconnect control (Main relay)">
+                Disconnect control(main relay)
+              </option>
+            </select>
 
           </div>
 
-        ))
-
-      )}
-
-    </div>
 
 
 
-    {/* Status */}
-    <div className="relay-status">
 
-      {relayTestResults.total > 0
-        ? `${relayTestResults.total}/${relayTestResults.failed}/${relayTestResults.successful}`
-        : "0/0/0"}
-
-    </div>
-
-
- <div> 
-    {/* Relay Test */}
-    <button
-      onClick={handleRelayTest}
-      disabled={loading}
-      className="relay-test-btn"
-    >
-      {loading ? "Testing..." : "Relay Test"}
-    </button>
-    </div>
+        </div>
 
 
 
-    {error && (
-      <div className="lc-error">
-        {error}
+        {/* Output state */}
+        <div className="relay-row">
+
+          <input
+            type="checkbox"
+            checked={selected.has(2)}
+            onChange={() => toggleCheckbox(2)}
+          />
+
+          <label className="relay-field-label">
+            Output state
+          </label>
+
+          <select
+            value={outputState}
+            disabled
+            className="relay-select disabled"
+          >
+            {OUTPUT_STATE_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+        </div>
+
+
+
+        {/* Control state */}
+        <div className="relay-row">
+
+          <input
+            type="checkbox"
+            checked={selected.has(3)}
+            onChange={() => toggleCheckbox(3)}
+          />
+
+          <label className="relay-field-label">
+            Control state
+          </label>
+
+          <select
+            value={controlState}
+            disabled
+            className="relay-select disabled"
+          >
+            {CONTROL_STATE_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+        </div>
+
+
+
+        {/* Control mode */}
+        <div className="relay-row">
+
+          <input
+            type="checkbox"
+            checked={selected.has(4)}
+            onChange={() => toggleCheckbox(4)}
+          />
+
+          <label className="relay-field-label">
+            Control mode
+          </label>
+
+          <select
+            value={controlMode}
+            onChange={(e) => setControlMode(e.target.value)}
+            className="relay-select"
+          >
+            {CONTROL_MODE_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+        </div>
+
+
+
+        {/* Method */}
+        <div className="relay-row">
+
+          <input
+            type="checkbox"
+            checked={selected.has(5)}
+            onChange={() => toggleCheckbox(5)}
+          />
+
+          <label className="relay-field-label">
+            Method
+          </label>
+
+          <select
+            value={method}
+            onChange={(e) => setMethod(e.target.value)}
+            className="relay-select"
+          >
+            {METHOD_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+        </div>
+
+
+
+        {/* Test Times */}
+        <div className="relay-row">
+          <label className="relay-field-label">
+            Test Times
+          </label>
+
+          <input
+            type="number"
+            value={testTimes}
+            onChange={(e) => setTestTimes(parseInt(e.target.value) || 1)}
+            className="relay-input"
+          />
+        </div>
+
+
+
+        {/* Hold Connection */}
+        <div className="relay-row">
+          <label className="relay-field-label">
+            Hold Connection(ms)
+          </label>
+
+          <input
+            type="number"
+            value={holdConnection}
+            onChange={(e) => setHoldConnection(parseInt(e.target.value) || 5000)}
+            className="relay-input"
+          />
+        </div>
+
+
+
+        {/* Hold Disconnection */}
+        <div className="relay-row">
+          <label className="relay-field-label">
+            Hold Disconnection(ms)
+          </label>
+
+          <input
+            type="number"
+            value={holdDisconnection}
+            onChange={(e) => setHoldDisconnection(parseInt(e.target.value) || 5000)}
+            className="relay-input"
+          />
+        </div>
+
+
+
+        {/* Log Area */}
+        <div className="relay-log">
+
+          {relayTestLog.length === 0 ? (
+
+            <div className="relay-log-empty">
+              No test results yet
+            </div>
+
+          ) : (
+
+            relayTestLog.map((entry, index) => (
+
+              <div key={index} className="relay-log-item">
+
+                <span className="relay-log-icon">
+                  {entry.success ? "✅" : "❌"}
+                </span>
+
+                <span className={entry.success ? "success" : "fail"}>
+                  {entry.action}
+                </span>
+
+              </div>
+
+            ))
+
+          )}
+
+        </div>
+
+
+
+        {/* Status */}
+        <div className="relay-status">
+
+          {relayTestResults.total > 0
+            ? `${relayTestResults.total}/${relayTestResults.failed}/${relayTestResults.successful}`
+            : "0/0/0"}
+
+        </div>
+
+
+        <div>
+          {/* Relay Test */}
+          <button
+            onClick={handleRelayTest}
+            disabled={loading}
+            className="relay-test-btn"
+          >
+            {loading ? "Testing..." : "Relay Test"}
+          </button>
+        </div>
+
+
+
+        {error && (
+          <div className="lc-error">
+            {error}
+          </div>
+        )}
+
+
+
       </div>
-    )}
 
 
 
-  </div>
-
-
-
-</div>
+    </div>
   );
 };
 

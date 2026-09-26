@@ -9,10 +9,7 @@ import { Clock } from 'lucide-react';
 import ProgressModal from '../ProgressModal';
 
 import { formatInTimeZone } from 'date-fns-tz';
-
-
-
-
+import { PERMISSIONS } from '../../permissions';
 
 const OPTIONS = [
   { label: 'Date Only (Time)', index: 2 },
@@ -34,7 +31,7 @@ function TimeSettingsChart1() {
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [writeDateTime, setWriteDateTime] = useState('');
   const [writeMinutes, setWriteMinutes] = useState('');
-  const [writeOffset, setWriteOffset] = useState(''); 
+  const [writeOffset, setWriteOffset] = useState('');
 
 
   const serial = 1234; // Replace with dynamic serial if needed
@@ -53,7 +50,7 @@ function TimeSettingsChart1() {
     }
     setWriteDateTime('');
     setWriteMinutes('');
-    setWriteOffset('');  
+    setWriteOffset('');
     setShowWriteModal(true);
   };
 
@@ -62,12 +59,12 @@ function TimeSettingsChart1() {
   const formatValue = (value, idx) => {
     if (value == null) return 'N/A';
     if (idx === '2' && typeof value === 'object') {
-    const {
-      Date: dateStr,
-      Time: timeStr,
-      ['Clock Status']: statusStr,
-    } = value;
-    return `${dateStr} ${timeStr}`;
+      const {
+        Date: dateStr,
+        Time: timeStr,
+        ['Clock Status']: statusStr,
+      } = value;
+      return `${dateStr} ${timeStr}`;
     }
     if (idx === '5' || idx === '6') return `${value.Date} ${value.Time}`;
     if (idx === '2') return value.toString();
@@ -135,7 +132,7 @@ function TimeSettingsChart1() {
 
   
 
- const handleWriteSubmit = async () => {
+  const handleWriteSubmit = async () => {
     setShowProgressModal(true);
     const attrIdx = Array.from(selected)[0];
     let payloadValue;
@@ -220,11 +217,11 @@ function TimeSettingsChart1() {
       if (!writeDateTime) return;
       // Append seconds and fixed IST offset
       payloadValue = `${writeDateTime}:00+05:30`;
-      
+
     } else if (attrIdx === 3) {
       if (!writeMinutes) return;
       payloadValue = writeMinutes;
-      
+
     } else {
       setError('Writing not supported for this parameter.');
       return;
@@ -249,18 +246,18 @@ function TimeSettingsChart1() {
       );
 
     console.log("Response",response.data)
-      
-    // resp.data is the single write-response object
-    const { attribute_index, written_value } = response.data;
-    const idx = Number(attribute_index);
-    const opt = OPTIONS.find(o => o.index === idx);
 
-    const extracted = [
-      {
-        label: opt ? opt.label : `Parameter ${idx}`,
-        value: formatValue(written_value, idx),
-      }
-    ];
+      // resp.data is the single write-response object
+      const { attribute_index, written_value } = response.data;
+      const idx = Number(attribute_index);
+      const opt = OPTIONS.find(o => o.index === idx);
+
+      const extracted = [
+        {
+          label: opt ? opt.label : `Parameter ${idx}`,
+          value: formatValue(written_value, idx),
+        }
+      ];
 
       
 
@@ -273,53 +270,51 @@ function TimeSettingsChart1() {
       //setShowWriteModal(false);
     }
   };
-  
-  
+
+  const role = localStorage.getItem('userRole');
+  const perms = PERMISSIONS[role] || {};
 
   return (
     <div className="time-settings-container">
-      <div> 
-      <div className="time-settings-header">
+      <div>
+        <div className="time-settings-header">
          <Clock  style={{ color: '#f88b3e',margin:'2px' }} />
-        <span className="time-settings-title">Time Settings Dashboard</span>
-        
-      </div>
+          <span className="time-settings-title">Time Settings Dashboard</span>
 
-      <div className="options-container">
-        <div className="options-grid">
-          {OPTIONS.map(opt => (
-            <label key={opt.index} className="option-label">
-              <input
-                type="checkbox"
-                className="option-checkbox"
-                checked={selected.has(opt.index)}
-                onChange={() => toggle(opt.index)}
-              />
-              <span className="option-text">{opt.label}</span>
-            </label>
-          ))}
         </div>
+
+        <div className="options-container">
+          <div className="options-grid">
+            {OPTIONS.map(opt => (
+              <label key={opt.index} className="option-label">
+                <input
+                  type="checkbox"
+                  className="option-checkbox"
+                  checked={selected.has(opt.index)}
+                  onChange={() => toggle(opt.index)}
+                />
+                <span className="option-text">{opt.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {error && <div className="error-message">{error}</div>}
+
+        <div className="button-container">
+
+          <button
+            className={`read-button${loading ? ' loading' : ''}`}
+            onClick={handleRead}
+            disabled={loading}
+          >
+            {loading ? 'Reading...' : 'Read'}
+          </button>
+
+          {perms.writeMeter && (
+            <button className={`read-button`} onClick={handleWriteClick}>Write OBIS</button>
+          )}       </div>
       </div>
-
-      {error && <div className="error-message">{error}</div>}
-
-      <div className="button-container"> 
-
-      <button
-        className={`read-button${loading ? ' loading' : ''}`}
-        onClick={handleRead}
-        disabled={loading}
-      >
-        {loading ? 'Reading...' : 'Read'}
-      </button>
-
-
-       <button className={`read-button`}  onClick={handleWriteClick} >Write</button>
-       </div>
-      </div>
-
-    
-    
 
       {showWriteModal && (
         <div className="modal-overlay">
@@ -327,27 +322,27 @@ function TimeSettingsChart1() {
             {Array.from(selected)[0] === 2 && (
 
 
-<div className="form-field">
-  <label htmlFor="write-datetime" className="form-label">
-    Date &amp; Time
-  </label>
-  <div className="input-with-icon datetime-picker">
-    <CalendarIcon className="icon" />
-    <input
-      id="write-datetime"
-      type="datetime-local"
-      className="form-input"
-      value={writeDateTime}
-      onChange={e => setWriteDateTime(e.target.value)}
-      aria-label="Choose date and time"
-    />
-  </div>
+              <div className="form-field">
+                <label htmlFor="write-datetime" className="form-label">
+                  Date &amp; Time
+                </label>
+                <div className="input-with-icon datetime-picker">
+                  <CalendarIcon className="icon" />
+                  <input
+                    id="write-datetime"
+                    type="datetime-local"
+                    className="form-input"
+                    value={writeDateTime}
+                    onChange={e => setWriteDateTime(e.target.value)}
+                    aria-label="Choose date and time"
+                  />
+                </div>
 
-  
-                  <label htmlFor="write-offset" className="form-label">
-                    Deviation (±HH:MM)
-                  </label>
-                  <div className="input-with-icon datetime-picker">
+
+                <label htmlFor="write-offset" className="form-label">
+                  Deviation (±HH:MM)
+                </label>
+                <div className="input-with-icon datetime-picker">
                   <input
                     id="write-offset"
                     type="text"
@@ -356,12 +351,12 @@ function TimeSettingsChart1() {
                     value={writeOffset}
                     onChange={e => setWriteOffset(e.target.value)}
                   />
-                  </div>
+                </div>
                
 
 
 
-</div>
+              </div>
 
            
      
@@ -370,37 +365,36 @@ function TimeSettingsChart1() {
             {Array.from(selected)[0] === 3 && (
               <div className="form-field">
                 <label className="form-label">Timezone (min):</label>
-                 <div className="input-with-icon">
-                <Clock className="icon" />
-                <input
-                id="write-datetime"
-             
-                  className="form-input"
-                  type="number"
-                  value={writeMinutes}
-                  onChange={e => setWriteMinutes(e.target.value)}
-                />
+                <div className="input-with-icon">
+                  <Clock className="icon" />
+                  <input
+                    id="write-datetime"
+
+                    className="form-input"
+                    type="number"
+                    value={writeMinutes}
+                    onChange={e => setWriteMinutes(e.target.value)}
+                  />
                 </div>
               </div>
             )}
-            
-             {error && <div className="error-message">{error}</div>}
 
-     
+            {error && <div className="error-message">{error}</div>}
+
             <button disabled={loading} onClick={handleWriteSubmit}>
 
-              {loading ? 'Submitting…' : 'Submit'} 
+              {loading ? 'Submitting…' : 'Submit'}
 
 
             </button>
             <button onClick={() => {
-    setShowWriteModal(false);
-    setError(null);
-    // if you also want to clear old results or inputs, do that here too:
-    // setResult(null);
-    // setWriteDateTime('');
-    // setWriteMinutes('');
-  }}>Cancel</button>
+              setShowWriteModal(false);
+              setError(null);
+              // if you also want to clear old results or inputs, do that here too:
+              // setResult(null);
+              // setWriteDateTime('');
+              // setWriteMinutes('');
+            }}>Cancel</button>
           </div>
         </div>
       )}
@@ -410,7 +404,7 @@ function TimeSettingsChart1() {
 
     
     
-    
+
       {result && (
         <div className="results-container">
           {result.map((r, i) => (
@@ -434,7 +428,7 @@ function TimeSettingsChart1() {
 export default function TimeSettingsChart() {
   const [selected, setSelected] = useState(new Set());
   const [result, setResult] = useState(null);
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showWriteModal, setShowWriteModal] = useState(false);
@@ -445,7 +439,11 @@ export default function TimeSettingsChart() {
   const [writeOffset, setWriteOffset] = useState('');
   const [writeMinutes, setWriteMinutes] = useState('');
 
-  const serial = localStorage.getItem('selectedSerialNumber');; // Replace with dynamic serial if needed
+
+  const role = localStorage.getItem('userRole');
+  const perms = PERMISSIONS[role] || {};
+
+  const serial = localStorage.getItem('selectedSerialNumber'); // Replace with dynamic serial if needed
 
   const toggle = (idx) => {
     const copy = new Set(selected);
@@ -481,22 +479,21 @@ export default function TimeSettingsChart() {
   };
 
   const formatValue_Datetime = (value) => {
-  if (!value || typeof value !== 'object') return 'N/A';
+    if (!value || typeof value !== 'object') return 'N/A';
 
-  const date = value.Date || '';
-  const time = value.Time || '';
+    const date = value.Date || '';
+    const time = value.Time || '';
 
-  // Extract time and deviation
-  const match = time.match(/^([\d:]+)\s*\(Deviation:\s*([^)]+)\)/);
-  if (match) {
-    const [_, timeStr, deviation] = match;
-    return `${date} - ${timeStr} (${deviation})`;
-  }
+    // Extract time and deviation
+    const match = time.match(/^([\d:]+)\s*\(Deviation:\s*([^)]+)\)/);
+    if (match) {
+      const [_, timeStr, deviation] = match;
+      return `${date} - ${timeStr} (${deviation})`;
+    }
 
-  // Fallback if format is not as expected
-  return `${date} - ${time}`;
-};
-
+    // Fallback if format is not as expected
+    return `${date} - ${time}`;
+  };
 
   const handleRead3 = async () => {
     if (!serial) {
@@ -534,20 +531,20 @@ export default function TimeSettingsChart() {
       );
 
       const extracted = response.data.data.map(item => {
-  const opt = OPTIONS.find(o => o.index.toString() === item.attribute_index);
+        const opt = OPTIONS.find(o => o.index.toString() === item.attribute_index);
 
-  const value = item.value;
-  const isDateTimeValue = value && typeof value === 'object' && 'Date' in value && 'Time' in value;
+        const value = item.value;
+        const isDateTimeValue = value && typeof value === 'object' && 'Date' in value && 'Time' in value;
 
-  return {
-    label: opt ? opt.label : `Parameter ${item.attribute_index}`,
-    value: isDateTimeValue
-      ? formatValue_Datetime(value)
-      : formatValue(value, item.attribute_index),
-  };
-});
+        return {
+          label: opt ? opt.label : `Parameter ${item.attribute_index}`,
+          value: isDateTimeValue
+            ? formatValue_Datetime(value)
+            : formatValue(value, item.attribute_index),
+        };
+      });
 
-setResult(extracted);
+      setResult(extracted);
 
     } catch (e) {
       console.error('API Error:', e);
@@ -634,7 +631,7 @@ setResult(extracted);
   };
 
 
-   const handleRead = async () => {
+  const handleRead = async () => {
     if (!serial) {
       setError('No serial number selected');
       setTimeout(() => setError(null), 3000);
@@ -667,48 +664,48 @@ setResult(extracted);
 
       console.log("Full Response:", response);
       console.log("Response.data:", response.data);
-      
+
       // Check if response.data is a string that needs parsing
       let parsedData = response.data;
       if (typeof parsedData === 'string') {
-      const lines = parsedData.split('\n');
-      const allResults = [];
+        const lines = parsedData.split('\n');
+        const allResults = [];
 
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('data:')) {
-          try {
-            const jsonStr = trimmed.slice(5).trim();
-            const parsed = JSON.parse(jsonStr);
-            if (parsed.status === 'success' && parsed.attribute_index) {
-              allResults.push(parsed);
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data:')) {
+            try {
+              const jsonStr = trimmed.slice(5).trim();
+              const parsed = JSON.parse(jsonStr);
+              if (parsed.status === 'success' && parsed.attribute_index) {
+                allResults.push(parsed);
+              }
+            } catch (e) {
+              // skip malformed lines
             }
-          } catch (e) {
-            // skip malformed lines
           }
+        }
+
+        if (allResults.length > 0) {
+          const extracted = allResults.map(item => {
+            const opt = OPTIONS.find(o => o.index === parseInt(item.attribute_index));
+            const value = item.value;
+            const displayValue =
+              value && typeof value === 'object' && 'Date' in value && 'Time' in value
+                ? `${value.Date} ${value.Time}`
+                : String(value ?? 'N/A');
+            return {
+              label: opt ? opt.label : `Parameter ${item.attribute_index}`,
+              value: displayValue,
+            };
+          });
+          setResult(extracted);
+          setLoading(false);
+          setShowProgressModal(false);
+          return;
         }
       }
 
-      if (allResults.length > 0) {
-        const extracted = allResults.map(item => {
-          const opt = OPTIONS.find(o => o.index === parseInt(item.attribute_index));
-          const value = item.value;
-          const displayValue =
-            value && typeof value === 'object' && 'Date' in value && 'Time' in value
-              ? `${value.Date} ${value.Time}`
-              : String(value ?? 'N/A');
-          return {
-            label: opt ? opt.label : `Parameter ${item.attribute_index}`,
-            value: displayValue,
-          };
-        });
-        setResult(extracted);
-        setLoading(false);
-        setShowProgressModal(false);
-        return;
-      }
-    }
-      
       console.log("Parsed data:", parsedData);
 
       // Navigate through nested data structures
@@ -717,11 +714,11 @@ setResult(extracted);
         console.log("Unwrapping nested data layer");
         actualData = actualData.data;
       }
-      
+
       console.log("Final actualData:", actualData);
       console.log("Has results array?", actualData?.results ? "YES" : "NO");
       console.log("Results:", actualData?.results);
-      
+
       if (actualData && actualData.status === "success") {
         // Check if we have multiple results (batch read)
         if (actualData.results && Array.isArray(actualData.results) && actualData.results.length > 0) {
@@ -732,9 +729,9 @@ setResult(extracted);
             .map(item => {
               const opt = OPTIONS.find(o => o.index === parseInt(item.attribute_index));
               const value = item.value;
-              
+
               console.log(`Processing item - attribute_index: ${item.attribute_index}, value:`, value);
-              
+
               const displayValue =
                 value && typeof value === "object" && "Date" in value && "Time" in value
                   ? `${value.Date} ${value.Time}`
@@ -745,7 +742,7 @@ setResult(extracted);
                 value: displayValue,
               };
             });
-          
+
           console.log("Extracted results:", extracted);
           setResult(extracted);
           alert(`Success! Retrieved ${extracted.length} clock parameter(s).`);
@@ -754,7 +751,7 @@ setResult(extracted);
           console.log("Processing single result");
           const opt = OPTIONS.find(o => o.index === parseInt(actualData.attribute_index));
           const value = actualData.value;
-          
+
           const displayValue =
             value && typeof value === "object" && "Date" in value && "Time" in value
               ? `${value.Date} ${value.Time}`
@@ -766,7 +763,7 @@ setResult(extracted);
               value: displayValue,
             },
           ]);
-          
+
           alert(`Success! Retrieved clock data.`);
         }
       } else {
@@ -818,9 +815,11 @@ setResult(extracted);
           {loading ? 'Reading...' : 'Read'}
         </button>
 
-        <button className="read-button" onClick={handleWriteClick}>
-          Write
-        </button>
+        {perms.writeMeter && (
+          <button className="read-button" onClick={handleWriteClick}>
+            Write
+          </button>
+        )}
       </div>
 
       {showWriteModal && (
@@ -909,7 +908,7 @@ setResult(extracted);
           ))}
         </div>
       )}
-      
+
       <ProgressModal
         isOpen={showProgressModal}
         onClose={() => setShowProgressModal(false)}
