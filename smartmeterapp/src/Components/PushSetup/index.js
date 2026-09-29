@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import './index.css';
 import axios from 'axios';
 import BASE_URL from '../../apiConfig'; // Adjust path based on your file structure
+import { PERMISSIONS } from '../../permissions.js';
 
 const OtherParameters1 = () => {
 
@@ -205,6 +206,9 @@ const OtherParameters1 = () => {
     </div>
   );
 };
+const role = localStorage.getItem('userRole');
+
+const perms = PERMISSIONS[role] || {};
 
 const OtherParameters12 = () => {
 
@@ -517,6 +521,9 @@ const OtherParameters12 = () => {
 }
 
 const OtherParameters = () => {
+  const role = localStorage.getItem('userRole');
+
+  const perms = PERMISSIONS[role] || {};
 
   const [formData, setFormData] = useState({
     send_destination: false,
@@ -736,6 +743,7 @@ const OtherParameters = () => {
     }
   };
 
+
   return (
     <div className="load-control-container">
       <div className="pushsetup-form-container">
@@ -891,15 +899,17 @@ const OtherParameters = () => {
             READ
           </button>
         </div>
-        <div className="security-form">
-          <button
-            type="button"
-            onClick={handleSetData}
-            style={{ marginLeft: "42%" }} className='scheduler-add-button'
-          >
-            write
-          </button>
-        </div>
+        {perms.writeMeter && (
+          <div className="security-form">
+            <button
+              type="button"
+              onClick={handleSetData}
+              style={{ marginLeft: "42%" }} className='scheduler-add-button'
+            >
+              WRITE
+            </button>
+          </div>
+        )}
 
       </div>
     </div>
