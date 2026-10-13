@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { TbUserCode } from "react-icons/tb";
@@ -17,17 +17,17 @@ function LoginSignup() {
   const [userCode, setUserCode] = useState('');
   const [account, setAccount] = useState('');
   const [password, setPassword] = useState('');
-  
+
   const [message, setMessage] = useState('');
   const [error, setError] = useState(true);
   const [userId, setUserId] = useState('');
-  
+
   const navigate = useNavigate();
 
-  
+
 
   const generateUserCode = async () => {
-   
+
 
     try {
       // endpoint: POST /api/step1-generate-code/
@@ -44,8 +44,8 @@ function LoginSignup() {
         console.log("Generated user code:", code); // <-- requirement: print to console
         setUserCode(code);                          // set state
         localStorage.setItem("userCode", code);     // persist it (step saved)
-        
-        
+
+
       } else {
         const serverError = response?.data?.error || "Unknown server response";
         throw new Error(serverError);
@@ -53,32 +53,30 @@ function LoginSignup() {
     } catch (err) {
       console.error("Generate user code failed:", err);
       setError(err.message || "Failed to generate user code");
-    } 
+    }
   };
 
 
 
-  const getSerialNumber1 = async (userCode)=> 
-  {
-    const data={
+  const getSerialNumber1 = async (userCode) => {
+    const data = {
       "user_code": userCode
 
-   
+
     }
 
-    try 
-    { 
-     const response= await axios.post(`${BASE_URL}/api/step2-generate-serial/`, data) 
+    try {
+      const response = await axios.post(`${BASE_URL}/api/step2-generate-serial/`, data)
 
-     const success = response?.data?.success;
-     const serial_number = response?.data?.serial_number || response?.data?.serial_number || "";
+      const success = response?.data?.success;
+      const serial_number = response?.data?.serial_number || response?.data?.serial_number || "";
 
       if (success && serial_number) {
-        
 
-        setSerialNumber(serial_number)    
-                              // set state
-        
+
+        setSerialNumber(serial_number)
+        // set state
+
       } else {
         const serverError = response?.data?.error || "Unknown server response";
         throw new Error(serverError);
@@ -86,8 +84,7 @@ function LoginSignup() {
 
 
     }
-    catch (err) 
-    {
+    catch (err) {
       console.error("Generate user code failed:", err);
       setError(err.message || "Failed to generate user code");
     }
@@ -95,22 +92,20 @@ function LoginSignup() {
 
   // ✅ Redirect if already logged in
   useEffect(() => {
-   
-    const serialVerified=localStorage.getItem('serialVerified')
-    console.log("serialVerified",serialVerified)
-    if (serialVerified==="true") 
-    {
+
+    const serialVerified = localStorage.getItem('serialVerified')
+    console.log("serialVerified", serialVerified)
+    if (serialVerified === "true") {
       setView('login')
       setError(false)
     }
-   
-    else 
-    {
-      
+
+    else {
+
       generateUserCode()
     }
   }, []);
-  
+
   const handleRegistrationSubmit1 = async (e) => {
     e.preventDefault();
 
@@ -131,20 +126,20 @@ function LoginSignup() {
       }
     }
   };
-  
 
 
-  
+
+
   const handleRegistrationSubmit = async (event) => {
-   
-     event.preventDefault()
+
+    event.preventDefault()
     try {
       const payload = {
         user_code: userCode,
         serial_number: serialNumber,
       };
 
-      console.log(userCode,serialNumber)
+      console.log(userCode, serialNumber)
 
       // POST request to verification endpoint
       const res = await axios.post(
@@ -163,21 +158,21 @@ function LoginSignup() {
       // e.g. { success: true, message: "...", ... }
       const data = res?.data || {};
       if (data.success) {
-       
+
         setMessage(data.message || "Serial verified successfully.");
         // optional: persist verification info
-        
+
         localStorage.setItem("serialVerified", "true");
         setView('login')
       } else {
-       
+
         const errMsg = data.error || data.message || "Verification failed";
         setMessage(errMsg);
         localStorage.setItem("serialVerified", "false");
       }
     } catch (err) {
       console.error("Verification request failed:", err);
-     
+
       // prefer server error message if present
       const errMsg =
         err?.response?.data?.error ||
@@ -186,7 +181,7 @@ function LoginSignup() {
         "Network or server error";
       setMessage(errMsg);
       localStorage.setItem("serialVerified", "false");
-    } 
+    }
   };
 
   const handleLoginSubmit = async (e) => {
@@ -204,13 +199,13 @@ function LoginSignup() {
 
       if (response.status === 200) {
         console.log('Login successful, attempting fullscreen...');
-        
+
         setUserId(response.data.user_id);
         setUserCode("")
         setAccount("")
         setPassword("")
         setSerialNumber("")
-        
+
         localStorage.setItem('userId', response.data.user_id);
         localStorage.setItem('userRole', response.data.user_type);
 
@@ -241,98 +236,106 @@ function LoginSignup() {
     <div className='login_Container'>
       <div className={`container ${view === 'signup' ? 's--signup' : ''}`}>
         <div className="form_login sign-in">
-        <div className="form_inside_Container" > 
-          <form  onSubmit={handleLoginSubmit}>
-          <h2 className='Create_Account_heading'>Welcome</h2>
-          <label className='login_label'>
-          <span> Account </span>
-          <div className="input-wrapper">
-        
-              <input className='login_input'
-              
-                type="text"
-                value={account}
-                onChange={(e) => setAccount(e.target.value)}
-                required
-              />
-              <FaUserAlt className="input-image" />
-             </div>
-            </label>
-            <label className='login_label' >
-              <span>Password</span>
-              <div className="input-wrapper"> 
-            
-              <input
-               className='login_input'
-                type="password"
-              
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-               
-               <RiLockPasswordFill className="input-image"/>
-               </div>
-            </label>
-           
-            <button type="submit" className="Sign_in_button">Sign In</button>
-          </form>
-     
-          {error && <h1 style={{ color: 'red', fontSize: '18px' }}>Invalid username and password</h1>}
-         
-        </div>
+          <div className="form_inside_Container" >
+            <form onSubmit={handleLoginSubmit}>
+              <h2 className='Create_Account_heading'>Welcome</h2>
+              <label className='login_label'>
+                <span> Account </span>
+                <div className="input-wrapper">
+
+                  <input className='login_input'
+
+                    type="text"
+                    value={account}
+                    onChange={(e) => setAccount(e.target.value)}
+                    required
+                  />
+                  <FaUserAlt className="input-image" />
+                </div>
+              </label>
+              <label className='login_label' >
+                <span>Password</span>
+                <div className="input-wrapper">
+
+                  <input
+                    className='login_input'
+                    type="password"
+
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+
+                  <RiLockPasswordFill className="input-image" />
+                </div>
+              </label>
+
+              <button type="submit" className="Sign_in_button">Sign In</button>
+            </form>
+
+            {error && <h1 style={{ color: 'red', fontSize: '18px' }}>Invalid username and password</h1>}
+
+          </div>
         </div>
 
         <div className="sub-container">
           <div className="image-container">
-           
-            
+
+
           </div>
-  
-          <div className="form_login sign-up"> 
-          
-           
-           
-            <form  className='form_inside_Container' onSubmit={handleRegistrationSubmit}>
-            <h2 className='Create_Account_heading'>Create your Account</h2>
-          
-              <label  className='login_label'>
+
+          <div className="form_login sign-up">
+
+
+
+            <form className='form_inside_Container' onSubmit={handleRegistrationSubmit}>
+              <h2 className='Create_Account_heading'>Create your Account</h2>
+
+              <label className='login_label'>
                 <span>User Code</span>
-            
-                <div className="input-wrapper"> 
-                <input readOnly
-               className='login_input'
 
-                  type="text"
-                  value={userCode}
-                  onChange={(e) => setUserCode(e.target.value)}
-                  required
-                />
+                <div className="input-wrapper">
+                  <input readOnly
+                    className='login_input'
 
-                <TbUserCode className="input-image" />
+                    type="text"
+                    value={userCode}
+                    onChange={(e) => setUserCode(e.target.value)}
+                    required
+                  />
+
+                  <TbUserCode className="input-image" />
                 </div>
               </label>
-              <label  className='login_label'>
+              <label className='login_label'>
                 <span id='label_headings'>Serial Number</span>
                 <div className="input-wrapper">
-                <input
-                 className='login_input'
-                  type="text"
-                  value={serialNumber}
-                  onChange={(e) => setSerialNumber(e.target.value)}
-                  required
-                />
-                
-                 <img src={myImage} alt="serial number" className="input-image" />
-                 </div>
+                  <input
+                    className='login_input'
+                    type="text"
+                    value={serialNumber}
+                    onChange={(e) => setSerialNumber(e.target.value)}
+                    required
+                  />
 
-                
-              </label> 
-              <div className='button_Container'> 
-              <button type="submit" className="submit">Sign Up</button>
-           
+                  <img src={myImage} alt="serial number" className="input-image" />
+                </div>
+
+
+              </label>
+              <div className='button_Container'>
+                <button type="submit" className="submit">Sign Up</button>
+
               </div>
               <h1 style={{ color: 'red', fontSize: '18px' }}>{message}</h1>
+
+              <button
+                type="button"
+                className="manufacturer_link"
+                onClick={() => navigate('/manufacturer')}
+              >
+                Are you the manufacturer?
+              </button>
 
             </form>
           </div>

@@ -13,6 +13,8 @@ import { AlertProvider, setupCustomAlert, useAlert } from './Components/CustomAl
 import { enterFullscreen } from './utils/fullscreen';
 import { checkAndClearStaleCache } from './utils/cacheManager';
 
+import Manufacturer from './Components/Manufacturer/Manufacturer';
+
 import './App.css';
 
 function AppContent() {
@@ -94,9 +96,9 @@ function AppContent() {
         document.mozFullScreenElement ||
         document.msFullscreenElement
       );
-      
+
       console.log('Fullscreen change detected. In fullscreen:', isInFullscreen, 'Locked:', fullscreenLocked);
-      
+
       if (!isInFullscreen && fullscreenLocked && fullscreenActivated) {
         console.log('Fullscreen exited unexpectedly, re-entering IMMEDIATELY...');
         enterFullscreen()
@@ -125,7 +127,7 @@ function AppContent() {
           document.mozFullScreenElement ||
           document.msFullscreenElement
         );
-        
+
         if (!isInFullscreen) {
           console.log('Tab became visible and not in fullscreen, re-entering...');
           setTimeout(() => {
@@ -155,6 +157,7 @@ function AppContent() {
       <Router>
         <Routes>
           <Route path="/" element={<LoginSignup />} />
+          <Route path="/manufacturer" element={<Manufacturer />} />   {/* add this */}
           <Route
             path="/dashboard"
             element={
@@ -173,9 +176,9 @@ function AppContent() {
           />
         </Routes>
       </Router>
-      <FullscreenButton 
-        fullscreenLocked={fullscreenLocked} 
-        setFullscreenLocked={setFullscreenLocked} 
+      <FullscreenButton
+        fullscreenLocked={fullscreenLocked}
+        setFullscreenLocked={setFullscreenLocked}
       />
     </div>
   );

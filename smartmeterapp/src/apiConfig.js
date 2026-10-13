@@ -5,7 +5,7 @@ const hostname = window.location.hostname;
 
 let BASE_URL;
 
-if (hostname === 'localhost' || hostname === '127.0.0.1') {
+if (hostname === 'localhost' || hostname === '127.0.0.1cd ') {
   // Local development
   BASE_URL = 'http://127.0.0.1:8000/meter1';
 } else if (hostname.includes('trycloudflare.com')) {
