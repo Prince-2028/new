@@ -24,12 +24,12 @@ jobs:
 
       # Step 3: Install frontend dependencies
       - name: Install frontend dependencies
-        working-directory: "Smart MeterApp"
+        working-directory: "smartmeterapp"
         run: npm ci
 
       # Step 4: Build frontend
       - name: Build frontend
-        working-directory: "Smart MeterApp"
+        working-directory: "smartmeterapp"
         run: npm run build
 
       # Step 5: Success message
