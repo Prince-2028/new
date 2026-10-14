@@ -12,92 +12,105 @@ permissions:
 
 jobs:
   build-desktop:
-    name: Build Backend, Frontend and Electron EXE
+    name: Build Backend, Frontend and Electron Installer
     runs-on: windows-latest
 
     steps:
-      # 1. Checkout code
+      # 1. Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Setup Python for backend EXE
+      # 2. Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
-      # 3. Install backend dependencies
-      # Assumes backend/requirements.txt exists
+      # 3. Check actual backend files
+      - name: Check backend files
+        shell: pwsh
+        run: |
+          Write-Host "Checking smartmeter1 folder..."
+          Get-ChildItem smartmeter1
+
+          if (!(Test-Path "smartmeter1/requirements.txt")) {
+            throw "smartmeter1/requirements.txt not found"
+          }
+
+      # 4. Install backend dependencies
       - name: Install backend dependencies
-        working-directory: backend
+        working-directory: smartmeter1
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller
 
-      # 4. Build backend EXE
-      # Assumes backend/manage.spec exists
+      # 5. Build backend EXE
+      # Assumes smartmeter1/manage.spec exists
       - name: Build backend EXE
-        working-directory: backend
+        working-directory: smartmeter1
         run: |
-          pyinstaller --noconfirm --clean manage.spec
+          if (Test-Path "manage.spec") {
+            python -m PyInstaller --noconfirm --clean manage.spec
+          } else {
+            throw "manage.spec not found in smartmeter1. Update this step to use your actual PyInstaller command."
+          }
 
-      # 5. Setup Node.js
+      # 6. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # 6. Install frontend dependencies
+      # 7. Install frontend dependencies
       - name: Install frontend dependencies
         working-directory: smartmeterapp
         run: npm ci
 
-      # 7. Build React frontend
+      # 8. Build React frontend
       - name: Build frontend
         working-directory: smartmeterapp
         run: npm run build
         env:
           CI: "false"
 
-      # 8. Copy backend EXE and frontend build into Electron
-      # Assumes Electron main.js expects:
-      # electron/backend/manage.exe
-      # electron/frontend/build/
+      # 9. Prepare Electron files
+      # Assumes Electron folder is named electron/
+      # and PyInstaller generates smartmeter1/dist/manage.exe
       - name: Prepare Electron files
         shell: pwsh
         run: |
-          if (!(Test-Path "backend/dist/manage.exe")) {
-            throw "Backend EXE not found"
-          }
-
           if (!(Test-Path "smartmeterapp/build/index.html")) {
-            throw "Frontend build not found"
+            throw "React build not found"
           }
 
-          New-Item -ItemType Directory -Force `
-            "electron/backend" | Out-Null
+          if (!(Test-Path "smartmeter1/dist/manage.exe")) {
+            throw "Backend EXE not found at smartmeter1/dist/manage.exe"
+          }
 
           New-Item -ItemType Directory -Force `
             "electron/frontend/build" | Out-Null
 
-          Copy-Item "backend/dist/manage.exe" `
-            "electron/backend/manage.exe" -Force
+          New-Item -ItemType Directory -Force `
+            "electron/backend" | Out-Null
 
           Copy-Item "smartmeterapp/build/*" `
             "electron/frontend/build/" -Recurse -Force
 
-      # 9. Install Electron dependencies
+          Copy-Item "smartmeter1/dist/manage.exe" `
+            "electron/backend/manage.exe" -Force
+
+      # 10. Install Electron dependencies
       - name: Install Electron dependencies
         working-directory: electron
         run: npm ci
 
-      # 10. Build final Windows installer
+      # 11. Build final Windows installer
       - name: Build Electron installer
         working-directory: electron
         run: npm run dist
 
-      # 11. Upload ONLY final Electron EXE
+      # 12. Upload ONLY final Electron EXE
       - name: Upload Final Windows Installer
         uses: actions/upload-artifact@v4
         with:
