@@ -22,7 +22,7 @@ db.sqlite3
 db.sqlite3-journal
 /staticfiles/
 /media/
-*.txt
+logFile.txt
 
 # Node
 node_modules/
