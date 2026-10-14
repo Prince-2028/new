@@ -1,0 +1,61 @@
+{
+  "name": "smartapp-desktop",
+  "version": "1.0.0",
+  "description": "Electron wrapper for SmartApp (uses existing build folder)",
+  "main": "main.js",
+  "author": "Your Name",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "icon": "build/favicon.ico",
+    "appId": "aviconn.smartapp.desktop",
+    "productName": "SmartApp",
+    "files": [
+      "build/**/*",
+      "main.js",
+      "package.json",
+      "!backend/**",
+      "!backend/**/*",
+      "!**/*.map"
+    ],
+    "extraResources": [
+      {
+        "from": "backend/SmartAppBackend.exe",
+        "to": "backend/SmartAppBackend.exe"
+      }
+    ],
+    "electronLanguages": [
+      "en-US"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "build/favicon.ico",
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SmartApp",
+      "installerIcon": "build/favicon.ico",
+      "uninstallerIcon": "build/favicon.ico",
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": true
+    }
+  }
+}
