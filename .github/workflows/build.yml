@@ -138,7 +138,7 @@ jobs:
 
       # 11. Build final Windows installer
       - name: Build Electron installer
-        working-directory: electron
+        working-directory: electrons
         run: npm run dist
 
       # 12. Upload final Windows installer
