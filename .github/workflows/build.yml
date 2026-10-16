@@ -51,7 +51,7 @@ jobs:
         working-directory: smartmeter1
         run: |
           if (Test-Path "manage.spec") {
-            python -m PyInstaller --noconfirm --clean manage.spec
+            python -m PyInstaller --clean --onefile --name smartmeter1 --distpath build --workpath temp_build manage.py
           } else {
             throw "manage.spec not found in smartmeter1. Update this step to use your actual PyInstaller command."
           }
