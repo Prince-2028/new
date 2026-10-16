@@ -112,10 +112,29 @@ jobs:
 
           Write-Host "Electron files prepared successfully"
 
-      # 10. Install Electron dependencies
+            # 10. Install Electron dependencies
       - name: Install Electron dependencies
         working-directory: electron
-        run: npm ci
+        shell: pwsh
+        run: |
+          Write-Host "Checking Electron package files..."
+          Get-ChildItem -Force
+
+          if (!(Test-Path "package.json")) {
+            throw "electron/package.json not found"
+          }
+
+          if (Test-Path "package-lock.json") {
+            Write-Host "package-lock.json found. Running npm ci..."
+            npm ci
+          } else {
+            Write-Host "package-lock.json not found in electron folder. Running npm install..."
+            npm install
+          }
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Electron dependency installation failed"
+          }
 
       # 11. Build final Windows installer
       - name: Build Electron installer
