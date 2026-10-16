@@ -1,4 +1,3 @@
-
 name: Integrate CI/CD Pipeline for DLMS
 
 on:
@@ -26,15 +25,18 @@ jobs:
         with:
           python-version: "3.13"
 
-      # 3. Check actual backend files
+      # 3. Check backend files
       - name: Check backend files
         shell: pwsh
         run: |
-          Write-Host "Checking smartmeter1 folder..."
           Get-ChildItem smartmeter1
 
           if (!(Test-Path "smartmeter1/requirements.txt")) {
             throw "smartmeter1/requirements.txt not found"
+          }
+
+          if (!(Test-Path "smartmeter1/manage.py")) {
+            throw "smartmeter1/manage.py not found"
           }
 
       # 4. Install backend dependencies
@@ -45,16 +47,26 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip install pyinstaller
 
-      # 5. Build backend EXE
-      # Assumes smartmeter1/manage.spec exists
+      # 5. Build backend EXE directly inside build/
       - name: Build backend EXE
         working-directory: smartmeter1
+        shell: pwsh
         run: |
-          if (Test-Path "manage.spec") {
-            python -m PyInstaller --clean --onefile --name smartmeter1 --distpath build --workpath temp_build manage.py
-          } else {
-            throw "manage.spec not found in smartmeter1. Update this step to use your actual PyInstaller command."
+          python -m PyInstaller `
+            --clean `
+            --onefile `
+            --name smartmeter1 `
+            --distpath build `
+            --workpath temp_build `
+            --specpath temp_build `
+            manage.py
+
+          if (!(Test-Path "build/smartmeter1.exe")) {
+            throw "Backend EXE build failed"
           }
+
+          Write-Host "Backend EXE created successfully:"
+          Get-Item "build/smartmeter1.exe"
 
       # 6. Setup Node.js
       - name: Setup Node.js
@@ -75,8 +87,6 @@ jobs:
           CI: "false"
 
       # 9. Prepare Electron files
-      # Assumes Electron folder is named electron/
-      # and PyInstaller generates smartmeter1/dist/manage.exe
       - name: Prepare Electron files
         shell: pwsh
         run: |
@@ -84,8 +94,8 @@ jobs:
             throw "React build not found"
           }
 
-          if (!(Test-Path "smartmeter1/dist/manage.exe")) {
-            throw "Backend EXE not found at smartmeter1/dist/manage.exe"
+          if (!(Test-Path "smartmeter1/build/smartmeter1.exe")) {
+            throw "Backend EXE not found"
           }
 
           New-Item -ItemType Directory -Force `
@@ -97,8 +107,10 @@ jobs:
           Copy-Item "smartmeterapp/build/*" `
             "electron/frontend/build/" -Recurse -Force
 
-          Copy-Item "smartmeter1/dist/manage.exe" `
+          Copy-Item "smartmeter1/build/smartmeter1.exe" `
             "electron/backend/manage.exe" -Force
+
+          Write-Host "Electron files prepared successfully"
 
       # 10. Install Electron dependencies
       - name: Install Electron dependencies
@@ -110,7 +122,7 @@ jobs:
         working-directory: electron
         run: npm run dist
 
-      # 12. Upload ONLY final Electron EXE
+      # 12. Upload final Windows installer
       - name: Upload Final Windows Installer
         uses: actions/upload-artifact@v4
         with:
