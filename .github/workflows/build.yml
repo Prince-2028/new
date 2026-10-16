@@ -114,7 +114,7 @@ jobs:
 
             # 10. Install Electron dependencies
       - name: Install Electron dependencies
-        working-directory: electron
+        working-directory: electrons
         shell: pwsh
         run: |
           Write-Host "Checking Electron package files..."
