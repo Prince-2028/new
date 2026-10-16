@@ -1,3 +1,4 @@
+
 name: Integrate CI/CD Pipeline for DLMS
 
 on:
@@ -6,8 +7,7 @@ on:
       - smartapp
   workflow_dispatch:
 
-permissions:
-  contents: read
+
 
 jobs:
   build-desktop:
@@ -29,8 +29,6 @@ jobs:
       - name: Check backend files
         shell: pwsh
         run: |
-          Get-ChildItem smartmeter1
-
           if (!(Test-Path "smartmeter1/requirements.txt")) {
             throw "smartmeter1/requirements.txt not found"
           }
@@ -39,15 +37,29 @@ jobs:
             throw "smartmeter1/manage.py not found"
           }
 
+          Write-Host "Backend files found successfully."
+
       # 4. Install backend dependencies
       - name: Install backend dependencies
         working-directory: smartmeter1
+        shell: pwsh
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m pip install pyinstaller
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to upgrade pip"
+          }
 
-      # 5. Build backend EXE directly inside build/
+          python -m pip install -r requirements.txt
+          if ($LASTEXITCODE -ne 0) {
+            throw "Backend dependency installation failed"
+          }
+
+          python -m pip install pyinstaller
+          if ($LASTEXITCODE -ne 0) {
+            throw "PyInstaller installation failed"
+          }
+
+      # 5. Build Django backend EXE
       - name: Build backend EXE
         working-directory: smartmeter1
         shell: pwsh
@@ -61,12 +73,15 @@ jobs:
             --specpath temp_build `
             manage.py
 
-          if (!(Test-Path "build/smartmeter1.exe")) {
-            throw "Backend EXE build failed"
+          if ($LASTEXITCODE -ne 0) {
+            throw "PyInstaller backend build failed"
           }
 
-          Write-Host "Backend EXE created successfully:"
-          Get-Item "build/smartmeter1.exe"
+          if (!(Test-Path "build/smartmeter1.exe")) {
+            throw "Backend EXE not found"
+          }
+
+          Write-Host "Backend EXE created successfully."
 
       # 6. Setup Node.js
       - name: Setup Node.js
@@ -74,19 +89,49 @@ jobs:
         with:
           node-version: 20
 
-      # 7. Install frontend dependencies
+      # 7. Check frontend files
+      - name: Check frontend files
+        shell: pwsh
+        run: |
+          if (!(Test-Path "smartmeterapp/package.json")) {
+            throw "smartmeterapp/package.json not found"
+          }
+
+          if (!(Test-Path "smartmeterapp/package-lock.json")) {
+            throw "smartmeterapp/package-lock.json not found. Commit the lock file or use npm install."
+          }
+
+      # 8. Install frontend dependencies
       - name: Install frontend dependencies
         working-directory: smartmeterapp
-        run: npm ci
+        shell: pwsh
+        run: |
+          npm ci
 
-      # 8. Build React frontend
+          if ($LASTEXITCODE -ne 0) {
+            throw "Frontend npm ci failed"
+          }
+
+      # 9. Build React frontend
       - name: Build frontend
         working-directory: smartmeterapp
-        run: npm run build
+        shell: pwsh
         env:
           CI: "false"
+        run: |
+          npm run build
 
-      # 9. Prepare Electron files
+          if ($LASTEXITCODE -ne 0) {
+            throw "React frontend build failed"
+          }
+
+          if (!(Test-Path "build/index.html")) {
+            throw "React build/index.html not found"
+          }
+
+          Write-Host "Frontend build completed successfully."
+
+      # 10. Prepare Electron application files
       - name: Prepare Electron files
         shell: pwsh
         run: |
@@ -98,37 +143,47 @@ jobs:
             throw "Backend EXE not found"
           }
 
-          New-Item -ItemType Directory -Force `
-            "electron/frontend/build" | Out-Null
+          if (!(Test-Path "electrons/package.json")) {
+            throw "electrons/package.json not found"
+          }
 
-          New-Item -ItemType Directory -Force `
-            "electron/backend" | Out-Null
+          New-Item -ItemType Directory -Force "electrons/build" | Out-Null
+          New-Item -ItemType Directory -Force "electrons/backend" | Out-Null
 
-          Copy-Item "smartmeterapp/build/*" `
-            "electron/frontend/build/" -Recurse -Force
+          Copy-Item `
+            "smartmeterapp/build/*" `
+            "electrons/build/" `
+            -Recurse -Force
 
-          Copy-Item "smartmeter1/build/smartmeter1.exe" `
-            "electron/backend/manage.exe" -Force
+          Copy-Item `
+            "smartmeter1/build/smartmeter1.exe" `
+            "electrons/backend/SmartAppBackend.exe" `
+            -Force
 
-          Write-Host "Electron files prepared successfully"
+          if (!(Test-Path "electrons/build/index.html")) {
+            throw "Electron frontend files were not copied"
+          }
 
-            # 10. Install Electron dependencies
+          if (!(Test-Path "electrons/backend/SmartAppBackend.exe")) {
+            throw "Electron backend EXE was not copied"
+          }
+
+          Write-Host "Electron files prepared successfully."
+          Get-ChildItem "electrons/build" -Force
+          Get-ChildItem "electrons/backend" -Force
+
+      # 11. Install Electron dependencies
       - name: Install Electron dependencies
         working-directory: electrons
         shell: pwsh
         run: |
-          Write-Host "Checking Electron package files..."
-          Get-ChildItem -Force
-
           if (!(Test-Path "package.json")) {
-            throw "electron/package.json not found"
+            throw "electrons/package.json not found"
           }
 
           if (Test-Path "package-lock.json") {
-            Write-Host "package-lock.json found. Running npm ci..."
             npm ci
           } else {
-            Write-Host "package-lock.json not found in electron folder. Running npm install..."
             npm install
           }
 
@@ -136,16 +191,57 @@ jobs:
             throw "Electron dependency installation failed"
           }
 
-      # 11. Build final Windows installer
+      # 12. Verify Electron icon, if configured
+      - name: Check Electron icon
+        working-directory: electrons
+        shell: pwsh
+        run: |
+          $package = Get-Content "package.json" -Raw | ConvertFrom-Json
+
+          $iconPaths = @(
+            $package.build.icon,
+            $package.build.win.icon,
+            $package.build.nsis.installerIcon,
+            $package.build.nsis.uninstallerIcon
+          )
+
+          foreach ($iconPath in $iconPaths) {
+            if ($iconPath -and !(Test-Path $iconPath)) {
+              throw "Configured Electron icon not found: $iconPath. Add the icon file or remove the missing icon setting from package.json."
+            }
+          }
+
+          Write-Host "Electron icon configuration checked."
+
+      # 13. Build final Windows installer
       - name: Build Electron installer
         working-directory: electrons
-        run: npm run dist
+        shell: pwsh
+        run: |
+          npm run dist
 
-      # 12. Upload final Windows installer
+          if ($LASTEXITCODE -ne 0) {
+            throw "Electron installer build failed"
+          }
+
+          if (!(Test-Path "dist")) {
+            throw "Electron dist folder was not created"
+          }
+
+          $installer = Get-ChildItem "dist/*.exe" -File
+
+          if (!$installer) {
+            throw "No Windows installer EXE found in electrons/dist"
+          }
+
+          Write-Host "Installer created successfully:"
+          $installer | ForEach-Object { Write-Host $_.FullName }
+
+      # 14. Upload final Windows installer
       - name: Upload Final Windows Installer
         uses: actions/upload-artifact@v4
         with:
           name: DLMS-Windows-Installer
-          path: electron/dist/*.exe
+          path: electrons/dist/*.exe
           if-no-files-found: error
           retention-days: 7
