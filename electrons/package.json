@@ -1,3 +1,4 @@
+
 {
   "name": "smartapp-desktop",
   "version": "1.0.0",
@@ -15,7 +16,6 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "icon": "build/favicon.ico",
     "appId": "aviconn.smartapp.desktop",
     "productName": "SmartApp",
     "files": [
@@ -39,7 +39,6 @@
       "output": "dist"
     },
     "win": {
-      "icon": "build/favicon.ico",
       "target": [
         "nsis"
       ],
@@ -49,8 +48,6 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "SmartApp",
-      "installerIcon": "build/favicon.ico",
-      "uninstallerIcon": "build/favicon.ico",
       "oneClick": false,
       "perMachine": false,
       "allowElevation": true,
