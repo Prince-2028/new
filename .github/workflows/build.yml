@@ -8,7 +8,7 @@ on:
 
 env:
   # Local me jo Python version hai wahi rakho (traceback se lagta hai 3.13)
-  PYTHON_VERSION: "3.13"
+  PYTHON_VERSION: "3.14"
 
 jobs:
   build-desktop:
