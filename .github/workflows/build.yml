@@ -1,4 +1,3 @@
-
 name: Integrate CI/CD Pipeline for DLMS
 
 on:
@@ -7,7 +6,9 @@ on:
       - smartapp
   workflow_dispatch:
 
-
+env:
+  # Local me jo Python version chalta hai wahi yahan rakho
+  PYTHON_VERSION: "3.12"
 
 jobs:
   build-desktop:
@@ -23,7 +24,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       # 3. Check backend files
       - name: Check backend files
@@ -54,23 +55,50 @@ jobs:
             throw "Backend dependency installation failed"
           }
 
-          python -m pip install pyinstaller
+          python -m pip install --upgrade pyinstaller pyinstaller-hooks-contrib
           if ($LASTEXITCODE -ne 0) {
             throw "PyInstaller installation failed"
           }
 
-      # 5. Build Django backend EXE
+      # 5. Print versions (local se compare karne ke liye)
+      - name: Show installed versions
+        working-directory: smartmeter1
+        shell: pwsh
+        run: |
+          python --version
+          python -m pip show django djangorestframework pyinstaller pyinstaller-hooks-contrib
+
+      # 6. Check DRF is properly installed
+      - name: Verify DRF import
+        working-directory: smartmeter1
+        shell: pwsh
+        run: |
+          python -c "import rest_framework.authentication as a; print('DRF OK:', a.__file__)"
+          if ($LASTEXITCODE -ne 0) {
+            throw "rest_framework.authentication cannot be imported in CI"
+          }
+
+      # 7. Build Django backend EXE
       - name: Build backend EXE
         working-directory: smartmeter1
         shell: pwsh
         run: |
           python -m PyInstaller `
             --clean `
+            --noconfirm `
             --onefile `
             --name smartmeter1 `
             --distpath build `
             --workpath temp_build `
             --specpath temp_build `
+            --paths . `
+            --collect-all rest_framework `
+            --collect-submodules django.contrib `
+            --collect-submodules meter1 `
+            --collect-submodules smartmeter1 `
+            --hidden-import rest_framework.authentication `
+            --hidden-import coloredlogs `
+            --hidden-import humanfriendly `
             manage.py
 
           if ($LASTEXITCODE -ne 0) {
@@ -83,13 +111,26 @@ jobs:
 
           Write-Host "Backend EXE created successfully."
 
-      # 6. Setup Node.js
+      # 8. Verify authentication module is bundled inside the EXE
+      - name: Verify authentication module in EXE
+        working-directory: smartmeter1
+        shell: pwsh
+        run: |
+          $out = python -m PyInstaller.utils.cliutils.archive_viewer -l -r build/smartmeter1.exe | Select-String "rest_framework.authentication"
+
+          if (-not $out) {
+            throw "rest_framework.authentication is missing from the backend EXE"
+          }
+
+          Write-Host "rest_framework.authentication found in EXE."
+
+      # 9. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # 7. Check frontend files
+      # 10. Check frontend files
       - name: Check frontend files
         shell: pwsh
         run: |
@@ -101,7 +142,7 @@ jobs:
             throw "smartmeterapp/package-lock.json not found. Commit the lock file or use npm install."
           }
 
-      # 8. Install frontend dependencies
+      # 11. Install frontend dependencies
       - name: Install frontend dependencies
         working-directory: smartmeterapp
         shell: pwsh
@@ -112,7 +153,7 @@ jobs:
             throw "Frontend npm ci failed"
           }
 
-      # 9. Build React frontend
+      # 12. Build React frontend
       - name: Build frontend
         working-directory: smartmeterapp
         shell: pwsh
@@ -131,7 +172,7 @@ jobs:
 
           Write-Host "Frontend build completed successfully."
 
-      # 10. Prepare Electron application files
+      # 13. Prepare Electron application files
       - name: Prepare Electron files
         shell: pwsh
         run: |
@@ -172,7 +213,7 @@ jobs:
           Get-ChildItem "electrons/build" -Force
           Get-ChildItem "electrons/backend" -Force
 
-      # 11. Install Electron dependencies
+      # 14. Install Electron dependencies
       - name: Install Electron dependencies
         working-directory: electrons
         shell: pwsh
@@ -191,7 +232,7 @@ jobs:
             throw "Electron dependency installation failed"
           }
 
-      # 12. Verify Electron icon, if configured
+      # 15. Verify Electron icon, if configured
       - name: Check Electron icon
         working-directory: electrons
         shell: pwsh
@@ -213,7 +254,7 @@ jobs:
 
           Write-Host "Electron icon configuration checked."
 
-      # 13. Build final Windows installer
+      # 16. Build final Windows installer
       - name: Build Electron installer
         working-directory: electrons
         shell: pwsh
@@ -237,7 +278,7 @@ jobs:
           Write-Host "Installer created successfully:"
           $installer | ForEach-Object { Write-Host $_.FullName }
 
-      # 14. Upload final Windows installer
+      # 17. Upload final Windows installer
       - name: Upload Final Windows Installer
         uses: actions/upload-artifact@v4
         with:
