@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  # Local me jo Python version chalta hai wahi yahan rakho
-  PYTHON_VERSION: "3.12"
+  # Local me jo Python version hai wahi rakho (traceback se lagta hai 3.13)
+  PYTHON_VERSION: "3.13"
 
 jobs:
   build-desktop:
@@ -78,51 +78,38 @@ jobs:
             throw "rest_framework.authentication cannot be imported in CI"
           }
 
-      # 7. Build Django backend EXE
+      # 7. Build Django backend EXE (exactly the same command as local)
       - name: Build backend EXE
         working-directory: smartmeter1
         shell: pwsh
         run: |
-          python -m PyInstaller `
-            --clean `
-            --noconfirm `
-            --onefile `
-            --name smartmeter1 `
-            --distpath build `
-            --workpath temp_build `
-            --specpath temp_build `
-            --paths . `
-            --collect-all rest_framework `
-            --collect-submodules django.contrib `
-            --collect-submodules meter1 `
-            --collect-submodules smartmeter1 `
-            --hidden-import rest_framework.authentication `
-            --hidden-import coloredlogs `
-            --hidden-import humanfriendly `
-            manage.py
+          python -m PyInstaller --clean --noconfirm --onefile --name smartmeter1 --paths . --collect-all rest_framework --collect-submodules django.contrib --collect-submodules meter1 --collect-submodules smartmeter1 --hidden-import rest_framework.authentication --hidden-import coloredlogs --hidden-import humanfriendly manage.py
 
           if ($LASTEXITCODE -ne 0) {
             throw "PyInstaller backend build failed"
           }
 
-          if (!(Test-Path "build/smartmeter1.exe")) {
-            throw "Backend EXE not found"
+          if (!(Test-Path "dist/smartmeter1.exe")) {
+            throw "Backend EXE not found in dist"
           }
+
+          New-Item -ItemType Directory -Force "build" | Out-Null
+          Copy-Item "dist/smartmeter1.exe" "build/smartmeter1.exe" -Force
 
           Write-Host "Backend EXE created successfully."
 
-      # 8. Verify authentication module is bundled inside the EXE
-      - name: Verify authentication module in EXE
+      # 8. Smoke test: EXE ko CI me hi chala ke dekho (Django system checks)
+      - name: Smoke test backend EXE
         working-directory: smartmeter1
         shell: pwsh
         run: |
-          $out = python -m PyInstaller.utils.cliutils.archive_viewer -l -r build/smartmeter1.exe | Select-String "rest_framework.authentication"
+          .\dist\smartmeter1.exe check
 
-          if (-not $out) {
-            throw "rest_framework.authentication is missing from the backend EXE"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Backend EXE failed its smoke test (manage.py check)"
           }
 
-          Write-Host "rest_framework.authentication found in EXE."
+          Write-Host "Backend EXE smoke test passed."
 
       # 9. Setup Node.js
       - name: Setup Node.js
