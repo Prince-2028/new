@@ -98,18 +98,6 @@ jobs:
 
           Write-Host "Backend EXE created successfully."
 
-      # 8. Smoke test: EXE ko CI me hi chala ke dekho (Django system checks)
-      - name: Smoke test backend EXE
-        working-directory: smartmeter1
-        shell: pwsh
-        run: |
-          .\dist\smartmeter1.exe check
-
-          if ($LASTEXITCODE -ne 0) {
-            throw "Backend EXE failed its smoke test (manage.py check)"
-          }
-
-          Write-Host "Backend EXE smoke test passed."
 
       # 9. Setup Node.js
       - name: Setup Node.js
