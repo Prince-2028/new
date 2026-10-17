@@ -6,7 +6,7 @@ djangorestframework==3.16.1
 future==1.0.0
 getmac==0.9.5
 gurux-common==1.0.13
-gurux_dlms @ git+https://github.com/Prince-2028/DLMS.git@main
+gurux_dlms @ git+https://github.com/Prince-2028/GURX.git@main
 gurux-net==1.0.23
 gurux-serial==1.0.21
 humanfriendly==10.0
