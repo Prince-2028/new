@@ -15,7 +15,7 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "icon": "build/favicon.ico",
+    "icon": "build/icon.png",
     "appId": "aviconn.smartapp.desktop",
     "productName": "SmartApp",
     "electronLanguages": [
