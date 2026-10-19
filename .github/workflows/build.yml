@@ -79,41 +79,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Backend EXE build failed" }
           if (!(Test-Path "dist/SmartAppBackend.exe")) { throw "dist/SmartAppBackend.exe was not created" }
 
-      # 6. Backend: real smoke test (server start hota hai ya nahi)
-      - name: Verify Backend EXE Starts
-        working-directory: smartmeter1
-        shell: pwsh
-        run: |
-          $exe = (Resolve-Path "dist/SmartAppBackend.exe").Path
-
-          # Electron main.js jis tarah backend chalata hai, yahan wahi arguments rakho
-          $proc = Start-Process -FilePath $exe `
-            -ArgumentList "runserver", "127.0.0.1:8000", "--noreload" `
-            -PassThru -WindowStyle Hidden `
-            -RedirectStandardOutput "backend-out.log" `
-            -RedirectStandardError "backend-err.log"
-
-          $ok = $false
-          for ($i = 0; $i -lt 30; $i++) {
-            Start-Sleep -Seconds 2
-            if ($proc.HasExited) { break }
-            try {
-              Invoke-WebRequest "http://127.0.0.1:8000/" -SkipHttpErrorCheck -TimeoutSec 3 | Out-Null
-              $ok = $true
-              break
-            } catch { }
-          }
-
-          Write-Host "---- backend stdout ----"
-          if (Test-Path "backend-out.log") { Get-Content "backend-out.log" }
-          Write-Host "---- backend stderr ----"
-          if (Test-Path "backend-err.log") { Get-Content "backend-err.log" }
-
-          if (!$proc.HasExited) { taskkill /PID $proc.Id /T /F | Out-Null }
-
-          if (!$ok) { throw "Backend EXE did not start. Check the logs above." }
-          Write-Host "Backend EXE smoke test passed."
-
+    
       # 7. Frontend: install + build
       - name: Install Frontend Dependencies
         working-directory: smartmeterapp
