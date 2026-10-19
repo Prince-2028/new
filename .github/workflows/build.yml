@@ -1,4 +1,4 @@
-name: Integrate CI/CD Pipeline for DLMS
+name: Build and Upload DLMS Backend EXE
 
 on:
   push:
@@ -6,21 +6,21 @@ on:
       - smartapp
   workflow_dispatch:
 
-
+permissions:
+  contents: read
 
 env:
-  # Local pe jo Python version use karte ho wahi yahan rakho
   PYTHON_VERSION: "3.12"
-  NODE_VERSION: "20"
+  BACKEND_EXE_NAME: "SmartAppBackend.exe"
 
 jobs:
-  build-desktop:
-    name: Build Backend, Frontend and Electron Installer
+  build-backend:
+    name: Build Django Backend EXE
     runs-on: windows-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
 
     steps:
-      # 1. Checkout
+      # 1. Checkout repository
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -32,30 +32,54 @@ jobs:
           cache: pip
           cache-dependency-path: smartmeter1/requirements.txt
 
-      # 3. Setup Node
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: |
-            smartmeterapp/package-lock.json
-            electrons/package-lock.json
+      # 3. Verify backend files
+      - name: Check Backend Files
+        shell: pwsh
+        run: |
+          if (!(Test-Path "smartmeter1/requirements.txt")) {
+            throw "smartmeter1/requirements.txt not found"
+          }
 
-      # 4. Backend: install dependencies
+          if (!(Test-Path "smartmeter1/manage.py")) {
+            throw "smartmeter1/manage.py not found"
+          }
+
+          Write-Host "Backend files verified."
+
+      # 4. Install Python dependencies
       - name: Install Backend Dependencies
         working-directory: smartmeter1
         shell: pwsh
         run: |
           python --version
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          if ($LASTEXITCODE -ne 0) { throw "Backend dependency installation failed" }
-          python -m pip install --upgrade pyinstaller pyinstaller-hooks-contrib
-          if ($LASTEXITCODE -ne 0) { throw "PyInstaller installation failed" }
 
-      # 5. Backend: build EXE
-      # NOTE: flags ko apne local build command se match karo (add-data, spec file, etc.)
+          python -m pip install --upgrade pip
+          if ($LASTEXITCODE -ne 0) {
+            throw "Pip upgrade failed"
+          }
+
+          python -m pip install -r requirements.txt
+          if ($LASTEXITCODE -ne 0) {
+            throw "Backend dependency installation failed"
+          }
+
+          python -m pip install --upgrade pyinstaller pyinstaller-hooks-contrib
+          if ($LASTEXITCODE -ne 0) {
+            throw "PyInstaller installation failed"
+          }
+
+      # 5. Verify important dependencies
+      - name: Verify Backend Dependencies
+        working-directory: smartmeter1
+        shell: pwsh
+        run: |
+          python -c "import django; import rest_framework; import coloredlogs; print('Backend imports OK')"
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Backend imports failed"
+          }
+
+      # 6. Build a single backend EXE
       - name: Build Backend EXE
         working-directory: smartmeter1
         shell: pwsh
@@ -76,121 +100,55 @@ jobs:
             --hidden-import coloredlogs `
             --hidden-import humanfriendly `
             manage.py
-          if ($LASTEXITCODE -ne 0) { throw "Backend EXE build failed" }
-          if (!(Test-Path "dist/SmartAppBackend.exe")) { throw "dist/SmartAppBackend.exe was not created" }
 
-    
-      # 7. Frontend: install + build
-      - name: Install Frontend Dependencies
-        working-directory: smartmeterapp
+          if ($LASTEXITCODE -ne 0) {
+            throw "Backend EXE build failed"
+          }
+
+          if (!(Test-Path "dist/SmartAppBackend.exe")) {
+            throw "SmartAppBackend.exe was not created"
+          }
+
+          Write-Host "Backend EXE built successfully."
+
+      # 7. Smoke test the EXE
+      - name: Verify Backend EXE
+        working-directory: smartmeter1
         shell: pwsh
         run: |
-          npm ci
-          if ($LASTEXITCODE -ne 0) { throw "Frontend npm ci failed" }
+          & ".\dist\SmartAppBackend.exe" --version
 
-      - name: Build React Frontend
-        working-directory: smartmeterapp
-        shell: pwsh
-        env:
-          CI: "false"
-        run: |
-          npm run build
-          if ($LASTEXITCODE -ne 0) { throw "React build failed" }
-          if (!(Test-Path "build/index.html")) { throw "React build/index.html not found" }
+          if ($LASTEXITCODE -ne 0) {
+            throw "Backend EXE smoke test failed"
+          }
 
-      # 8. Copy frontend build + backend EXE into electrons/
-      - name: Prepare Electron Files
+          Write-Host "Backend EXE smoke test passed."
+
+      # 8. Copy only the EXE to a clean output folder
+      - name: Prepare Backend Artifact
         shell: pwsh
         run: |
-          if (Test-Path "electrons/build") { Remove-Item "electrons/build" -Recurse -Force }
-          New-Item -ItemType Directory -Force "electrons/build" | Out-Null
-          New-Item -ItemType Directory -Force "electrons/backend" | Out-Null
+          New-Item -ItemType Directory -Force "output" | Out-Null
 
-          Copy-Item "smartmeterapp/build/*" "electrons/build/" -Recurse -Force
-          Copy-Item "smartmeter1/dist/SmartAppBackend.exe" "electrons/backend/SmartAppBackend.exe" -Force
+          Copy-Item `
+            "smartmeter1/dist/SmartAppBackend.exe" `
+            "output/SmartAppBackend.exe" `
+            -Force
 
-          if (!(Test-Path "electrons/build/index.html")) { throw "Frontend copy failed" }
-          if (!(Test-Path "electrons/backend/SmartAppBackend.exe")) { throw "Backend copy failed" }
+          if (!(Test-Path "output/SmartAppBackend.exe")) {
+            throw "Final backend EXE not found"
+          }
 
-      # 9. Electron: install dependencies
-      - name: Install Electron Dependencies
-        working-directory: electrons
-        shell: pwsh
-        run: |
-          if (Test-Path "package-lock.json") { npm ci } else { npm install }
-          if ($LASTEXITCODE -ne 0) { throw "Electron dependency installation failed" }
+          $file = Get-Item "output/SmartAppBackend.exe"
 
-      # 10. Generate Windows icon OUTSIDE build/ (React build isse overwrite nahi kar sakta)
-      - name: Generate Windows Icon
-        shell: pwsh
-        run: |
-          python -m pip install Pillow
-          if ($LASTEXITCODE -ne 0) { throw "Pillow installation failed" }
+          Write-Host "File: $($file.FullName)"
+          Write-Host "Size: $([math]::Round($file.Length / 1MB, 2)) MB"
 
-          $scriptPath = Join-Path $env:RUNNER_TEMP "make_icon.py"
-
-          @'
-          from pathlib import Path
-          from PIL import Image
-
-          candidates = [
-              Path("smartmeterapp/public/logo512.png"),
-              Path("smartmeterapp/public/logo192.png"),
-              Path("smartmeterapp/public/favicon.png"),
-              Path("smartmeterapp/public/favicon.ico"),
-          ]
-          dest = Path("electrons/assets/icon.ico")
-
-          src = next((p for p in candidates if p.is_file()), None)
-          if src is None:
-              raise SystemExit("No source icon found in smartmeterapp/public/")
-
-          with Image.open(src) as im:
-              if im.format == "ICO":
-                  largest = max(im.ico.sizes(), key=lambda s: s[0] * s[1])
-                  img = im.ico.getimage(largest).convert("RGBA")
-              else:
-                  img = im.convert("RGBA")
-
-          print(f"Icon source: {src} ({img.width}x{img.height})")
-          img = img.resize((256, 256), Image.Resampling.LANCZOS)
-
-          dest.parent.mkdir(parents=True, exist_ok=True)
-          img.save(dest, format="ICO",
-                   sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)])
-
-          with Image.open(dest) as r:
-              sizes = r.ico.sizes()
-              print("ICO sizes:", sorted(sizes))
-              assert (256, 256) in sizes, "ICO missing 256x256"
-          print("Icon generated:", dest)
-          '@ | Set-Content -Path $scriptPath -Encoding UTF8
-
-          python $scriptPath
-          if ($LASTEXITCODE -ne 0) { throw "Icon generation failed" }
-
-  
-
-      # 12. Build installer
-      # icon explicitly pass kiya hai taaki package.json ka koi purana path use na ho
-      - name: Build Electron Installer
-        working-directory: electrons
-        shell: pwsh
-        run: |
-          npm run dist -- --config.icon=assets/icon.ico --config.win.icon=assets/icon.ico
-          if ($LASTEXITCODE -ne 0) { throw "Electron installer build failed" }
-
-          $installers = @(Get-ChildItem "dist/*.exe" -File)
-          if ($installers.Count -eq 0) { throw "No Windows installer EXE found" }
-
-          Write-Host "Installer files created:"
-          $installers | ForEach-Object { Write-Host $_.FullName }
-
-      # 13. Upload installer
-      - name: Upload Final Windows Installer
+      # 9. Upload only the backend EXE
+      - name: Upload Backend EXE
         uses: actions/upload-artifact@v4
         with:
-          name: DLMS-Windows-Installer
-          path: electrons/dist/*.exe
+          name: DLMS-Backend-EXE
+          path: output/SmartAppBackend.exe
           if-no-files-found: error
           retention-days: 7
