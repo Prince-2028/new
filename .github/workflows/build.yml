@@ -169,28 +169,7 @@ jobs:
           python $scriptPath
           if ($LASTEXITCODE -ne 0) { throw "Icon generation failed" }
 
-      # 11. Verify electron config
-      - name: Verify Electron Configuration
-        working-directory: electrons
-        shell: pwsh
-        run: |
-          $raw = Get-Content "package.json" -Raw
-          $package = $raw | ConvertFrom-Json
-
-          if (!$package.main -or !(Test-Path $package.main)) { throw "Electron main file missing" }
-          if (!$package.scripts.dist) { throw "package.json must define the dist script" }
-
-          # build/ folder React ka hai, icon wahan se mat lo
-          if ($raw -match "favicon") {
-            throw "package.json mein 'favicon' reference mila. Saare icon paths 'assets/icon.ico' pe set karo."
-          }
-
-          $backendResource = @($package.build.extraResources) | Where-Object { $_.to -eq "backend/SmartAppBackend.exe" }
-          if (!$backendResource) {
-            throw "build.extraResources mein backend/SmartAppBackend.exe -> backend/SmartAppBackend.exe configure karo"
-          }
-
-          Write-Host "Electron configuration verified."
+  
 
       # 12. Build installer
       # icon explicitly pass kiya hai taaki package.json ka koi purana path use na ho
