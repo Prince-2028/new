@@ -1,4 +1,3 @@
-
 {
   "name": "smartapp-desktop",
   "version": "1.0.0",
@@ -12,33 +11,36 @@
     "dist": "electron-builder"
   },
   "devDependencies": {
-    "electron": "^28.3.3",
+    "electron": "^28.0.0",
     "electron-builder": "^24.13.3"
   },
   "build": {
+    "icon": "build/favicon.ico",
     "appId": "aviconn.smartapp.desktop",
     "productName": "SmartApp",
+    "electronLanguages": [
+      "en-US"
+    ],
     "files": [
       "build/**/*",
       "main.js",
       "package.json",
-      "!backend/**",
-      "!backend/**/*",
       "!**/*.map"
     ],
     "extraResources": [
       {
-        "from": "backend/SmartAppBackend.exe",
-        "to": "backend/SmartAppBackend.exe"
+        "from": "backend/",
+        "to": "backend/",
+        "filter": [
+          "**/*"
+        ]
       }
-    ],
-    "electronLanguages": [
-      "en-US"
     ],
     "directories": {
       "output": "dist"
     },
     "win": {
+      "icon": "build/favicon.ico",
       "target": [
         "nsis"
       ],
@@ -48,10 +50,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "SmartApp",
-      "oneClick": false,
+      "oneClick": true,
       "perMachine": false,
-      "allowElevation": true,
-      "allowToChangeInstallationDirectory": true,
       "deleteAppDataOnUninstall": true
     }
   }
